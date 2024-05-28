@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>表單</title>
+    <script src="https://d.line-scdn.net/liff/1.0/sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+<script>
+    var liffID = '2005419810-AVWDqGyY';
+    $(document).ready(function () {
+        liff.init({ liffId: liffID }).then(() => {
+            liff.getProfile().then(profile => {
+                var userId = profile.userId;
+
+                var queryString = window.location.search;
+		        var urlParams = new URLSearchParams(queryString);
+		        var tempValue = decodeURIComponent(urlParams.get('temp'));
+                var mydata = JSON.parse(tempValue);
+                $('#User_ID').val(userId);
+                document.getElementById('item').value = mydata.item;
+                document.getElementById('payment').value = mydata.payment;
+                document.getElementById('location').value = mydata.location;
+                document.getElementById('category').value = mydata.category;
+                document.getElementById('transaction_type').value = mydata.transaction_type;
+
+                var currentDateTime = new Date();
+                var formattedDateTime = currentDateTime.getFullYear() + "-" +
+                        ("0" + (currentDateTime.getMonth() + 1)).slice(-2) + "-" +
+                        ("0" + currentDateTime.getDate()).slice(-2) + " " +
+                        ("0" + currentDateTime.getHours()).slice(-2) + ":" +
+                        ("0" + currentDateTime.getMinutes()).slice(-2) + ":" +
+                        ("0" + currentDateTime.getSeconds()).slice(-2);
+                document.getElementById("datetime").value = formattedDateTime;
+            });
+        });
+
+        $('#sure').click(function (e) {  // On clicking the "確定" button
+            // Add your form submission logic here
+        });
+    });
+</script>
+</head>
+<body>
+    <div class="row" style="margin: 10px">
+        <div class="col-12" style="margin: 10px">
+            <label>User_ID</label>
+            <input type="text" id="User_ID" class="form-control" />
+            <br />
+            <label>項目</label>
+            <input type="text" id="item" class="form-control" />
+            <br />
+            <label>金額</label>
+            <input type="number" id="payment" class="form-control" />
+            <br />
+            <label>時間</label>
+            <input type="text" id="datetime" class="form-control" />
+            <br />
+            <label>地點</label>
+            <input type="text" id="location" class="form-control" />
+            <br />
+            <label>交易類型</label>
+            <input type="text" id="transaction_type" class="form-control" />
+            <br />
+            <label>類別</label>
+            <input type="text" id="category" class="form-control" />
+            <br />
+            <button class="btn btn-warning btn-block" id="temporary">暫存</button>
+            <button class="btn btn-warning btn-block" id="sure">完成確定</button>
+        </div>
+    </div>
+</body>
+
+</html>

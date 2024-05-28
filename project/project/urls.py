@@ -1,0 +1,35 @@
+"""
+URL configuration for project project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/5.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+
+from django.contrib import admin
+from django.urls import path, include
+from line_bot_app import views
+from django.views.generic import TemplateView
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('callback',views.callback),
+    path('search',views.search),
+    path('liff-add',views.liff_add),
+    path('get_user_account',views.get_user_account),
+    path('personal_account_form',views.personal_account_form),#new
+    path('get_user_account_info',views.get_user_account_info),#new
+    
+    path('', TemplateView.as_view(template_name="index.html")),
+    path('api/', include('line_bot_app.api_urls')), 
+
+]

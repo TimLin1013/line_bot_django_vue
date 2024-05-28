@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8">
+    <title>個人記帳主頁面</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+    <style>
+        body {
+            background-color: #f0f0f0; /* 灰白色 */
+            color: #333; /* 文本颜色 */
+        }
+        .container {
+            margin-top: 20vh;
+        }
+        .btn {
+            width: 100%;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #e0e0e0; /* 灰白色背景 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="result"></div>
+        <button id="keep_account" class="btn btn-primary">記帳</button>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/versions/2.23.2/sdk.js"></script>
+    <script>
+        var liffID = '2004983305-2LqXBLZr';
+
+        $(document).ready(function() {
+            liff.init({
+                liffId: liffID
+            }).then(() => {
+                liff.getProfile().then(profile => {
+                    var userId = profile.userId;
+                    $.ajax({
+                        url: "https://8d12-2401-e180-8800-c773-c65-1509-d69a-ce18.ngrok-free.app/get_user_account",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(userId),
+                        success: function(res) {
+                            console.log('ajax result:');
+                            console.log(res);
+                            var resultDiv = $('#result');
+                            resultDiv.empty(); // 清空之前的内容
+
+                            if (res.accounts && res.accounts.length > 0) {
+                                var table = $('<table></table>');
+                                var thead = $('<thead><tr><th>帳目名稱</th><th>地點</th><th>金額</th><th>類別</th></tr></thead>');
+                                var tbody = $('<tbody></tbody>');
+
+                                res.accounts.forEach(function(account) {
+                                    var row = $('<tr></tr>');
+                                    row.append($('<td></td>').text(account.item));
+                                    row.append($('<td></td>').text(account.location));
+                                    row.append($('<td></td>').text(account.payment));
+                                    row.append($('<td></td>').text(account.category_name));
+
+                                    tbody.append(row);
+                                });
+
+                                table.append(thead);
+                                table.append(tbody);
+                                resultDiv.append(table);
+                            } else {
+                                resultDiv.text('沒有帳目資訊');
+                            }
+                        },
+                        error: function(err) {
+                            $('#result').text('AJAX 請求失敗: ' + err);
+                        }
+                    });
+                }).catch((err) => {
+                    console.error('取得 profile 時錯誤: ' + err);
+                });
+
+            }).catch((err) => {
+                alert('LIFF 初始化失败: ' + err);
+            });
+
+            $('#keep_account').click(function() {
+                var isInClient = liff.isInClient();
+                console.log('isInClient', isInClient);
+
+                liff.openWindow({
+                    url: 'https://liff.line.me/2004983305-Wxv3l2rx',
+                    external: false
+                });
+            });
+        });
+    </script>
+</body>
+</html>
