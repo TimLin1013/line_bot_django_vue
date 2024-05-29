@@ -5,16 +5,10 @@
 
     <div class="fixed-container">
       <div class="btn-group">
-        <button
-          :class="{ active: isPersonalExpense }"
-          @click="showPersonalExpense"
-        >
+        <button :class="{ active: isPersonalExpense }" @click="showPersonalExpense">
           個人花費
         </button>
-        <button
-          :class="{ active: !isPersonalExpense }"
-          @click="showGroupExpense"
-        >
+        <button :class="{ active: !isPersonalExpense }" @click="showGroupExpense">
           群組花費
         </button>
       </div>
@@ -44,6 +38,7 @@
         </div>
       </div>
     </div>
+    <button class="keep-button" @click="navigateToKeep">記帳</button>
   </div>
 </template>
 
@@ -51,26 +46,25 @@
 import dayjs from 'dayjs';
 
 export default {
-  props: ['userId'], 
   data() {
     return {
       selectedDate: '',
       accounts: [],
-      isPersonalExpense: true // 預設顯示個人花費
+      isPersonalExpense: true
     };
   },
   methods: {
     onChange(date) {
       const formattedDate = dayjs(date).format('YYYY-MM-DD');
       this.selectedDate = formattedDate;
+
     },
-    sendUserId() {
+    fetchAccounts() {
       const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
       console.log(apiUrl);
-      console.log("User ID to be sent:", this.userId);
-      this.$axios.post(apiUrl, { userId: this.userId }) 
+
+      this.$axios.post(apiUrl, { userId: this.$root.$userId })
         .then(response => {
-          console.log(response.data);
           this.accounts = response.data.accounts;
         })
         .catch(error => {
@@ -79,21 +73,19 @@ export default {
     },
     showPersonalExpense() {
       this.isPersonalExpense = true;
-      // 在這裡可以加載個人花費的數據
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
-      // 在這裡可以加載群組花費的數據
+    },
+    navigateToKeep() {
+      this.$router.push({ name: 'liff_keep' });
     }
   },
   watch: {
-    userId: {
-      handler(newValue, oldValue) {
-        if (newValue !== oldValue && newValue !== null) {
-          this.sendUserId();
-        }
-      },
-      immediate: true  
+    'this.$root.$userId': function(newVal) {
+      if (newVal) {
+        this.fetchAccounts();
+      }
     }
   },
   computed: {
@@ -115,7 +107,7 @@ export default {
 }
 
 .fixed-container {
-  height: calc(550px); 
+  height: calc(300px); 
   overflow-y: auto;
 }
 
@@ -160,7 +152,7 @@ export default {
 
 .btn-group button {
   margin-right: 10px;
-  padding: 10px 20px; /* 增加按鈕的寬度和高度 */
+  padding: 10px 20px; 
   border: none;
   cursor: pointer;
 }
@@ -168,5 +160,13 @@ export default {
 .btn-group button.active {
   background-color: #4CAF50;
   color: white;
+}
+
+.keep-button {
+  margin-right: 10px;
+  padding: 30px 40px;
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
 }
 </style>

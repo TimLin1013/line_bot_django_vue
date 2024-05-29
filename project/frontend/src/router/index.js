@@ -1,12 +1,12 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import liff_search from '@/components/liff_search'
-
+import liff_keep from '@/components/liff_keep'
   Vue.use(Router)
 
   export default new Router({
     routes: [
-
+      
       {
         path: '/:queryParam', 
         name: 'liff_search_with_query',
@@ -18,6 +18,15 @@ import liff_search from '@/components/liff_search'
         name: 'liff_search',
         component: liff_search,
         props: true 
-      }
+      },
+      {
+        path: '/keep',
+        name: 'liff_keep',
+        component: liff_keep,
+        props: true
+      },
+     
+      
     ]
+    
   })

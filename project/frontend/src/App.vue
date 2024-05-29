@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <router-view :key="$route.fullPath"/> 
+
+    <router-view :key="$route.fullPath"/>
   </div>
 </template>
 
@@ -11,7 +12,7 @@ export default {
     return {
       profile: {},
       msg: "",
-      userId:"",
+
     };
   },
   beforeCreate() {
@@ -31,15 +32,8 @@ export default {
     getProfile() {
       if (window.liff.isLoggedIn()) {
         window.liff.getProfile().then((profile) => {
-          console.log('Profile:', profile);
           this.profile = profile;
-          this.msg = profile.displayName;
-          this.userId = profile.userId;
-          
-          
-          this.$router.push({ name: 'liff_search_with_query', params: { userId: this.userId } });
-          this.$router.push({ name: 'liff_search', params: { userId: this.userId } });
-          
+          this.$root.$userId = profile.userId;
         }).catch((error) => {
           console.error('獲取Profile失敗', error);
         });
@@ -48,7 +42,7 @@ export default {
       }
     }
   }
-}
+};
 </script>
 
 <style>
