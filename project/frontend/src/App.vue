@@ -12,7 +12,7 @@ export default {
     return {
       profile: {},
       msg: "",
-
+      
     };
   },
   beforeCreate() {
@@ -34,6 +34,7 @@ export default {
         window.liff.getProfile().then((profile) => {
           this.profile = profile;
           this.$root.$userId = profile.userId;
+          
         }).catch((error) => {
           console.error('獲取Profile失敗', error);
         });

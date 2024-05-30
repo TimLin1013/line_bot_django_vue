@@ -32,6 +32,7 @@
             </tr>
           </tbody>
         </table>
+        <div v-else-if="loading" class="loading">載入中...</div>
         <div v-else class="account-area-placeholder"> 
           <h2>當天花費：</h2>
           <p>暫無資料</p>
@@ -43,32 +44,35 @@
 </template>
 
 <script>
-import dayjs from 'dayjs';
-
 export default {
   data() {
     return {
       selectedDate: '',
       accounts: [],
-      isPersonalExpense: true
+      isPersonalExpense: true,
+      loading: false 
     };
   },
   methods: {
     onChange(date) {
       const formattedDate = dayjs(date).format('YYYY-MM-DD');
       this.selectedDate = formattedDate;
-
+      
     },
     fetchAccounts() {
+      this.loading = true; 
       const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
       console.log(apiUrl);
-
+      console.log(this.$root.$userId);
       this.$axios.post(apiUrl, { userId: this.$root.$userId })
         .then(response => {
           this.accounts = response.data.accounts;
         })
         .catch(error => {
           console.error(error);
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
     showPersonalExpense() {
@@ -81,13 +85,18 @@ export default {
       this.$router.push({ name: 'liff_keep' });
     }
   },
-  watch: {
-    'this.$root.$userId': function(newVal) {
-      if (newVal) {
+  mounted() {
+    const checkUserId = () => {
+      if (this.$root.$userId === null) {
+        console.log();
+        setTimeout(checkUserId, 500); 
+      } else {
         this.fetchAccounts();
       }
-    }
+    };
+    checkUserId();
   },
+
   computed: {
     selectedAccounts() {
       return this.accounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'));
@@ -168,5 +177,16 @@ export default {
   font-size: 20px;
   border: none;
   cursor: pointer;
+}
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
 }
 </style>

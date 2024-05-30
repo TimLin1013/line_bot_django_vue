@@ -23,11 +23,9 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('callback',views.callback),
-    path('search',views.search),
-    path('liff-add',views.liff_add),
-    path('get_user_account',views.get_user_account),
-    path('personal_account_form',views.personal_account_form),#new
-    path('get_user_account_info',views.get_user_account_info),#new
+    
+    path('test',views.test),
+
     
     path('', TemplateView.as_view(template_name="index.html")),
     path('api/', include('line_bot_app.api_urls')), 

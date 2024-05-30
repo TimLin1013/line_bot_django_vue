@@ -61,7 +61,7 @@ def callback(request):
     else:
         return HttpResponseBadRequest()
 @csrf_exempt
-def search(request):
+def test(request):
     if request.method == 'POST':
   
         return HttpResponse(json.dumps("success"), content_type="application/json")

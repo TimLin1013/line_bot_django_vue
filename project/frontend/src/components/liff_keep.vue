@@ -29,7 +29,17 @@ export default {
   },
   methods: {
     handleReserve() {
-      // Handle the reserve action
+      const apiUrl = `${this.$apiUrl}/test`;
+      this.$axios.post(apiUrl, { 
+        user_input : this.input,
+
+       }).then(response => {
+          console.log(response);
+          this.$router.push({ name: 'liff_personal_form'});//,params: {formData: response.data.formData}
+        })
+        .catch(error => {
+          console.error(error);
+        });
     }
   }
 };
