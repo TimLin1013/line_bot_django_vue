@@ -11,7 +11,7 @@ export default {
   data() {
     return {
       profile: {},
-      msg: "",
+      msg: "", 
       
     };
   },
@@ -29,6 +29,11 @@ export default {
     }
   },
   methods: {
+    mounted() {
+      if (this.$route.path === '/createGroup') {
+        this.$router.push({ name: 'liff_createGroup'});
+      }
+    },
     getProfile() {
       if (window.liff.isLoggedIn()) {
         window.liff.getProfile().then((profile) => {
