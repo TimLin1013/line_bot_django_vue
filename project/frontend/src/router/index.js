@@ -33,7 +33,6 @@ Vue.use(Router)
         component: liff_personal,
         props: true
       },
-
     ]
     
   })

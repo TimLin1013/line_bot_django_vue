@@ -29,6 +29,7 @@ urlpatterns = [
     
     path('', TemplateView.as_view(template_name="index.html")),
     
+
     path('api/', include('line_bot_app.api_urls')), 
 
 ]
