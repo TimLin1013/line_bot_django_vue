@@ -17,7 +17,7 @@ from module import func
 import json
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
-
+#
 
 @csrf_exempt
 def callback(request):
