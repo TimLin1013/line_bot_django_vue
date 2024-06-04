@@ -7,7 +7,7 @@ import liff_personal from '@/components/liff_personal_form'
 Vue.use(Router)
 
   export default new Router({
-    mode: 'history',
+    
     routes: [
       {
         path: '/:queryParam', 

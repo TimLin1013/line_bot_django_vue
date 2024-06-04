@@ -1,18 +1,23 @@
 <template>
   <div id="demo">
-    <calendar @change="onChange"/>
-    <inlineCalendar @change="onChange"/>
+    <div class="btn-group fixed-buttons">
+      <button :class="{ active: isAllExpense }" @click="showAllExpense">
+        所有花費
+      </button>
+      <button :class="{ active: isPersonalExpense && !isAllExpense }" @click="showPersonalExpense">
+        個人帳本
+      </button>
+      <button :class="{ active: !isPersonalExpense && !isAllExpense }" @click="showGroupExpense">
+        群組帳本
+      </button>
+      <button @click="toggleCalendar" class="toggle-calendar-button">
+        {{ showCalendar ? '所有時間' : '選擇日期' }}
+      </button>
+    </div>
+    <calendar v-if="showCalendar" @change="onChange"/>
+    <inlineCalendar v-if="showCalendar" @change="onChange"/>
 
     <div class="fixed-container">
-      <div class="btn-group">
-        <button :class="{ active: isPersonalExpense }" @click="showPersonalExpense">
-          個人花費
-        </button>
-        <button :class="{ active: !isPersonalExpense }" @click="showGroupExpense">
-          群組花費
-        </button>
-      </div>
-
       <div class="scrollable-block">
         <table v-if="selectedAccounts.length > 0" class="account-area">
           <thead>
@@ -39,7 +44,26 @@
         </div>
       </div>
     </div>
-    <button class="keep-button" @click="navigateToKeep">記帳</button>
+
+    <div class="bottom-buttons">
+      <button @click="navigateToOverview" class="overview-button">
+        帳本總覽
+      </button>
+      <button @click="joinGroupAccount" class="group-account-button">
+        加入群組帳本
+      </button>
+      <button @click="createGroupAccount" class="group-account-button">
+        建立群組帳本
+      </button>
+      <div class="split-button">
+        <button @click="manualAccounting" class="manual-accounting">
+          手動記帳
+        </button>
+        <button @click="voiceTextAccounting" class="voice-text-accounting">
+          語音/文字記帳
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -49,15 +73,19 @@ export default {
     return {
       selectedDate: '',
       accounts: [],
-      isPersonalExpense: true,
-      loading: false 
+      isPersonalExpense: false,
+      isAllExpense: true,
+      loading: false,
+      showCalendar: false
     };
   },
   methods: {
+    toggleCalendar() {
+      this.showCalendar = !this.showCalendar;
+    },
     onChange(date) {
       const formattedDate = dayjs(date).format('YYYY-MM-DD');
       this.selectedDate = formattedDate;
-      
     },
     fetchAccounts() {
       this.loading = true; 
@@ -75,15 +103,33 @@ export default {
           this.loading = false;
         });
     },
+    showAllExpense() {
+      this.isPersonalExpense = false;
+      this.isAllExpense = true;
+    },
     showPersonalExpense() {
       this.isPersonalExpense = true;
+      this.isAllExpense = false;
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
+      this.isAllExpense = false;
     },
-    navigateToKeep() {
+    navigateToOverview() {
+      this.$router.push({ name: 'account_overview' });
+    },
+    joinGroupAccount() {
+      this.$router.push({ name: 'join_group_account' });
+    },
+    createGroupAccount() {
+      this.$router.push({ name: 'create_group_account' });
+    },
+    manualAccounting() {
+      this.$router.push({ name: 'liff_personal_form' });
+    },
+    voiceTextAccounting() {
       this.$router.push({ name: 'liff_keep' });
-    }
+    },
   },
   mounted() {
     const checkUserId = () => {
@@ -96,10 +142,19 @@ export default {
     };
     checkUserId();
   },
-
   computed: {
     selectedAccounts() {
-      return this.accounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'));
+      let filteredAccounts = this.accounts;
+
+      if (this.selectedDate) {
+        filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'));
+      }
+
+      if (!this.isAllExpense) {
+        filteredAccounts = filteredAccounts.filter(account => account.type === (this.isPersonalExpense ? 'personal' : 'group'));
+      }
+
+      return filteredAccounts;
     }
   }
 };
@@ -115,7 +170,21 @@ export default {
   margin-top: 60px;
 }
 
+.fixed-buttons {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #f9f9f9;
+  z-index: 1000;
+  padding: 6px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+}
+
 .fixed-container {
+  margin-top: 70px; /* Adjust margin to make space for fixed buttons */
   height: calc(300px); 
   overflow-y: auto;
 }
@@ -156,28 +225,74 @@ export default {
 }
 
 .btn-group {
-  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 .btn-group button {
-  margin-right: 10px;
-  padding: 10px 20px; 
+  padding: 8px 16px; 
   border: none;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+  color: white;
+  font-size: 14px;
   cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .btn-group button.active {
-  background-color: #4CAF50;
-  color: white;
+  background: linear-gradient(135deg, #ff9a9e 10%, #fecfef 100%);
 }
 
-.keep-button {
-  margin-right: 10px;
-  padding: 30px 40px;
-  font-size: 20px;
-  border: none;
-  cursor: pointer;
+.btn-group button:hover {
+  transform: scale(1.05);
 }
+
+.bottom-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #f9f9f9;
+  z-index: 1000;
+  padding: 10px 0;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bottom-buttons button {
+  padding: 10px 20px; 
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.bottom-buttons button:hover {
+  transform: scale(1.05);
+}
+
+.split-button {
+  display: flex;
+}
+
+.split-button .manual-accounting,
+.split-button .voice-text-accounting {
+  border-radius: 20px 0 0 20px;
+}
+
+.split-button .voice-text-accounting {
+  border-radius: 0 20px 20px 0;
+  margin-left: -1px; /* To prevent double border */
+}
+
 .loading {
   position: absolute;
   top: 50%;
@@ -188,5 +303,20 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 9999;
+}
+
+.toggle-calendar-button {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+  color: white;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.toggle-calendar-button:hover {
+  transform: scale(1.05);
 }
 </style>

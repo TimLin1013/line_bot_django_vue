@@ -13,7 +13,7 @@ class category_classification(BaseTool):
             類別: str = None,
              ):
 
-        return(f"category：{類別}")
+        return(f"category:{類別}")
 
 def get_category_classification_tool(llm):
     tools = [category_classification()]

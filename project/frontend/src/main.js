@@ -3,7 +3,7 @@ import App from './App'
 import router from './router'
 import Calendar from 'vue-mobile-calendar'
 import axios from 'axios';
-Vue.prototype.$apiUrl = 'https://35cb-2401-e180-8842-48ce-3d47-650c-574c-1b4c.ngrok-free.app';
+Vue.prototype.$apiUrl = 'https://c5a8-2401-e180-8852-3538-51f0-c432-d848-2f79.ngrok-free.app';
 Vue.prototype.$axios = axios;
 Vue.prototype.$userId = null;
 Vue.use(Calendar);
