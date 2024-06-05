@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-
     <router-view :key="$route.fullPath"/>
   </div>
 </template>
@@ -35,7 +34,7 @@ export default {
         window.liff.getProfile().then((profile) => {
           this.profile = profile;
           this.$root.$userId = profile.userId;
-          
+          this.$root.$userName = profile.displayName;//6/2
         }).catch((error) => {
           console.error('獲取Profile失敗', error);
         });

@@ -1,96 +1,138 @@
 <template>
-    <div class="row" style="margin: 10px">
-      <div class="col-12" style="margin: 10px">
-        <label>User_ID</label>
-        <input type="text" v-model="userId" class="form-control" readonly />
-        <br />
-        <label>項目</label>
-        <input type="text" v-model="formData.item" class="form-control" />
-        <br />
-        <label>金額</label>
-        <input type="number" v-model="formData.payment" class="form-control" />
-        <br />
-        <label>時間</label>
-        <input type="text" v-model="formData.datetime" class="form-control"  />
-        <br />
-        <label>地點</label>
-        <input type="text" v-model="formData.location" class="form-control" />
-        <br />
-        <label>交易類型</label>
-        <input type="text" v-model="formData.transaction_type" class="form-control" />
-        <br />
-        <label>類別</label>
-        <input type="text" v-model="formData.category" class="form-control" />
-        <br />
-        <button class="btn btn-warning btn-block" @click="temporarySave">暫存</button>
-        <button class="btn btn-warning btn-block" @click="confirm">完成確定</button>
-      </div>
+  <div class="row" style="margin: 10px">
+    <div class="col-12" style="margin: 10px">
+      <label >User_ID</label>
+      <input v-model="formData.user_id" type="text" class="form-control" />
+      <br />
+      <label >項目</label>
+      <input v-model="formData.item" type="text" class="form-control" />
+      <br />
+      <label>金額</label>
+      <input v-model="formData.payment" type="number" class="form-control" />
+      <br />
+      <label>時間</label>
+      <input v-model="currentTime" type="text" class="form-control" />
+      <br />
+      <label>地點</label>
+      <input v-model="formData.location" type="text" class="form-control" />
+      <br />
+      <label>交易類型</label>
+      <input v-model="formData.transaction_type" type="text" class="form-control" />
+      <br />
+      <label>類別</label>
+      <input v-model="formData.category" type="text" class="form-control" />
+      <br />
+      <button @click="temporary" class="btn btn-warning btn-block">暫存</button>
+      <button @click="sure" class="btn btn-warning btn-block">完成確定</button>
     </div>
-  </template>
-  
-  <script>
-
-  
-  export default {
+  </div>
+</template>
+<script>
+import Swal from 'sweetalert2';
+export default {
     props: {
-       //formData : Object
+      formData : Object
     },
     data() {
       return {
-        userId : this.$root.$userId,
-            formData: {
-            item: '',
-            payment: '',
-            datetime: '',
-            location: '',
-            transaction_type: '',
-            category: ''
-        }
+        currentTime: this.formatCurrentTime(),
       };
     },
     methods: {
-      temporarySave() {
-        // Add your temporary save logic here
-        console.log('Temporary Save:', this.formData);
+      formatCurrentTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        //const hours = String(now.getHours()).padStart(2, '0');
+        //const minutes = String(now.getMinutes()).padStart(2, '0');
+        //const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       },
-      confirm() {
-        // Add your confirm logic here
-        console.log('Confirm:', this.formData);
+      temporary() {
+        this.currentTime = this.formatCurrentTime();
+        const apiUrl = `${this.$apiUrl}/api/get_keep_temporary/`;
+        console.log(apiUrl);
+        this.$axios.post(apiUrl, { 
+          userID :this.formData.user_id,
+          item:this.formData.item,
+          payment:this.formData.payment,
+          location:this.formData.location,
+          category:this.formData.category,
+          time:this.currentTime
+        }).then(response => {
+          console.log(response);
+          Swal.fire({
+              title: "暫存成功!!",
+              icon: "success"
+          });
+          this.$router.push({ name: 'liff_search'});
+        })
+        .catch(error => {
+          console.error(error);
+        });
+      },
+      sure(){
+        for (let key in this.formData) {
+          if (!this.formData[key]) {
+            Swal.fire({
+              title: "有空白無法完成確認，只能按暫存!",
+              icon: "warning"
+            });
+            return;
+          }
+        }
+        this.currentTime = this.formatCurrentTime();
+        const apiUrl = `${this.$apiUrl}/api/get_keep_sure/`;
+        console.log(apiUrl);
+        this.$axios.post(apiUrl, { 
+          userID :this.formData.user_id,
+          item:this.formData.item,
+          payment:this.formData.payment,
+          location:this.formData.location,
+          category:this.formData.category,
+          time:this.currentTime
+        }).then(response => {
+          console.log(response);
+          Swal.fire({
+              title: "完成記帳!!",
+              icon: "success"
+          });
+          this.$router.push({ name: 'liff_search'});
+        })
+        .catch(error => {
+          console.error(error);
+        });
       }
     },
-    mounted() {
-      
-        
-    }
     
-  };
-  </script>
+};
+</script>
   
-  <style scoped>
-  body {
-    background-color: #fff;
-  }
-  .btn-group {
-    display: flex;
-  }
-  .btn-group label {
-    flex: 1;
-    margin: 5px;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    text-align: center;
-    cursor: pointer;
-    background-color: #fff;
-    transition: background-color 0.3s;
-  }
-  .btn-group input[type="radio"] {
-    display: none;
-  }
-  .btn-group input[type="radio"]:checked + label {
-    background-color: #007bff;
-    color: #fff;
-    border-color: #007bff;
-  }
-  </style>
-  
+<style scoped>
+.form-control {
+  font-size: 16px;
+  color: black;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.btn-warning {
+  font-size: 16px;
+  color: #0e0303;
+  background-color: #ffc107;
+  border-color: #ffc107;
+  padding: 0.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.btn-warning:hover {
+  color: #0e0303;
+  background-color: #e0a800;
+  border-color: #d39e00;
+}
+</style>

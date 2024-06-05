@@ -12,16 +12,15 @@
       輸入
     </button>
     <div id="result" style="margin-top: 10px;" v-html="result"></div> 
-    <div id="loading" v-if="loading">載入中...</div>
+    <div id="loading" v-if="loading">載入中，請稍後...</div>
   </div>
 </template>
-
 <script>
+import Swal from 'sweetalert2';
 export default {
-  
   data() {
     return {
-      type: '收入',
+      type: '',
       input: '',
       loading: false,
       result: ''
@@ -29,18 +28,36 @@ export default {
   },
   methods: {
     handleReserve() {
-      const apiUrl = `${this.$apiUrl}/test`;
+      if(this.type === ''){
+        Swal.fire({
+          title: "請選擇支出與收入!",
+          icon: "warning"
+        });
+        return;
+      }
+      if(this.input === ''){
+        Swal.fire({
+          title: "請輸入記帳資訊!",
+          icon: "warning"
+        });
+        return;
+      }
+      this.loading = true;
+      const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
       this.$axios.post(apiUrl, { 
         user_input : this.input,
+        type: this.type,
+        userId: this.$root.$userId 
 
        }).then(response => {
           console.log(response);
-          this.$router.push({ name: 'liff_personal_form'});//,params: {formData: response.data.formData}
+          this.loading = false;
+          this.$router.push({ name: 'liff_personal_form',params: {formData: response.data.temp}});
         })
         .catch(error => {
           console.error(error);
         });
-    }
+    },
   }
 };
 </script>
@@ -72,4 +89,3 @@ export default {
     border-color: #007bff;
   }
   </style>
-  

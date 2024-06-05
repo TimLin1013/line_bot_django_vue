@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('callback',views.callback),
     
-    path('test',views.test),
+   
 
     
     path('', TemplateView.as_view(template_name="index.html")),

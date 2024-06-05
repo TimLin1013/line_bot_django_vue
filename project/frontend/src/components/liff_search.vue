@@ -50,10 +50,10 @@
         帳本總覽
       </button>
       <button @click="joinGroupAccount" class="group-account-button">
-        加入群組帳本
+        加入群組
       </button>
       <button @click="createGroupAccount" class="group-account-button">
-        建立群組帳本
+        建立群組
       </button>
       <div class="split-button">
         <button @click="manualAccounting" class="manual-accounting">
@@ -66,8 +66,8 @@
     </div>
   </div>
 </template>
-
 <script>
+import Swal from 'sweetalert2'
 export default {
   data() {
     return {
@@ -76,7 +76,8 @@ export default {
       isPersonalExpense: false,
       isAllExpense: true,
       loading: false,
-      showCalendar: false
+      showCalendar: false,
+      personal_id:'',
     };
   },
   methods: {
@@ -92,9 +93,11 @@ export default {
       const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
       console.log(apiUrl);
       console.log(this.$root.$userId);
-      this.$axios.post(apiUrl, { userId: this.$root.$userId })
+      this.$axios.post(apiUrl, { userId: this.$root.$userId,name: this.$root.$userName })
         .then(response => {
+          console.log(response);
           this.accounts = response.data.accounts;
+          this.personal_id = response.data.personal_id
         })
         .catch(error => {
           console.error(error);
@@ -106,6 +109,7 @@ export default {
     showAllExpense() {
       this.isPersonalExpense = false;
       this.isAllExpense = true;
+      console.log(this.personal_id)
     },
     showPersonalExpense() {
       this.isPersonalExpense = true;
@@ -119,13 +123,48 @@ export default {
       this.$router.push({ name: 'account_overview' });
     },
     joinGroupAccount() {
-      this.$router.push({ name: 'join_group_account' });
     },
     createGroupAccount() {
-      this.$router.push({ name: 'create_group_account' });
+        const { value: groupname } = Swal.fire({
+          title: "輸入創建群組名稱",
+          input: "text",
+          confirmButtonText: '創建',
+          inputPlaceholder: "請輸入",
+          inputValidator: (value) => {
+            if (!value) {
+              return "請輸入群組名稱!";
+            }else if (value.length > 200) {
+              return "群組名稱不能超過200個字!";
+            }
+          }
+        }).then((result) => {
+          console.log(result)
+            if(result.isConfirmed){
+              const groupname = result.value;
+              this.creatgroup_axios(groupname);
+              Swal.fire({
+                title: "創建成功!",
+                icon: "success"
+            });
+            }
+        }
+      )
+    },
+    creatgroup_axios(groupname){
+      const apiUrl = `${this.$apiUrl}/api/creategroup/`;
+      this.$axios.post(apiUrl, { GroupName:groupname,userId: this.$root.$userId})
+        .then(response => {
+          console.log(response);
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
     },
     manualAccounting() {
-      this.$router.push({ name: 'liff_personal_form' });
+      this.$router.push({ name: 'liff_manual_personal_form',params: {formData:this.personal_id}});
     },
     voiceTextAccounting() {
       this.$router.push({ name: 'liff_keep' });
@@ -167,7 +206,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
 }
 
 .fixed-buttons {
@@ -194,13 +232,13 @@ export default {
 }
 
 .account-area {
-  border: 2px solid blue; 
+  border: 2px solid black; 
   padding: 10px; 
   margin: 0 auto; 
 }
 
 .account-area-placeholder {
-  border: 2px solid blue;
+  border: 2px solid black;
   padding: 10px; 
   opacity: 0.5; 
 }
@@ -227,6 +265,7 @@ export default {
 .btn-group {
   display: flex;
   justify-content: center;
+  background-color:#FFEFDB;
   gap: 10px;
 }
 
@@ -234,15 +273,15 @@ export default {
   padding: 8px 16px; 
   border: none;
   border-radius: 15px;
-  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
-  color: white;
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
   font-size: 14px;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .btn-group button.active {
-  background: linear-gradient(135deg, #ff9a9e 10%, #fecfef 100%);
+  background: #FFD700; /* 更淺的黃色 */
 }
 
 .btn-group button:hover {
@@ -254,7 +293,7 @@ export default {
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #f9f9f9;
+  background-color:#FFEFDB;
   z-index: 1000;
   padding: 10px 0;
   box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
@@ -268,8 +307,8 @@ export default {
   padding: 10px 20px; 
   border: none;
   border-radius: 20px;
-  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
-  color: white;
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
   font-size: 16px;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
@@ -283,14 +322,35 @@ export default {
   display: flex;
 }
 
-.split-button .manual-accounting,
-.split-button .voice-text-accounting {
-  border-radius: 20px 0 0 20px;
+.manual-accounting {
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+  margin-right: 10px;
 }
 
-.split-button .voice-text-accounting {
-  border-radius: 0 20px 20px 0;
-  margin-left: -1px; /* To prevent double border */
+.manual-accounting:hover {
+  transform: scale(1.05);
+}
+
+.voice-text-accounting {
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.voice-text-accounting:hover {
+  transform: scale(1.05);
 }
 
 .loading {
@@ -311,8 +371,8 @@ export default {
   font-size: 16px;
   cursor: pointer;
   border-radius: 20px;
-  background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
-  color: white;
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
   transition: background 0.3s ease, transform 0.3s ease;
 }
 

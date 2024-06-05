@@ -11,10 +11,10 @@ from django.db import models
 class GroupAccountTable(models.Model):
     group_account_id = models.AutoField(primary_key=True)
     item = models.CharField(max_length=200, blank=True, null=True)
-    account_date = models.DateTimeField(blank=True, null=True)
+    account_date = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=200, blank=True, null=True)
     payment = models.IntegerField(blank=True, null=True)
-    flag = models.IntegerField()
+    info_complete_flag = models.IntegerField()
     group = models.ForeignKey('GroupTable', models.DO_NOTHING)
     category = models.ForeignKey('GroupCategoryTable', models.DO_NOTHING)
     payment_person = models.ForeignKey('PersonalTable', models.DO_NOTHING)
@@ -51,10 +51,10 @@ class GroupTable(models.Model):
 class PersonalAccountTable(models.Model):
     personal_account_id = models.AutoField(primary_key=True)
     item = models.CharField(max_length=200, blank=True, null=True)
-    account_date = models.DateTimeField(blank=True, null=True)
+    account_date = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=200, blank=True, null=True)
     payment = models.IntegerField(blank=True, null=True)
-    flag = models.IntegerField()
+    info_complete_flag = models.IntegerField()
     personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
     category = models.ForeignKey('PersonalCategoryTable', models.DO_NOTHING)
 
@@ -78,22 +78,37 @@ class PersonalCategoryTable(models.Model):
 
 
 class PersonalGroupLinkingTable(models.Model):
-    personal = models.OneToOneField('PersonalTable', models.DO_NOTHING, primary_key=True)
+    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
     group = models.ForeignKey(GroupTable, models.DO_NOTHING)
 
     class Meta:
         managed = False
         db_table = 'personal_group_linking_table'
-        unique_together = (('personal', 'group'),)
+        unique_together = (('id', 'personal', 'group'),)
 
 
 class PersonalTable(models.Model):
     personal_id = models.CharField(primary_key=True, max_length=200)
     user_name = models.CharField(max_length=200)
+    line_id = models.CharField(unique=True, max_length=45)
 
     class Meta:
         managed = False
         db_table = 'personal_table'
+
+
+class ReturnTable(models.Model):
+    return_id = models.AutoField(primary_key=True)
+    return_payment = models.CharField(max_length=45)
+    payer = models.IntegerField()
+    receiver = models.IntegerField()
+    return_flag = models.CharField(max_length=1)
+    split = models.ForeignKey('SplitTable', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'return_table'
+        unique_together = (('return_id', 'split'),)
 
 
 class SplitTable(models.Model):

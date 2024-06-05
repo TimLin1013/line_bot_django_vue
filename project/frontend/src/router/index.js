@@ -3,11 +3,10 @@ import Router from 'vue-router'
 import liff_search from '@/components/liff_search'
 import liff_keep from '@/components/liff_keep'
 import liff_personal from '@/components/liff_personal_form'
-
+import liff_manual_personal_form from '@/components/liff_manual_personal_form'
 Vue.use(Router)
 
   export default new Router({
-    
     routes: [
       {
         path: '/:queryParam', 
@@ -33,6 +32,12 @@ Vue.use(Router)
         component: liff_personal,
         props: true
       },
+      {
+        path: '/manual_personal_form',
+        name: 'liff_manual_personal_form',
+        component: liff_manual_personal_form,
+        props: true
+      }
     ]
     
   })
