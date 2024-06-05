@@ -21,9 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--$&ve3+tr(ucslc)zf@=ph1f7o5)5)h-i__ldr35v&#(l(7=4j'
-LINE_CHANNEL_ACCESS_TOKEN='9ZOTbZYrULRKwzcozRyjIjpsgHPx5pO0glYPsP9oqmTQ+f66j2//J/XPZcHvRimZ7ytQLG3wERHA+JxtDuG7A+q6BHr6p5sV2Y2SsxjSo3gLW76Egfhi8jjlBqtWGuEd2bKpFD9VQzvniWvmaacahQdB04t89/1O/w1cDnyilFU='
-LINE_CHANNEL_SECRET='645785cb4949d14fbd8499f3cfed5fc7'
-
+LINE_CHANNEL_ACCESS_TOKEN='7TnHIxy+SncMlXI6lT9xqGYK/G+HJRN3+Cjcf1lXdBXsVBF1BamzIcAPptdQuDqCQXfKrG2DAlyJ7aw0Axn2FiHkyV+hpXdMdYBFZJiVwpmXOgiNdYDtJc8toF5zQfoi9LXlgjmnjNuJ6JCs1kZeSQdB04t89/1O/w1cDnyilFU='
+LINE_CHANNEL_SECRET='d7ffe0139126e023340443f290b2f484'
+OPENAI_API_KEY ='a'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'my_project',
         'USER': 'root',
-        'PASSWORD': '123456789',
+        'PASSWORD': '0981429209',
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -134,5 +134,4 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 CORS_ALLOW_ALL_ORIGINS = True
