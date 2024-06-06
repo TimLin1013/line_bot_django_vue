@@ -12,6 +12,15 @@ from django.conf import settings
 from linebot import LineBotApi
 from linebot.models import *
 from urllib.parse import quote
+from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
+import os
+from langchain_community.utilities import SQLDatabase
+from langchain.chains import create_sql_query_chain
+from langchain_openai import ChatOpenAI
+from operator import itemgetter
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -101,7 +110,6 @@ def classification(text,personal_id,transaction_type):
     else:
         item = item
     return_data = {
-            'user_id':personal_id,
             'category': pred_category,
             'item': item,
             'payment':payment,
@@ -170,4 +178,32 @@ def address_sure(personal_id,item,payment,location,category,time):
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
 
-# def sqlagent(text):
+def sqlagent(text,personal_id):
+    db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")
+    llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0)
+    chain = create_sql_query_chain(llm, db)
+    write_query = create_sql_query_chain(llm, db)
+    execute_query = QuerySQLDataBaseTool(db=db)
+
+    answer_prompt = PromptTemplate.from_template(
+        """如果使用者輸入了問題：
+        - 若問題與資料庫相關，則使用正確的 MySQL 語法查詢相關資料，如果有提供了地點或者時間範圍，請準確的抓取地點或時間範圍，以提高效率。
+          若未提供時間範圍，請要求使用者提供，以便進行相關資料的查詢，請考慮上下文關聯並給出合理的邏輯回答。
+        - 若問題與資料庫無關，則使用繁體中文邏輯或知識來回答。
+
+        Question: {question}
+        SQL Query: {query}
+        SQL Result: {result}
+        Answer: """
+    )
+
+    answer = answer_prompt | llm | StrOutputParser()
+    chain = (
+        RunnablePassthrough.assign(query=write_query).assign(
+            result=itemgetter("query") | execute_query,
+        )
+        | answer
+    )
+
+    result = chain.invoke({"question": text})
+    return result

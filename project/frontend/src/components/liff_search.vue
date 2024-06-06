@@ -102,7 +102,7 @@ export default {
         .then(response => {
           console.log(response);
           this.accounts = response.data.accounts;
-          this.personal_id = response.data.personal_id
+          this.personal_id = this.$root.$personal_id
         })
         .catch(error => {
           console.error(error);
@@ -169,7 +169,7 @@ export default {
         });
     },
     manualAccounting() {
-      this.$router.push({ name: 'liff_manual_personal_form',params: {formData:this.personal_id}});
+      this.$router.push({ name: 'liff_personal_form',params: {formData: {item:'',payment:'',location:'',category:'',transaction_type:''}}});
     },
     voiceTextAccounting() {
       this.$router.push({ name: 'liff_keep' });

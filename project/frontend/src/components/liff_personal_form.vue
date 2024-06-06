@@ -2,7 +2,7 @@
   <div class="row" style="margin: 10px">
     <div class="col-12" style="margin: 10px">
       <label >User_ID</label>
-      <input v-model="formData.user_id" type="text" class="form-control" />
+      <input v-model="personal_id" type="text" class="form-control" />
       <br />
       <label >項目</label>
       <input v-model="formData.item" type="text" class="form-control" />
@@ -35,6 +35,7 @@ export default {
     },
     data() {
       return {
+        personal_id: this.$root.$personal_id,
         currentTime: this.formatCurrentTime(),
       };
     },
@@ -54,7 +55,7 @@ export default {
         const apiUrl = `${this.$apiUrl}/api/get_keep_temporary/`;
         console.log(apiUrl);
         this.$axios.post(apiUrl, { 
-          userID :this.formData.user_id,
+          userID :this.$root.$personal_id,
           item:this.formData.item,
           payment:this.formData.payment,
           location:this.formData.location,
@@ -86,7 +87,7 @@ export default {
         const apiUrl = `${this.$apiUrl}/api/get_keep_sure/`;
         console.log(apiUrl);
         this.$axios.post(apiUrl, { 
-          userID :this.formData.user_id,
+          userID :this.$root.$personal_id,
           item:this.formData.item,
           payment:this.formData.payment,
           location:this.formData.location,
