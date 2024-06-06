@@ -46,23 +46,23 @@
     </div>
 
     <div class="bottom-buttons">
-      <button @click="navigateToOverview" class="overview-button">
-        帳本總覽
-      </button>
-      <button @click="joinGroupAccount" class="group-account-button">
-        加入群組
-      </button>
-      <button @click="createGroupAccount" class="group-account-button">
-        建立群組
-      </button>
+        <button @click="navigateToOverview" class="overview-button">
+          <img :src="analysisimg" class="analysis" width="36" height="36" style="margin-left:6px;">
+        </button>
       <div class="split-button">
         <button @click="manualAccounting" class="manual-accounting">
-          手動記帳
+          <img :src="fromimg" class="form" width="32" height="32">
         </button>
         <button @click="voiceTextAccounting" class="voice-text-accounting">
-          語音/文字記帳
+          <img :src="plusimg" class="plus" width="32" height="32">
         </button>
       </div>
+      <button @click="joinGroupAccount" class="group-account-button">
+        <img :src="joingroupimg" class="joingroup" width="34" height="34">
+      </button>
+      <button @click="createGroupAccount" class="group-account-button">
+        <img :src="creategroupimg" class="creategroup" width="42" height="42">
+      </button>
     </div>
   </div>
 </template>
@@ -71,6 +71,11 @@ import Swal from 'sweetalert2'
 export default {
   data() {
     return {
+      analysisimg:require('@/assets/analysis.png'),
+      fromimg:require("@/assets/form.png"),
+      plusimg:require("@/assets/plus.png"),
+      creategroupimg:require("@/assets/creategroup.png"),
+      joingroupimg:require("@/assets/joingroup.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: false,
@@ -304,12 +309,10 @@ export default {
 }
 
 .bottom-buttons button {
-  padding: 10px 20px; 
+  padding: 6px 16px; 
   border: none;
-  border-radius: 20px;
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
-  font-size: 16px;
+  border-radius: 16px;
+  background: #FFFF;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
 }
