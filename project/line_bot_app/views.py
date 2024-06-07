@@ -98,7 +98,7 @@ def get_user_account(request):
             response_data = {
                 "message": "Data received successfully",
                 "accounts": account_list,
-                "personal_id":personal_id
+                "personal_id":personal_id,
             }
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
@@ -203,4 +203,51 @@ def creategroup(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def joingroup(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get("Personal_ID")
+            group_code = data.get("GroupCode")
+            response_data = func.JoinGroup(personal_id,group_code)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#傳遞類別
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def returncategory(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            #在資料庫裡面的類別抓到前端去
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+            user_instance = PersonalTable.objects.get(personal_id=personal_id)
+            user_category = PersonalCategoryTable.objects.filter(personal=user_instance)
+            category_list=[]
+            for category in user_category:
+                category_name = category.category_name
+                category_data={
+                    "category_name":category_name
+                }
+                category_list.append(category_data)
+            response_data={
+                "category":category_list
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

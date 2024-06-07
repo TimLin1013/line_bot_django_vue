@@ -17,10 +17,17 @@
       <input v-model="formData.location" type="text" class="form-control" />
       <br />
       <label>交易類型</label>
-      <input v-model="formData.transaction_type" type="text" class="form-control" />
+      <select v-model="formData.transaction_type" class="form-control" >
+        <option value="expenditure">支出</option>
+        <option value="income">收入</option>
+      </select>
       <br />
       <label>類別</label>
-      <input v-model="formData.category" type="text" class="form-control" />
+      <select v-model="formData.category" class="form-control">
+        <option v-for="category in category_list" :key="category" :value="category">
+          {{ category }}
+        </option>
+      </select>
       <br />
       <button @click="temporary" class="btn btn-warning btn-block">暫存</button>
       <button @click="sure" class="btn btn-warning btn-block">完成確定</button>
@@ -37,7 +44,11 @@ export default {
       return {
         personal_id: this.$root.$personal_id,
         currentTime: this.formatCurrentTime(),
+        category_list: []
       };
+    },
+    mounted(){
+      this.catchcategory()
     },
     methods: {
       formatCurrentTime() {
@@ -50,10 +61,33 @@ export default {
         //const seconds = String(now.getSeconds()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       },
+      //抓取使用者類別
+      catchcategory(){
+        const apiUrl = `${this.$apiUrl}/api/returncategory/`;
+        this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id})
+          .then(response => {
+            console.log(response);
+            this.category_list = response.data.category.map(category => category.category_name);
+          })
+          .catch(error => {
+            console.error(error);
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+      },
+      //暫存
       temporary() {
         this.currentTime = this.formatCurrentTime();
         const apiUrl = `${this.$apiUrl}/api/get_keep_temporary/`;
         console.log(apiUrl);
+        if(this.formData.category==''){
+            Swal.fire({
+              title: "請選擇類別或支出!!",
+              icon: "warning"
+          });
+          return;
+        }
         this.$axios.post(apiUrl, { 
           userID :this.$root.$personal_id,
           item:this.formData.item,
@@ -73,6 +107,7 @@ export default {
           console.error(error);
         });
       },
+      //完成確定
       sure(){
         for (let key in this.formData) {
           if (!this.formData[key]) {

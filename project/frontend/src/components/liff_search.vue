@@ -83,6 +83,7 @@ export default {
       loading: false,
       showCalendar: false,
       personal_id:'',
+      categories:[]
     };
   },
   methods: {
@@ -128,10 +129,49 @@ export default {
       this.$router.push({ name: 'account_overview' });
     },
     joinGroupAccount() {
+      const{value: groupcode}= Swal.fire({
+        title:"輸入群組代碼",
+        input:"text",
+        confirmButtonText:"加入",
+        inputPlaceholder: "請輸入",
+        inputValidator: (value) => {
+            if (!value) {
+              return "請輸入群組代碼!";
+          }
+        }
+      }).then((result) => {
+          console.log(result)
+            if(result.isConfirmed){
+              const groupcode = result.value;
+              const apiUrl = `${this.$apiUrl}/api/joingroup/`;
+              this.$axios.post(apiUrl, { GroupCode:groupcode,Personal_ID: this.$root.$personal_id})
+                .then(response => {
+                  console.log(response);
+                  if(response.data == '查無此群組，請重新輸入'){
+                    Swal.fire({
+                      title: "查無此群組，請重新輸入!",
+                      icon: "warning"
+                    });
+                  }
+                  else if(response.data == '已加入該群組，請重新核對您的群組代碼'){
+                    Swal.fire({
+                      title: "已經有加入該群組，請重新核對您的群組代碼!",
+                      icon: "warning"
+                    });
+                  }
+                  else if(response.data == '成功加入群組'){
+                    Swal.fire({
+                      title: "成功加入群組!",
+                      icon: "success"
+                    });
+                  }
+                })
+          }
+        })
     },
     createGroupAccount() {
         const { value: groupname } = Swal.fire({
-          title: "輸入創建群組名稱",
+          title: "輸入群組名稱",
           input: "text",
           confirmButtonText: '創建',
           inputPlaceholder: "請輸入",
@@ -146,16 +186,15 @@ export default {
           console.log(result)
             if(result.isConfirmed){
               const groupname = result.value;
-              this.creatgroup_axios(groupname);
+              this.creategroup_axios(groupname);
               Swal.fire({
                 title: "創建成功!",
                 icon: "success"
-            });
+              });
             }
-        }
-      )
+        })
     },
-    creatgroup_axios(groupname){
+    creategroup_axios(groupname){
       const apiUrl = `${this.$apiUrl}/api/creategroup/`;
       this.$axios.post(apiUrl, { GroupName:groupname,userId: this.$root.$userId})
         .then(response => {

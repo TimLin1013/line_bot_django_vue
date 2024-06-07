@@ -33,7 +33,7 @@ def CreateGroup(groupname,user_id):
     digits = string.digits#產生字串
     # 如果有和資料庫重複會重新生成
     while True:
-        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(15))#數字和英文字母串接
+        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(8))#數字和英文字母串接
         if not GroupTable.objects.filter(group_code=secure_random_string).exists():
             break
     group_name = groupname
@@ -53,22 +53,21 @@ def CreateGroup(groupname,user_id):
         print(f"Error creating group: {e}")
 
 #加入群組
-def JoinGroup(mtext, user_id):
-    code = mtext[6:]  # 取得井字號的後面
+def JoinGroup(personal_id,group_code):
     #判斷使用者輸入有無此群組
-    unit2 = GroupTable.objects.filter(group_code=code)
+    unit2 = GroupTable.objects.filter(group_code=group_code)
     if not unit2:
         return '查無此群組，請重新輸入'
     else:
         # 判斷使用者是否有想要重複加入群組，去linkingtable看有沒有重複加入
-        group = GroupTable.objects.get(group_code=code)
-        user_instance = PersonalTable.objects.get(personal_id=user_id)
+        group = GroupTable.objects.get(group_code=group_code)
+        user_instance = PersonalTable.objects.get(personal_id=personal_id)
         unit4 = PersonalGroupLinkingTable.objects.filter(personal=user_instance, group=group)
         if unit4:
-            return '已經有加入該群組，若是要加入新群組請重新核對您的群組代碼'
+            return '已加入該群組，請重新核對您的群組代碼'
         else:
             try:
-                user_instance = PersonalTable.objects.get(personal_id=user_id)
+                user_instance = PersonalTable.objects.get(personal_id=personal_id)
                 unit5 = PersonalGroupLinkingTable.objects.create(personal=user_instance,group=group)
                 return '成功加入群組'
             except Exception as e:
