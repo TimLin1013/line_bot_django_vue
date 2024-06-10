@@ -17,7 +17,7 @@ export default {
   beforeCreate() {
     if (window.liff) {
       window.liff.init({
-        liffId: '2004983305-2LqXBLZr'
+        liffId: '2005419810-weQvN4rd'
       }).then(() => {
         this.getProfile();
       }).catch((error) => {
@@ -35,9 +35,24 @@ export default {
           this.profile = profile;
           this.$root.$userId = profile.userId;
           this.$root.$userName = profile.displayName;//6/2
-        }).catch((error) => {
-          console.error('獲取Profile失敗', error);
-        });
+          const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
+            console.log(apiUrl);
+            console.log(this.$root.$userId);
+            this.$axios.post(apiUrl, { userId: this.$root.$userId,name: this.$root.$userName })
+            .then(response => {
+                console.log(response);
+                this.$root.$personal_id = response.data.personal_id
+                console.log(this.$root.$personal_id)
+              })
+            .catch(error => {
+                console.error(error);
+            })
+            .finally(() => {
+              this.loading = false;
+            });
+            }).catch((error) => {
+              console.error('獲取Profile失敗', error);
+            });
       } else {
         window.liff.login();
       }

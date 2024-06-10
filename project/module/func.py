@@ -12,6 +12,15 @@ from django.conf import settings
 from linebot import LineBotApi
 from linebot.models import *
 from urllib.parse import quote
+from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
+import os
+from langchain_community.utilities import SQLDatabase
+from langchain.chains import create_sql_query_chain
+from langchain_openai import ChatOpenAI
+from operator import itemgetter
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -24,7 +33,7 @@ def CreateGroup(groupname,user_id):
     digits = string.digits#產生字串
     # 如果有和資料庫重複會重新生成
     while True:
-        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(15))#數字和英文字母串接
+        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(8))#數字和英文字母串接
         if not GroupTable.objects.filter(group_code=secure_random_string).exists():
             break
     group_name = groupname
@@ -44,22 +53,21 @@ def CreateGroup(groupname,user_id):
         print(f"Error creating group: {e}")
 
 #加入群組
-def JoinGroup(mtext, user_id):
-    code = mtext[6:]  # 取得井字號的後面
+def JoinGroup(personal_id,group_code):
     #判斷使用者輸入有無此群組
-    unit2 = GroupTable.objects.filter(group_code=code)
+    unit2 = GroupTable.objects.filter(group_code=group_code)
     if not unit2:
         return '查無此群組，請重新輸入'
     else:
         # 判斷使用者是否有想要重複加入群組，去linkingtable看有沒有重複加入
-        group = GroupTable.objects.get(group_code=code)
-        user_instance = PersonalTable.objects.get(personal_id=user_id)
+        group = GroupTable.objects.get(group_code=group_code)
+        user_instance = PersonalTable.objects.get(personal_id=personal_id)
         unit4 = PersonalGroupLinkingTable.objects.filter(personal=user_instance, group=group)
         if unit4:
-            return '已經有加入該群組，若是要加入新群組請重新核對您的群組代碼'
+            return '已加入該群組，請重新核對您的群組代碼'
         else:
             try:
-                user_instance = PersonalTable.objects.get(personal_id=user_id)
+                user_instance = PersonalTable.objects.get(personal_id=personal_id)
                 unit5 = PersonalGroupLinkingTable.objects.create(personal=user_instance,group=group)
                 return '成功加入群組'
             except Exception as e:
@@ -101,7 +109,6 @@ def classification(text,personal_id,transaction_type):
     else:
         item = item
     return_data = {
-            'user_id':personal_id,
             'category': pred_category,
             'item': item,
             'payment':payment,
@@ -170,4 +177,32 @@ def address_sure(personal_id,item,payment,location,category,time):
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
 
-# def sqlagent(text):
+def sqlagent(text,personal_id):
+    db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")
+    llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0)
+    chain = create_sql_query_chain(llm, db)
+    write_query = create_sql_query_chain(llm, db)
+    execute_query = QuerySQLDataBaseTool(db=db)
+
+    answer_prompt = PromptTemplate.from_template(
+        """如果使用者輸入了問題：
+        - 若問題與資料庫相關，則使用正確的 MySQL 語法查詢相關資料，如果有提供了地點或者時間範圍，請準確的抓取地點或時間範圍，以提高效率。
+          若未提供時間範圍，請要求使用者提供，以便進行相關資料的查詢，請考慮上下文關聯並給出合理的邏輯回答。
+        - 若問題與資料庫無關，則使用繁體中文邏輯或知識來回答。
+
+        Question: {question}
+        SQL Query: {query}
+        SQL Result: {result}
+        Answer: """
+    )
+
+    answer = answer_prompt | llm | StrOutputParser()
+    chain = (
+        RunnablePassthrough.assign(query=write_query).assign(
+            result=itemgetter("query") | execute_query,
+        )
+        | answer
+    )
+
+    result = chain.invoke({"question": text})
+    return result

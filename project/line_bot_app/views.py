@@ -33,11 +33,14 @@ def callback(request):
             if isinstance(event,MessageEvent):
                 if isinstance(event.message,TextMessage):
                     mtext = event.message.text
+                    user_id = event.source.user_id
+                    personal = PersonalTable.objects.get(line_id = user_id)
+                    personal_id = personal.personal_id
                     if mtext == "查詢":
                         line_bot_api.reply_message(event.reply_token, TextMessage(text="請輸入想問的帳目問題"))
                     else:
-                        print('OK')
-                        # func.sqlagent(mtext)
+                        result = func.sqlagent(mtext,personal_id)
+                        line_bot_api.reply_message(event.reply_token, TextMessage(text=result))
         return HttpResponse()
     else:
         return HttpResponseBadRequest()
@@ -64,7 +67,7 @@ def get_user_account(request):
                 digits = string.digits#產生字串
                 # 如果有和資料庫重複會重新生成
                 while True:
-                    virtual_personal= ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(12))#數字和英文字母串接
+                    virtual_personal= ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(5))#數字和英文字母串接
                     if not PersonalTable.objects.filter(personal_id=virtual_personal).exists():
                         break
                 unit2 = PersonalTable(personal_id=virtual_personal,user_name=user_name,line_id=user_id)
@@ -95,7 +98,7 @@ def get_user_account(request):
             response_data = {
                 "message": "Data received successfully",
                 "accounts": account_list,
-                "personal_id":personal_id
+                "personal_id":personal_id,
             }
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
@@ -117,11 +120,9 @@ def get_user_account_info(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            user_id = data.get('userId')
+            personal_id = data.get('personal_id')
             input_text = data.get('user_input')
             transaction_type = data.get('type')
-            personal = PersonalTable.objects.get(line_id = user_id)
-            personal_id = personal.personal_id
             response_data = {'message': '成功接收數據','input': input_text}
             temp = func.classification(input_text,personal_id,transaction_type)
             return JsonResponse({**response_data,'temp':temp})
@@ -202,4 +203,51 @@ def creategroup(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def joingroup(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get("Personal_ID")
+            group_code = data.get("GroupCode")
+            response_data = func.JoinGroup(personal_id,group_code)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#傳遞類別
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def returncategory(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            #在資料庫裡面的類別抓到前端去
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+            user_instance = PersonalTable.objects.get(personal_id=personal_id)
+            user_category = PersonalCategoryTable.objects.filter(personal=user_instance)
+            category_list=[]
+            for category in user_category:
+                category_name = category.category_name
+                category_data={
+                    "category_name":category_name
+                }
+                category_list.append(category_data)
+            response_data={
+                "category":category_list
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

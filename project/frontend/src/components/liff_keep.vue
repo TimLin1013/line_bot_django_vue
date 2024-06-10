@@ -47,7 +47,7 @@ export default {
       this.$axios.post(apiUrl, { 
         user_input : this.input,
         type: this.type,
-        userId: this.$root.$userId 
+        personal_id: this.$root.$personal_id
 
        }).then(response => {
           console.log(response);
