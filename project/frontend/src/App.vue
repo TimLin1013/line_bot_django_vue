@@ -17,7 +17,7 @@ export default {
   beforeCreate() {
     if (window.liff) {
       window.liff.init({
-        liffId: '2005419810-weQvN4rd'
+        liffId: '2004983305-2LqXBLZr'
       }).then(() => {
         this.getProfile();
       }).catch((error) => {

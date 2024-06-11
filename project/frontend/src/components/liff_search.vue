@@ -10,10 +10,24 @@
       <button :class="{ active: !isPersonalExpense && !isAllExpense }" @click="showGroupExpense">
         群組帳本
       </button>
-      <button @click="toggleCalendar" class="toggle-calendar-button">
+      <button @click="toggleCalendar">
         {{ showCalendar ? '所有時間' : '選擇日期' }}
       </button>
     </div>
+
+    <div v-if="!isPersonalExpense && !isAllExpense" class="group-buttons-container">
+      <div class="group-buttons">
+        <button
+          v-for="groups in group"
+          :key="groups.group_id"
+          :class="{ active: selectedGroupId === groups.group_id }"
+          @click="filterByGroup(groups.group_id)"
+        >
+          {{ groups.group_name }}
+        </button>
+      </div>
+    </div>
+
     <calendar v-if="showCalendar" @change="onChange"/>
     <inlineCalendar v-if="showCalendar" @change="onChange"/>
 
@@ -46,9 +60,9 @@
     </div>
 
     <div class="bottom-buttons">
-        <button @click="navigateToOverview" class="overview-button">
-          <img :src="analysisimg" class="analysis" width="36" height="36" style="margin-left:6px;">
-        </button>
+      <button @click="navigateToOverview" class="overview-button">
+        <img :src="analysisimg" class="analysis" width="36" height="36" style="margin-left:6px;">
+      </button>
       <div class="split-button">
         <button @click="manualAccounting" class="manual-accounting">
           <img :src="fromimg" class="form" width="32" height="32">
@@ -66,24 +80,31 @@
     </div>
   </div>
 </template>
+
+
+
+
+
 <script>
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
 export default {
   data() {
     return {
-      analysisimg:require('@/assets/analysis.png'),
-      fromimg:require("@/assets/form.png"),
-      plusimg:require("@/assets/plus.png"),
-      creategroupimg:require("@/assets/creategroup.png"),
-      joingroupimg:require("@/assets/joingroup.png"),
+      analysisimg: require('@/assets/analysis.png'),
+      fromimg: require("@/assets/form.png"),
+      plusimg: require("@/assets/plus.png"),
+      creategroupimg: require("@/assets/creategroup.png"),
+      joingroupimg: require("@/assets/joingroup.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: false,
       isAllExpense: true,
       loading: false,
       showCalendar: false,
-      personal_id:'',
-      categories:[]
+      personal_id: '',
+      categories: [],
+      group: [],
+      selectedGroupId: null,
     };
   },
   methods: {
@@ -95,15 +116,32 @@ export default {
       this.selectedDate = formattedDate;
     },
     fetchAccounts() {
-      this.loading = true; 
+      this.loading = true;
       const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
       console.log(apiUrl);
       console.log(this.$root.$userId);
-      this.$axios.post(apiUrl, { userId: this.$root.$userId,name: this.$root.$userName })
+      this.$axios.post(apiUrl, { userId: this.$root.$userId, name: this.$root.$userName })
         .then(response => {
           console.log(response);
           this.accounts = response.data.accounts;
           this.personal_id = this.$root.$personal_id
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
+    fetchGroup() {
+      this.loading = true;
+      const apiUrl = `${this.$apiUrl}/api/get_group/`;
+      console.log(apiUrl);
+      console.log(this.$root.$personal_id);
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          console.log(response);
+          this.group = response.data.groups;
         })
         .catch(error => {
           console.error(error);
@@ -125,78 +163,80 @@ export default {
       this.isPersonalExpense = false;
       this.isAllExpense = false;
     },
+    filterByGroup(groupId) {
+      this.selectedGroupId = groupId;
+    },
     navigateToOverview() {
       this.$router.push({ name: 'account_overview' });
     },
     joinGroupAccount() {
-      const{value: groupcode}= Swal.fire({
-        title:"輸入群組代碼",
-        input:"text",
-        confirmButtonText:"加入",
+      const { value: groupcode } = Swal.fire({
+        title: "輸入群組代碼",
+        input: "text",
+        confirmButtonText: "加入",
         inputPlaceholder: "請輸入",
         inputValidator: (value) => {
-            if (!value) {
-              return "請輸入群組代碼!";
+          if (!value) {
+            return "請輸入群組代碼!";
           }
         }
       }).then((result) => {
-          console.log(result)
-            if(result.isConfirmed){
-              const groupcode = result.value;
-              const apiUrl = `${this.$apiUrl}/api/joingroup/`;
-              this.$axios.post(apiUrl, { GroupCode:groupcode,Personal_ID: this.$root.$personal_id})
-                .then(response => {
-                  console.log(response);
-                  if(response.data == '查無此群組，請重新輸入'){
-                    Swal.fire({
-                      title: "查無此群組，請重新輸入!",
-                      icon: "warning"
-                    });
-                  }
-                  else if(response.data == '已加入該群組，請重新核對您的群組代碼'){
-                    Swal.fire({
-                      title: "已經有加入該群組，請重新核對您的群組代碼!",
-                      icon: "warning"
-                    });
-                  }
-                  else if(response.data == '成功加入群組'){
-                    Swal.fire({
-                      title: "成功加入群組!",
-                      icon: "success"
-                    });
-                  }
-                })
-          }
-        })
+        console.log(result)
+        if (result.isConfirmed) {
+          const groupcode = result.value;
+          const apiUrl = `${this.$apiUrl}/api/joingroup/`;
+          this.$axios.post(apiUrl, { GroupCode: groupcode, Personal_ID: this.$root.$personal_id })
+            .then(response => {
+              console.log(response);
+              if (response.data == '查無此群組，請重新輸入') {
+                Swal.fire({
+                  title: "查無此群組，請重新輸入!",
+                  icon: "warning"
+                });
+              } else if (response.data == '已加入該群組，請重新核對您的群組代碼') {
+                Swal.fire({
+                  title: "已經有加入該群組，請重新核對您的群組代碼!",
+                  icon: "warning"
+                });
+              } else if (response.data == '成功加入群組') {
+                Swal.fire({
+                  title: "成功加入群組!",
+                  icon: "success"
+                });
+              }
+            })
+        }
+      })
     },
     createGroupAccount() {
-        const { value: groupname } = Swal.fire({
-          title: "輸入群組名稱",
-          input: "text",
-          confirmButtonText: '創建',
-          inputPlaceholder: "請輸入",
-          inputValidator: (value) => {
-            if (!value) {
-              return "請輸入群組名稱!";
-            }else if (value.length > 200) {
-              return "群組名稱不能超過200個字!";
-            }
+      const { value: groupname } = Swal.fire({
+        title: "輸入群組名稱",
+        input: "text",
+        confirmButtonText: '創建',
+        inputPlaceholder: "請輸入",
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入群組名稱!";
+          } else if (value.length > 200) {
+            return "群組名稱不能超過200個字!";
           }
-        }).then((result) => {
-          console.log(result)
-            if(result.isConfirmed){
-              const groupname = result.value;
-              this.creategroup_axios(groupname);
-              Swal.fire({
-                title: "創建成功!",
-                icon: "success"
-              });
-            }
-        })
+        }
+      }).then((result) => {
+        console.log(result)
+        if (result.isConfirmed) {
+          const groupname = result.value;
+          this.creategroup_axios(groupname);
+          Swal.fire({
+            title: "創建成功!",
+            icon: "success"
+          });
+        }
+
+      })
     },
-    creategroup_axios(groupname){
+    creategroup_axios(groupname) {
       const apiUrl = `${this.$apiUrl}/api/creategroup/`;
-      this.$axios.post(apiUrl, { GroupName:groupname,userId: this.$root.$userId})
+      this.$axios.post(apiUrl, { GroupName: groupname, userId: this.$root.$userId })
         .then(response => {
           console.log(response);
         })
@@ -208,7 +248,7 @@ export default {
         });
     },
     manualAccounting() {
-      this.$router.push({ name: 'liff_personal_form',params: {formData: {item:'',payment:'',location:'',category:'',transaction_type:''}}});
+      this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
     },
     voiceTextAccounting() {
       this.$router.push({ name: 'liff_keep' });
@@ -216,11 +256,12 @@ export default {
   },
   mounted() {
     const checkUserId = () => {
-      if (this.$root.$userId === null) {
+      if (this.$root.$userId === null||this.$root.$personal_id === null) {
         console.log();
-        setTimeout(checkUserId, 500); 
+        setTimeout(checkUserId, 500);
       } else {
         this.fetchAccounts();
+        this.fetchGroup();
       }
     };
     checkUserId();
@@ -229,19 +270,23 @@ export default {
     selectedAccounts() {
       let filteredAccounts = this.accounts;
 
-      if (this.selectedDate) {
-        filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'));
-      }
+      if (this.isAllExpense) {
+        if (this.showCalendar) {
+          filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'))
+        }
+      } else if (this.isPersonalExpense) {
 
-      if (!this.isAllExpense) {
-        filteredAccounts = filteredAccounts.filter(account => account.type === (this.isPersonalExpense ? 'personal' : 'group'));
       }
 
       return filteredAccounts;
+    },
+    groups() {
+      return this.group;
     }
   }
 };
 </script>
+
 
 <style scoped>
 #demo {
@@ -316,7 +361,7 @@ export default {
 .btn-group button {
   padding: 8px 16px; 
   border: none;
-  border-radius: 15px;
+  border-radius: 5px;
   background: #FFCC00; /* 深黃色背景 */
   color: black; /* 黑色字體 */
   font-size: 14px;
@@ -325,10 +370,43 @@ export default {
 }
 
 .btn-group button.active {
-  background: #FFD700; /* 更淺的黃色 */
+  background: #ff1e00; /* 更淺的黃色 */
 }
 
 .btn-group button:hover {
+  transform: scale(1.05);
+}
+
+.group-buttons-container {
+  display: flex;
+  justify-content: flex-start; 
+  overflow-x: auto;
+  padding: 10px 0;
+  white-space: nowrap;
+  background-color: #FFEFDB;
+}
+
+.group-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.group-buttons button {
+  padding: 8px 16px; 
+  border: none;
+  border-radius: 5px;
+  background: #FFCC00; /* 深黃色背景 */
+  color: black; /* 黑色字體 */
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.group-buttons button.active {
+  background: #ff1e00; /* 更淺的黃色 */
+}
+
+.group-buttons button:hover {
   transform: scale(1.05);
 }
 

@@ -251,3 +251,42 @@ def returncategory(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+
+            user_instance = PersonalTable.objects.get(personal_id=personal_id)
+            group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
+            print("id :"+personal_id)
+            group_list = []
+            for group_link in group_instances:
+                group_instance = group_link.group
+                group_data = {
+                    "group_id": group_instance.group_id,
+                    "group_name": group_instance.group_name
+                }
+                group_list.append(group_data)
+
+            response_data = {
+                "message": "Data received successfully",
+                "groups": group_list,
+                "user_id": personal_id,
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return HttpResponse('Invalid JSON', status=400)
+        except PersonalTable.DoesNotExist:
+            return HttpResponse('User not found', status=404)
+        except Exception as e:
+            return HttpResponse(str(e), status=500)
+    else:
+        return HttpResponse('Only POST requests are allowed', status=405)

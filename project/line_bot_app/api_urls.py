@@ -9,4 +9,5 @@ urlpatterns = [
     path('creategroup/',views.creategroup,name='creategroup_api'),
     path('returncategory/',views.returncategory,name='returncategory_api'),
     path('joingroup/',views.joingroup,name='joingroup_api'),
+    path('get_group/',views.get_group,name='get_group_api'),
 ]
