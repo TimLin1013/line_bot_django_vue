@@ -89,7 +89,8 @@ def get_user_account(request):
                     "flag": account.info_complete_flag,
                     "personal_id": account.personal.personal_id,
                     "category_id": account.category.personal_category_id,
-                    "category_name": category_name
+                    "category_name": category_name,
+                    "group_name":"個人帳本"
                 }
                 account_list.append(account_data)
             #把那個人的peronsal_id抓出來，因為空白的表單需要peronsal_id
@@ -279,6 +280,50 @@ def get_group(request):
             response_data = {
                 "message": "Data received successfully",
                 "groups": group_list,
+                "user_id": personal_id,
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return HttpResponse('Invalid JSON', status=400)
+        except PersonalTable.DoesNotExist:
+            return HttpResponse('User not found', status=404)
+        except Exception as e:
+            return HttpResponse(str(e), status=500)
+    else:
+        return HttpResponse('Only POST requests are allowed', status=405)
+    
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_account(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+            user_instance = PersonalTable.objects.get(personal_id=personal_id)
+            group_account = GroupAccountTable.objects.filter(payment_person=user_instance)
+            print("id :"+personal_id)
+            group_account_list = []
+            for account in group_account:
+                group_instance=account.group
+                category_instance=account.category
+                group_account_data = {
+                    "item": account.item,
+                    "group_name": group_instance.group_name,
+                    "account_date": account.account_date.strftime(
+                        '%Y-%m-%d') if account.account_date else None,
+                    "location":account.location,
+                    "payment":account.payment,
+                    "category_name":category_instance.category_name
+                }
+                group_account_list.append(group_account_data)
+            response_data = {
+                "message": "Data received successfully",
+                "group_account": group_account_list,
                 "user_id": personal_id,
             }
             return HttpResponse(json.dumps(response_data), content_type="application/json")

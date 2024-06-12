@@ -1,16 +1,16 @@
 <template>
   <div id="demo">
     <div class="btn-group fixed-buttons">
-      <button :class="{ active: isAllExpense }" @click="showAllExpense">
+      <button :class="{ active: isAllExpense }" @click="showAllExpense" :disabled="!dataLoaded">
         所有花費
       </button>
-      <button :class="{ active: isPersonalExpense && !isAllExpense }" @click="showPersonalExpense">
+      <button :class="{ active: isPersonalExpense && !isAllExpense }" @click="showPersonalExpense" :disabled="!dataLoaded">
         個人帳本
       </button>
-      <button :class="{ active: !isPersonalExpense && !isAllExpense }" @click="showGroupExpense">
+      <button :class="{ active: !isPersonalExpense && !isAllExpense }" @click="showGroupExpense" :disabled="!dataLoaded">
         群組帳本
       </button>
-      <button @click="toggleCalendar">
+      <button @click="toggleCalendar" :disabled="!dataLoaded">
         {{ showCalendar ? '所有時間' : '選擇日期' }}
       </button>
     </div>
@@ -40,6 +40,7 @@
               <th>日期</th>
               <th>金額</th>
               <th>類別</th>
+              <th>帳本</th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +49,7 @@
               <td>{{ account.account_date }}</td>
               <td>{{ account.payment }}</td>
               <td>{{ account.category_name }}</td>
+              <td>{{ account.group_name }}</td>
             </tr>
           </tbody>
         </table>
@@ -105,6 +107,8 @@ export default {
       categories: [],
       group: [],
       selectedGroupId: null,
+      group_account: [],
+      dataLoaded: false
     };
   },
   methods: {
@@ -117,6 +121,7 @@ export default {
     },
     fetchAccounts() {
       this.loading = true;
+      this.dataLoaded = false;
       const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
       console.log(apiUrl);
       console.log(this.$root.$userId);
@@ -131,10 +136,12 @@ export default {
         })
         .finally(() => {
           this.loading = false;
+          this.dataLoaded = true;
         });
     },
     fetchGroup() {
       this.loading = true;
+      this.dataLoaded = false;
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       console.log(apiUrl);
       console.log(this.$root.$personal_id);
@@ -148,6 +155,26 @@ export default {
         })
         .finally(() => {
           this.loading = false;
+          this.dataLoaded = true;
+        });
+    },
+    fetchGroupAccount() {
+      this.loading = true;
+      this.dataLoaded = false;
+      const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
+      console.log(apiUrl);
+      console.log(this.$root.$personal_id);
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          console.log(response);
+          this.group = response.data.groups;
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          this.loading = false;
+          this.dataLoaded = true;
         });
     },
     showAllExpense() {
@@ -262,6 +289,7 @@ export default {
       } else {
         this.fetchAccounts();
         this.fetchGroup();
+        this.fetchGroupAccount();
       }
     };
     checkUserId();
@@ -311,7 +339,8 @@ export default {
 }
 
 .fixed-container {
-  margin-top: 70px; /* Adjust margin to make space for fixed buttons */
+  border: 2px solid rgb(192, 233, 10); 
+  margin-top: 40px; /* Adjust margin to make space for fixed buttons */
   height: calc(300px); 
   overflow-y: auto;
 }
@@ -322,13 +351,14 @@ export default {
 
 .account-area {
   border: 2px solid black; 
-  padding: 10px; 
+  padding: 1px; 
   margin: 0 auto; 
+  font-size: 12px;
 }
 
 .account-area-placeholder {
   border: 2px solid black;
-  padding: 10px; 
+  padding: 1px; 
   opacity: 0.5; 
 }
 
