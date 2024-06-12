@@ -17,12 +17,12 @@ class GroupAccountTable(models.Model):
     info_complete_flag = models.IntegerField()
     group = models.ForeignKey('GroupTable', models.DO_NOTHING)
     category = models.ForeignKey('GroupCategoryTable', models.DO_NOTHING)
-    payment_person = models.ForeignKey('PersonalTable', models.DO_NOTHING)
+    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)#改
 
     class Meta:
         managed = False
         db_table = 'group_account_table'
-        unique_together = (('group_account_id', 'group', 'category', 'payment_person'),)
+        unique_together = (('group_account_id', 'group', 'category', 'personal'),)#改
 
 
 class GroupCategoryTable(models.Model):
@@ -100,8 +100,8 @@ class PersonalTable(models.Model):
 class ReturnTable(models.Model):
     return_id = models.AutoField(primary_key=True)
     return_payment = models.CharField(max_length=45)
-    payer = models.IntegerField()
-    receiver = models.IntegerField()
+    payer = models.CharField(max_length=45)#改
+    receiver = models.CharField(max_length=45)#改
     return_flag = models.CharField(max_length=1)
     split = models.ForeignKey('SplitTable', models.DO_NOTHING)
 
@@ -116,9 +116,9 @@ class SplitTable(models.Model):
     payment = models.IntegerField(blank=True, null=True)
     advance_payment = models.IntegerField(blank=True, null=True)
     group_account = models.ForeignKey(GroupAccountTable, models.DO_NOTHING)
-    spliter = models.ForeignKey(PersonalTable, models.DO_NOTHING)
+    personal = models.ForeignKey(PersonalTable, models.DO_NOTHING)#改
 
     class Meta:
         managed = False
         db_table = 'split_table'
-        unique_together = (('split_id', 'group_account', 'spliter'),)
+        unique_together = (('split_id', 'group_account', 'personal'),)#改
