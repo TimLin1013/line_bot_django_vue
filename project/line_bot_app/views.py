@@ -305,7 +305,7 @@ def get_group_account(request):
             data = json.loads(request.body.decode('utf-8'))
             personal_id = data.get('personal_id')
             user_instance = PersonalTable.objects.get(personal_id=personal_id)
-            group_account = GroupAccountTable.objects.filter(payment_person=user_instance)
+            group_account = GroupAccountTable.objects.filter(personal=user_instance)
             print("id :"+personal_id)
             group_account_list = []
             for account in group_account:
