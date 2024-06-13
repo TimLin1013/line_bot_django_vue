@@ -18,7 +18,6 @@ from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 import os
 from langchain_community.agent_toolkits import create_sql_agent
 from operator import itemgetter
-from langchain_community.llms import OpenAI
 from langchain_community.vectorstores import FAISS
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
 from langchain_openai import OpenAIEmbeddings
@@ -85,44 +84,47 @@ def JoinGroup(personal_id,group_code):
 def classification(text,personal_id,transaction_type):
     #金額、地點、項目
     messages = []
-    user_category_set_str =''
-    pred_category=''
+    #user_category_set_str =''
+    #pred_category=''
     return_data ={}
     messages.append({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
     messages.append({"role": "user", "content": text})
-    chat_response = get_payment_location_item(
-        messages, tools=tools
-    )
-    assistant_message = chat_response.choices[0].message
-    messages.append(assistant_message)
-    tool_call = assistant_message.tool_calls[0].function.arguments
-    data = json.loads(tool_call)
-    payment = data.get("金額", "")
-    location = data.get("地點", "")
-    item = data.get("項目", "")
-    #如果使用者有輸入項目，才丟到langchain裡面
-    if item != '':
-        user_category=PersonalCategoryTable.objects.filter(personal=personal_id,transaction_type=transaction_type)
-        user_category_set=[]
-        for category in user_category:
-            category_name = category.category_name
-            user_category_set.append(category_name)
-        user_category_set_str = ', '.join(user_category_set)
-        #類別
-        agent = get_category_classification_tool(llm)
-        data = agent(f"=使用者輸入：{text}，類別:{user_category_set_str}，ex:預測餐費就輸出餐費")['output']
-        pred_category = str(data)
-    #沒有的話就維持一樣空值
-    else:
-        item = item
-    return_data = {
-            'category': pred_category,
+    try:
+        chat_response = get_payment_location_item(
+            messages, tools=tools
+        )
+        assistant_message = chat_response.choices[0].message
+        messages.append(assistant_message)
+        tool_call = assistant_message.tool_calls[0].function.arguments
+        data = json.loads(tool_call)
+        payment = data.get("金額", "")
+        location = data.get("地點", "")
+        item = data.get("項目", "")
+        return_data = {
+            'category': '',
             'item': item,
             'payment':payment,
             'location':location,
             'transaction_type':transaction_type
         }
-    return return_data
+        return return_data
+    except Exception as e:
+        return "錯誤"
+    # #如果使用者有輸入項目，才丟到langchain裡面
+    # if item != '':
+    #     user_category=PersonalCategoryTable.objects.filter(personal=personal_id,transaction_type=transaction_type)
+    #     user_category_set=[]
+    #     for category in user_category:
+    #         category_name = category.category_name
+    #         user_category_set.append(category_name)
+    #     user_category_set_str = ', '.join(user_category_set)
+    #     #類別
+    #     agent = get_category_classification_tool(llm)
+    #     data = agent(f"=使用者輸入：{text}，類別:{user_category_set_str}，ex:預測餐費就輸出餐費")['output']
+    #     pred_category = str(data)
+    # #沒有的話就維持一樣空值
+    # else:
+    #     item = item
 
 def get_payment_location_item(messages, tools=None, tool_choice=None, model=GPT_MODEL):
     try:
@@ -149,15 +151,15 @@ tools= [
                     "properties": {
                         "金額": {
                             "type": "string",
-                            "description": "抓取金額，如果沒有抓到就為空值. e.g 200",
+                            "description": "抓取金額，如果沒有抓到就為空值. e.g:50,200,2000,50000",
                         },
                         "地點": {
                             "type": "string",
-                            "description": "抓取地點，如果沒有抓到就為空值. e.g 麥當勞、中央大學",
+                            "description": "抓取地點，如果沒有抓到就為空值. e.g:麥當勞、中央大學、LA",
                         },
                         "項目": {
                             "type": "string",
-                            "description": "抓取項目，如果沒有抓到就為空值. e.g 牛排、衣服、電影票",
+                            "description": "抓取花費的項目，如果沒有抓到就為空值. e.g:牛排、衣服、電影票",
                         },
                     },
                     "required":['金額',"地點","項目"]

@@ -43,7 +43,7 @@ export default {
         return;
       }
       this.loading = true;
-      const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
+      //const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
       this.$axios.post(apiUrl, { 
         user_input : this.input,
         type: this.type,

@@ -32,7 +32,6 @@
       <button @click="temporary" class="btn btn-warning btn-block">暫存</button>
       <button @click="sure" class="btn btn-warning btn-block">完成確定</button>
     </div>
-    <h1>{{ transaction }}</h1>
   </div>
   
 </template>
