@@ -17,22 +17,24 @@
       <input v-model="formData.location" type="text" class="form-control" />
       <br />
       <label>交易類型</label>
-      <select v-model="formData.transaction_type" class="form-control" >
+      <select v-model="transaction" class="form-control" >
         <option value="expenditure">支出</option>
         <option value="income">收入</option>
       </select>
       <br />
       <label>類別</label>
       <select v-model="formData.category" class="form-control">
-        <option v-for="category in category_list" :key="category" :value="category">
-          {{ category }}
+        <option v-for="category in this.tmp_list" :key="category" :value="category">
+          {{ category.category_name }}
         </option>
       </select>
       <br />
       <button @click="temporary" class="btn btn-warning btn-block">暫存</button>
       <button @click="sure" class="btn btn-warning btn-block">完成確定</button>
     </div>
+    <h1>{{ transaction }}</h1>
   </div>
+  
 </template>
 <script>
 import Swal from 'sweetalert2';
@@ -44,9 +46,22 @@ export default {
       return {
         personal_id: this.$root.$personal_id,
         currentTime: this.formatCurrentTime(),
-        category_list: []
+        category_list: [],
+        tmp_list:[],
+        transaction:this.formData.transaction_type
       };
     },
+    watch: {
+      transaction(newValue) {
+        console.log('Transaction type changed to:', newValue);
+        if (newValue === 'expenditure') {
+          console.log("ok")
+          this.handleExpenditure();
+        } else if (newValue === 'income') {
+          this.handleIncome();
+        }
+    }
+  },
     mounted(){
       this.catchcategory()
     },
@@ -67,7 +82,8 @@ export default {
         this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id})
           .then(response => {
             console.log(response);
-            this.category_list = response.data.category.map(category => category.category_name);
+            
+            this.category_list = response.data.category.map(category => ({category_name:category.category_name,transaction_type:category.transaction_type}));
           })
           .catch(error => {
             console.error(error);
@@ -78,7 +94,7 @@ export default {
       },
       //暫存
       temporary() {
-        this.currentTime = this.formatCurrentTime();
+        
         const apiUrl = `${this.$apiUrl}/api/get_keep_temporary/`;
         console.log(apiUrl);
         if(this.formData.category==''){
@@ -118,7 +134,7 @@ export default {
             return;
           }
         }
-        this.currentTime = this.formatCurrentTime();
+       
         const apiUrl = `${this.$apiUrl}/api/get_keep_sure/`;
         console.log(apiUrl);
         this.$axios.post(apiUrl, { 
@@ -139,8 +155,22 @@ export default {
         .catch(error => {
           console.error(error);
         });
+      },
+      handleExpenditure() {
+        
+        
+        this.tmp_list = this.category_list.filter(category_list => category_list.transaction_type==="支出")
+
+        
+      },
+      handleIncome() {
+       
+        
+        this.tmp_list = this.category_list.filter(category_list => category_list.transaction_type==="收入")
+        
       }
     },
+    
     
 };
 </script>

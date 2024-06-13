@@ -240,8 +240,10 @@ def returncategory(request):
             category_list=[]
             for category in user_category:
                 category_name = category.category_name
+                transaction_type = category.transaction_type
                 category_data={
-                    "category_name":category_name
+                    "category_name":category_name,
+                    "transaction_type":transaction_type
                 }
                 category_list.append(category_data)
             response_data={
