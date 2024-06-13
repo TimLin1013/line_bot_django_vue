@@ -205,6 +205,7 @@ export default {
     navigateToOverview() {
       this.$router.push({ name: 'account_overview' });
     },
+    //加入群組
     joinGroupAccount() {
       const { value: groupcode } = Swal.fire({
         title: "輸入群組代碼",
@@ -244,6 +245,7 @@ export default {
         }
       })
     },
+    //創建群組
     createGroupAccount() {
       const { value: groupname } = Swal.fire({
         title: "輸入群組名稱",
@@ -283,12 +285,56 @@ export default {
           this.loading = false;
         });
     },
+    //手動記帳
     manualAccounting() {
       this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
     },
+    //快速記帳
     voiceTextAccounting() {
-      this.$router.push({ name: 'liff_keep' });
+      Swal.fire({
+        title: "快速記帳",
+        input: "text",
+        confirmButtonText: "送出",
+        inputPlaceholder: "請輸入",
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入資訊!";
+          }
+        }
+      }).then((result) => {
+        //點選送出，會有請稍候
+        if (result.isConfirmed) {
+          const data = result.value;
+          Swal.fire({
+            title: '請稍候...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+          const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
+          this.$axios.post(apiUrl, { user_input: data, personal_id: this.$root.$personal_id })
+            .then(response => {
+              //把請稍候關掉
+              Swal.close();
+              //如果錯會跳出錯誤的alert
+              if (response.data.temp === '錯誤') {
+                Swal.fire({
+                  text: "請檢查輸入的記帳內容!",
+                  icon: "warning"
+                });
+              } else {
+                this.$router.push({ name: 'liff_personal_form', params: { formData: response.data.temp } });
+              }
+            })
+            .catch(error => {
+              Swal.close();
+              console.error('Error:', error);
+            });
+          }
+        });
     },
+
     editAccount(account) {
       // 處理修改帳目的邏輯，例如彈出表單進行編輯
       Swal.fire({
