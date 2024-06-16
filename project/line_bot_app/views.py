@@ -110,7 +110,6 @@ def get_user_account(request):
             return HttpResponse(str(e), status=500)
     else:
         return HttpResponse('Only POST requests are allowed', status=405)
-#6/1
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_user_account_info(request):
@@ -131,7 +130,6 @@ def get_user_account_info(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-#6/2
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_keep_temporary(request):
@@ -159,7 +157,6 @@ def get_keep_temporary(request):
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
 
-#6/2
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_keep_sure(request):
@@ -308,7 +305,7 @@ def get_group_account(request):
             personal_id = data.get('personal_id')
             user_instance = PersonalTable.objects.get(personal_id=personal_id)
             group_account = GroupAccountTable.objects.filter(personal=user_instance)
-            print("id :"+personal_id)
+            #print("id :"+personal_id)
             group_account_list = []
             for account in group_account:
                 group_instance=account.group
@@ -337,3 +334,112 @@ def get_group_account(request):
             return HttpResponse(str(e), status=500)
     else:
         return HttpResponse('Only POST requests are allowed', status=405)
+#報表個人資料
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def personal_report(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            #抓取前端傳來的參數date和personal_id
+            personal_id = data.get('personal_id')
+            date = data.get('date')
+            date = str(date)
+            income_total=0
+            expense_total=0
+            #把income和expense的資料抓出來
+            income_accounts = PersonalAccountTable.objects.filter(personal=personal_id, category__transaction_type='收入',account_date__startswith = date)
+            expense_accounts = PersonalAccountTable.objects.filter(personal=personal_id, category__transaction_type='支出',account_date__startswith = date)
+            #先把使用者所有的群組抓出來
+            user_instance = PersonalTable.objects.get(personal_id=personal_id)
+            group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
+            temp = 0
+            temp2 = 0
+            temp3 = 0
+            records = []
+            records2 = []
+            group_account_income_ids = []
+            group_account_expense_ids = []
+            #然後有關於使用者所有的群組相關帳全部抓出來
+            for group_instance in group_instances:
+                group_table_instance = group_instance.group
+                group_accounts = GroupAccountTable.objects.filter(group=group_table_instance)
+                #這裡分的就是每筆群組帳收入還是支出，因為這樣抓是split_table需要連動到個人的報表
+                for account in group_accounts:
+                    category_instance = account.category
+                    account_date =account.account_date
+                    year_month = account_date.strftime('%Y-%m')
+                    if category_instance.transaction_type == '收入' and year_month == date:
+                        group_account_income_ids.append(account.group_account_id)
+                    if category_instance.transaction_type =='支出' and  year_month == date:
+                        group_account_expense_ids.append(account.group_account_id)
+            #這裡就是抓收入和支出的資訊
+            for group_account_id in group_account_income_ids:
+                records.extend(SplitTable.objects.filter(group_account=group_account_id))
+            records = records
+            for group_account_id in group_account_expense_ids:
+                records2.extend(SplitTable.objects.filter(group_account=group_account_id))
+            #把每筆資料的payment加起來
+            for income in income_accounts:
+                temp = income.payment
+                income_total += temp
+            for record in records:
+                temp2 = record.payment
+                income_total += temp2
+            for expense in expense_accounts:
+                temp2 = expense.payment
+                expense_total += temp2
+            for record2 in records2:
+                temp3 = record2.payment
+                expense_total += temp3
+            response_data = {
+                "message": "Data received successfully",
+                "income_total": income_total,
+                "expense_total":expense_total
+            }
+            return JsonResponse(json.dumps(response_data), safe=False)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+#報表群組資料
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def group_report(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            #抓取前端傳來的參數date和group_id
+            date = data.get('date')
+            group_id = data.get('group_id')
+            income_total=0
+            expense_total=0
+            #把income和expense的資料抓出來
+            income_accounts = GroupAccountTable.objects.filter(group=group_id, category__transaction_type='收入',account_date__startswith = date)
+            expense_accounts = GroupAccountTable.objects.filter(group=group_id, category__transaction_type='支出',account_date__startswith = date)
+            #把每筆資料的payment加起來
+            for income in income_accounts:
+                temp = income.payment
+                income_total += temp
+            for expense in expense_accounts:
+                temp2 = expense.payment
+                expense_total += temp2
+            response_data = {
+                "message": "Data received successfully",
+                "income_total": income_total,
+                "expense_total":expense_total
+            }
+            return JsonResponse(json.dumps(response_data), safe=False)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

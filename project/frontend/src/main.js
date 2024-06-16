@@ -3,7 +3,11 @@ import App from './App'
 import router from './router'
 import Calendar from 'vue-mobile-calendar'
 import axios from 'axios';
-Vue.prototype.$apiUrl = 'https://3e6c-39-10-55-15.ngrok-free.app';
+import VueApexCharts from 'vue-apexcharts'
+Vue.use(VueApexCharts)
+
+Vue.component('apexchart', VueApexCharts)
+Vue.prototype.$apiUrl = 'https://406c-58-114-6-244.ngrok-free.app';
 Vue.prototype.$axios = axios;
 Vue.prototype.$userId = null;
 Vue.prototype.$userName = null;// 6/2

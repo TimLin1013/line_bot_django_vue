@@ -11,4 +11,6 @@ urlpatterns = [
     path('joingroup/',views.joingroup,name='joingroup_api'),
     path('get_group/',views.get_group,name='get_group_api'),
     path('get_group_account/',views.get_group_account,name='get_group_account_api'),
+    path('personal_report/',views.personal_report,name='persoanl_report_api'),
+    path('group_report/',views.group_report,name='group_report_api'),
 ]
