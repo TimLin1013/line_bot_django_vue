@@ -1,6 +1,5 @@
 <template>
   <div id="demo">
-
     <div class="btn-group fixed-buttons">
       <button :class="{ active: isAllExpense }" @click="showAllExpense" :disabled="loading">
         所有花費
@@ -13,7 +12,6 @@
       </button>
       
     </div>
-
     <div v-if="!isPersonalExpense && !isAllExpense" class="group-buttons-container">
       <div class="group-buttons">
         <button
@@ -64,32 +62,40 @@
       </div>
     </div>
 
-   
-
-    <div class="bottom-buttons">
-      <button @click="navigateToOverview" class="overview-button">
-        <img :src="analysisimg" class="analysis" width="36" height="36" style="margin-left:6px;">
-      </button>
-      <div class="split-button">
-        <button @click="manualAccounting" class="manual-accounting">
-          <img :src="fromimg" class="form" width="32" height="32">
-        </button>
-        <button @click="voiceTextAccounting" class="voice-text-accounting">
-          <img :src="plusimg" class="plus" width="32" height="32">
-        </button>
+      <div class="bottom-buttons">
+        <div class="button-container" @click="navigateToOverview">
+          <button class="overview-button">
+            <img :src="analysisimg" class="analysis" width="30" height="30">
+          </button>
+          <div class="button-text">報表</div>
+        </div>
+        <div class="button-container" @click="manualAccounting">
+          <button class="manual-accounting">
+            <img :src="fromimg" class="form" width="30" height="30">
+          </button>
+          <div class="button-text">手動記帳</div>
+        </div>
+        <div class="button-container" @click="voiceTextAccounting">
+          <button class="voice-text-accounting">
+            <img :src="plusimg" class="plus" width="30" height="30">
+          </button>
+          <div class="button-text">快速記帳</div>
+        </div>
+        <div class="button-container" @click="joinGroupAccount">
+          <button class="group-account-button">
+            <img :src="joingroupimg" class="joingroup" width="30" height="30">
+          </button>
+          <div class="button-text">加入群組</div>
+        </div>
+        <div class="button-container" @click="createGroupAccount">
+          <button class="group-account-button">
+            <img :src="creategroupimg" class="creategroup" width="30" height="30">
+          </button>
+          <div class="button-text">創建群組</div>
+        </div>
       </div>
-      <button @click="joinGroupAccount" class="group-account-button">
-        <img :src="joingroupimg" class="joingroup" width="34" height="34">
-      </button>
-      <button @click="createGroupAccount" class="group-account-button">
-        <img :src="creategroupimg" class="creategroup" width="42" height="42">
-      </button>
-    </div>
-  </div>
+</div>
 </template>
-
-
-
 
 
 <script>
@@ -202,8 +208,9 @@ export default {
     filterByGroup(groupId) {
       this.selectedGroupId = groupId;
     },
+    //報表
     navigateToOverview() {
-      this.$router.push({ name: 'account_overview' });
+      this.$router.push({ name: 'liff_account_overview' });
     },
     //加入群組
     joinGroupAccount() {
@@ -614,18 +621,23 @@ export default {
 .bottom-buttons button {
   padding: 6px 16px; 
   border: none;
-  border-radius: 16px;
+  border-radius:10px;
   background: #FFFF;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
 }
-
+.button-text {
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: center;
+  color: black;
+  width: 50px;
+  line-height: 1.2;
+  white-space: pre-wrap; 
+  padding-left : 6px;
+}
 .bottom-buttons button:hover {
   transform: scale(1.05);
-}
-
-.split-button {
-  display: flex;
 }
 
 .manual-accounting {
@@ -637,7 +649,6 @@ export default {
   font-size: 16px;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
-  margin-right: 10px;
 }
 
 .manual-accounting:hover {
