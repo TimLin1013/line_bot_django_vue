@@ -219,7 +219,7 @@ def joingroup(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-#傳遞類別
+#傳遞個人類別
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def returncategory(request):
@@ -236,6 +236,38 @@ def returncategory(request):
             user_category = PersonalCategoryTable.objects.filter(personal=user_instance)
             category_list=[]
             for category in user_category:
+                category_name = category.category_name
+                transaction_type = category.transaction_type
+                category_data={
+                    "category_name":category_name,
+                    "transaction_type":transaction_type
+                }
+                category_list.append(category_data)
+            response_data={
+                "category":category_list
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#傳遞群組類別
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def return_group_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            #在資料庫裡面的類別抓到前端去
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('group_id')
+            group_instance = GroupTable.objects.get(group_id=group_id)
+            group_category = GroupCategoryTable.objects.filter(group=group_instance)
+            category_list=[]
+            for category in group_category:
                 category_name = category.category_name
                 transaction_type = category.transaction_type
                 category_data={
@@ -437,6 +469,39 @@ def group_report(request):
                 "message": "Data received successfully",
                 "income_total": income_total,
                 "expense_total":expense_total
+            }
+            return JsonResponse(json.dumps(response_data), safe=False)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#抓成員
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def catch_member(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            #抓取前端傳來的參數group_id
+            group_id = data.get('group_id')
+            group_instance = GroupTable.objects.get(group_id=group_id)
+            group_member = PersonalGroupLinkingTable.objects.filter(group=group_instance)
+            personal_name_list=[]
+            for member in group_member:
+                personal_instance = member.personal
+                personal_name = personal_instance.user_name
+                personal_id = personal_instance.personal_id
+                personal_info={
+                    "personal_name":personal_name,
+                    "pesonal_id":personal_id
+                }
+                personal_name_list.append(personal_info)
+            response_data = {
+                "personal_name_list":personal_name_list
             }
             return JsonResponse(json.dumps(response_data), safe=False)
         except json.JSONDecodeError:

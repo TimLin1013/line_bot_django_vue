@@ -13,4 +13,6 @@ urlpatterns = [
     path('get_group_account/',views.get_group_account,name='get_group_account_api'),
     path('personal_report/',views.personal_report,name='persoanl_report_api'),
     path('group_report/',views.group_report,name='group_report_api'),
+    path('return_group_category/',views.return_group_category,name='return_group_category_api'),
+    path('catch_member/',views.catch_member,name='catch_member_api'),
 ]
