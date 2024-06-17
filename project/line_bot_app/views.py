@@ -45,6 +45,7 @@ def callback(request):
     else:
         return HttpResponseBadRequest()
 
+
 #6/2 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
