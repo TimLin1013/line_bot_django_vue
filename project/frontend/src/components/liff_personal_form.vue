@@ -124,14 +124,12 @@ export default {
       },
       //完成確定
       sure(){
-        for (let key in this.formData) {
-          if (!this.formData[key]) {
+          if (this.personal_id==='' || this.formData.item==='' || this.formData.payment==='' || this.formData.location==='' || this.formData.category==='' || this.transaction==='' || this.currentTime==='') {
             Swal.fire({
               title: "有空白無法完成確認，只能按暫存!",
               icon: "warning"
             });
             return;
-          }
         }
        
         const apiUrl = `${this.$apiUrl}/api/get_keep_sure/`;

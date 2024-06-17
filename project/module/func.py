@@ -169,7 +169,7 @@ tools= [
 ]
 
 def address_temporary(personal_id,item,payment,location,category,time):
-    unit = PersonalCategoryTable.objects.get(personal_id=personal_id,category_name=category)
+    unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
     category_id = unit.personal_category_id
     #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
     if payment == '':
@@ -181,7 +181,7 @@ def address_temporary(personal_id,item,payment,location,category,time):
 
 
 def address_sure(personal_id,item,payment,location,category,time):
-    unit = PersonalCategoryTable.objects.get(personal_id=personal_id,category_name=category)
+    unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
     category_id = unit.personal_category_id
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
