@@ -309,13 +309,15 @@ export default {
             input: "select",
             inputOptions: this.inputOptions,
             inputPlaceholder: "選擇一個帳本",
-            showCancelButton: true,
             inputValidator: (value) => {
               if (!value) {
                 return "請選擇帳本"
               } 
             }
           }).then((result) => {
+              if(result.value == null){
+                  return 
+              }
               if (result.value == 0) {
                 this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
               }

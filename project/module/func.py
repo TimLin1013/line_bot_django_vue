@@ -1,32 +1,17 @@
 import os
 import secrets,string,json
 from line_bot_app.models import * 
-from langchain_community.utilities import SQLDatabase
 from langchain_openai import ChatOpenAI
 from module.langchain_tool import *
-from langchain.agents import AgentType
-from pydantic import BaseModel
 from openai import OpenAI
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from django.conf import settings
-from typing import Any, List,Dict
 from linebot import LineBotApi
 from langchain.prompts.chat import ChatPromptTemplate
 from linebot.models import *
 from urllib.parse import quote
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-import os
-from langchain_community.agent_toolkits import create_sql_agent
-from operator import itemgetter
-from langchain_community.vectorstores import FAISS
-from langchain_core.example_selectors import SemanticSimilarityExampleSelector
-from langchain_openai import OpenAIEmbeddings
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain.chains import create_sql_query_chain
 from langchain_openai import ChatOpenAI
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -186,114 +171,27 @@ def address_sure(personal_id,item,payment,location,category,time):
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
     
-# def get_all_accounts(id):
-#         personal_account = list(PersonalAccountTable.objects.filter(personal=id))
-#         group_account = list(GroupAccountTable.objects.filter(personal=id))
-#         return_payer_account = list(ReturnTable.objects.filter(payer=id))
-#         return_receiver_account = list(ReturnTable.objects.filter(receiver=id))
-#         personal_group_linking = PersonalGroupLinkingTable.objects.filter(personal=id)
-#         group_ids = personal_group_linking.values_list('group', flat=True)
-#         group_account2 = list(GroupAccountTable.objects.filter(group__in=group_ids))
-#         split_account = list(SplitTable.objects.filter(personal=id))
-#         account_data=[]
-#         group_data=[]
-#         return_payer_data=[]
-#         return_receiver_data=[]
-#         split_data=[]
-#         group_data2=[]
-#         for account in personal_account:
-#             account_data.append({
-#                 "personal_account_id":account.personal_account_id,
-#                 "item":account.item,
-#                 "account_date":account.account_date,
-#                 "location":account.location,
-#                 "payment":account.payment,
-#                 "info_complete_flag":account.info_complete_flag,
-#                 "personal_id":account.personal.personal_id,
-#                 "personal_categroy_id":account.category.personal_category_id,
-#             })
-#         for gaccount in group_account:
-#             group_data.append({
-#                 "group_account_id":gaccount.group_account_id,
-#                 "item":gaccount.item,
-#                 "account_date":gaccount.account_date,
-#                 "location":gaccount.location,
-#                 "payment":gaccount.payment,
-#                 "info_complete_flag":gaccount.info_complete_flag,
-#                 "group_id":gaccount.group.group_id,
-#                 "group_categroy_id":gaccount.category.group_category_id,
-#                 "personal_id":gaccount.personal.personal_id,
-#             })
-#         for payer in return_payer_account:
-#             return_payer_data.append({
-#                 "return_id":payer.return_id,
-#                 "return_payment":payer.return_payment,
-#                 "payer":payer.payer,
-#                 "receiver":payer.receiver,
-#                 "return_flag":payer.return_flag,
-#                 "split_id":payer.split.split_id,
-#             })
-#         for receiver in return_receiver_account:
-#             return_receiver_data.append({
-#                 "return_id":receiver.return_id,
-#                 "return_payment":receiver.return_payment,
-#                 "payer":receiver.payer,
-#                 "receiver":receiver.receiver,
-#                 "return_flag":receiver.return_flag,
-#                 "split_id":receiver.split.split_id,
-#             })
-#         for split in split_account:
-#             split_data.append({
-#                 "split_id":split.split_id,
-#                 "payment":split.payment,
-#                 "advance_payment":split.advance_payment,
-#                 "group_account_id":split.group_account.group_account_id,
-#                 "personal_id":split.personal.personal_id,
-#             })
-#         for gaccount2 in group_account2:
-#             group_data2.append({
-#                 "group_account_id":gaccount2.group_account_id,
-#                 "item":gaccount2.item,
-#                 "account_date":gaccount2.account_date,
-#                 "location":gaccount2.location,
-#                 "payment":gaccount2.payment,
-#                 "info_complete_flag":gaccount2.info_complete_flag,
-#                 "group_id":gaccount2.group.group_id,
-#                 "group_categroy_id":gaccount2.category.group_category_id,
-#                 "personal_id":gaccount2.personal.personal_id,
-#             })
-#         all_data = []
-#         all_data.extend(account_data)
-#         all_data.extend(group_data)
-#         all_data.extend(return_payer_data)
-#         all_data.extend(return_receiver_data)
-#         all_data.extend(split_data)
-#         all_data.extend(group_data2)
+    # db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")#要改你自己的
+    # llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0)
+    # text=text+"personal_id:"+personal_id
+    # write_query = create_sql_query_chain(llm, db)
+    # execute_query = QuerySQLDataBaseTool(db=db)
+    # answer_prompt = PromptTemplate.from_template(
+    #     """
+    #      - 若問題與資料庫相關，則使用正確的 MySQL 語法查詢相關資料，請從給予的personal_id進行全面查詢，請考慮上下文關聯並給出合理的邏輯。
+    #      - 若問題與資料庫無關，則使用繁體中文適當且有邏輯的知識來回答，然後不要輸出personal_id與資料庫table的名稱。
 
-#         return all_data
+    # Question: {question}
+    # SQL Query: {query}
+    # SQL Result: {result}
+    # Answer: """
+    # )
     
-def sqlagent(text,personal_id):
-    db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")#要改你自己的
-    llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0)
-    text=text+"personal_id:"+personal_id
-    write_query = create_sql_query_chain(llm, db)
-    execute_query = QuerySQLDataBaseTool(db=db)
-    answer_prompt = PromptTemplate.from_template(
-        """
-         - 若問題與資料庫相關，則使用正確的 MySQL 語法查詢相關資料，請從給予的personal_id進行全面查詢，請考慮上下文關聯並給出合理的邏輯。
-         - 若問題與資料庫無關，則使用繁體中文適當且有邏輯的知識來回答，然後不要輸出personal_id與資料庫table的名稱。
-
-    Question: {question}
-    SQL Query: {query}
-    SQL Result: {result}
-    Answer: """
-    )
-    
-    answer = answer_prompt | llm | StrOutputParser()
-    chain = (
-        RunnablePassthrough.assign(query=write_query).assign(
-            result=itemgetter("query") | execute_query
-        )| answer
-    )
-    data = chain.invoke({"question":text})
-    return data
+    # answer = answer_prompt | llm | StrOutputParser()
+    # chain = (
+    #     RunnablePassthrough.assign(query=write_query).assign(
+    #         result=itemgetter("query") | execute_query
+    #     )| answer
+    # )
+    # data = chain.invoke({"question":text})
+    # return data

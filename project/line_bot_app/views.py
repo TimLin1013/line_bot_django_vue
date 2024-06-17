@@ -14,6 +14,12 @@ from linebot.models import *
 from line_bot_app.models import *
 from module import func
 import json
+from langchain.agents import AgentType
+from langchain_community.utilities import SQLDatabase
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain.llms.openai import OpenAI
+from langchain.chat_models import ChatOpenAI
+from langchain_community.agent_toolkits import create_sql_agent
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 #6/2
@@ -39,7 +45,7 @@ def callback(request):
                     if mtext == "查詢":
                         line_bot_api.reply_message(event.reply_token, TextMessage(text="請輸入想問的帳目問題"))
                     else:
-                        result = func.sqlagent(mtext,personal_id)
+                        result = sqlagent(mtext,personal_id)
                         line_bot_api.reply_message(event.reply_token, TextMessage(text=result))
         return HttpResponse()
     else:
@@ -386,8 +392,8 @@ def personal_report(request):
             income_total=0
             expense_total=0
             #把income和expense的資料抓出來
-            income_accounts = PersonalAccountTable.objects.filter(personal=personal_id, category__transaction_type='收入',account_date__startswith = date)
-            expense_accounts = PersonalAccountTable.objects.filter(personal=personal_id, category__transaction_type='支出',account_date__startswith = date)
+            income_accounts = PersonalAccountTable.objects.filter(personal=personal_id,info_complete_flag=1 ,category__transaction_type='收入',account_date__startswith = date)
+            expense_accounts = PersonalAccountTable.objects.filter(personal=personal_id,info_complete_flag=1, category__transaction_type='支出',account_date__startswith = date)
             #先把使用者所有的群組抓出來
             user_instance = PersonalTable.objects.get(personal_id=personal_id)
             group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
@@ -497,10 +503,17 @@ def catch_member(request):
                 personal_instance = member.personal
                 personal_name = personal_instance.user_name
                 personal_id = personal_instance.personal_id
-                personal_info={
-                    "personal_name":personal_name,
-                    "pesonal_id":personal_id
-                }
+                existing_names = [info["personal_name"] for info in personal_name_list]
+                if personal_name in existing_names:
+                    personal_info={
+                        "personal_name":personal_name + "id:" +personal_id,
+                        "personal_id":personal_id
+                    }
+                else:
+                    personal_info={
+                        "personal_name":personal_name,
+                        "personal_id":personal_id
+                    }
                 personal_name_list.append(personal_info)
             response_data = {
                 "personal_name_list":personal_name_list
@@ -510,3 +523,15 @@ def catch_member(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+def sqlagent(text,personal_id):
+    text = "personal_id"+personal_id+text
+    agent_executor = create_sql_agent(
+        llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0),
+        #這裡db密碼要改
+        toolkit=SQLDatabaseToolkit(db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project"),llm=OpenAI(temperature=0)),
+        verbose = False,
+        agent_type = AgentType.OPENAI_FUNCTIONS
+    )
+    temp=agent_executor.run(text+"回答請用繁體中文回答，然後修飾一下回答，若與資料庫無關請回答(不好意思請給我更多資訊)")
+    return temp
