@@ -4,6 +4,7 @@ import liff_search from '@/components/liff_search'
 import liff_keep from '@/components/liff_keep'
 import liff_personal from '@/components/liff_personal_form'
 import liff_account_overview from '@/components/liff_account_overview.vue'
+import liff_group_form from '@/components/liff_group_form.vue'
 Vue.use(Router)
 
   export default new Router({
@@ -36,6 +37,12 @@ Vue.use(Router)
         path: '/account_overview',
         name: 'liff_account_overview',
         component: liff_account_overview,
+        props: true
+      },
+      {
+        path: '/group_form',
+        name: 'liff_group_form',
+        component: liff_group_form,
         props: true
       },
 

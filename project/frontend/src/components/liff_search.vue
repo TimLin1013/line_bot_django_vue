@@ -118,6 +118,8 @@ export default {
       personal_id: '',
       categories: [],
       group: [],
+      group2:[],
+      inputOptions:{},
       selectedGroupId: null,
       group_account: [],
       
@@ -294,7 +296,34 @@ export default {
     },
     //手動記帳
     manualAccounting() {
-      this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
+      const apiUrl = `${this.$apiUrl}/api/get_group/`;
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          this.group2 = response.data.groups;
+          this.inputOptions = {0: '個人帳本'};
+          this.group2.forEach(group => {
+            this.inputOptions[group.group_id] = group.group_name;
+          });
+          Swal.fire({
+            title: "選擇帳本",
+            input: "select",
+            inputOptions: this.inputOptions,
+            inputPlaceholder: "選擇一個帳本",
+            showCancelButton: true,
+            inputValidator: (value) => {
+              if (!value) {
+                return "請選擇帳本"
+              } 
+            }
+          }).then((result) => {
+              if (result.value == 0) {
+                this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
+              }
+              else{
+                this.$router.push({name: 'liff_group_form', params: { formData: { group_id : result.value,item: '', payment: '', location: ''} } })
+              }
+            })
+        })
     },
     //快速記帳
     voiceTextAccounting() {
