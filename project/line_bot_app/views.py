@@ -351,7 +351,9 @@ def get_group_account(request):
                         '%Y-%m-%d') if account.account_date else None,
                     "location":account.location,
                     "payment":account.payment,
-                    "category_name":category_instance.category_name
+                    "category_name":category_instance.category_name,
+                    "flag":account.info_complete_flag,
+                    "group_id":account.group_account_id
                 }
                 group_account_list.append(group_account_data)
             response_data = {

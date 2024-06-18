@@ -1,13 +1,10 @@
 <template>
   <div id="demo">
     <div class="btn-group fixed-buttons">
-      <button :class="{ active: isAllExpense }" @click="showAllExpense" :disabled="loading">
-        所有花費
-      </button>
-      <button :class="{ active: isPersonalExpense && !isAllExpense }" @click="showPersonalExpense" :disabled="loading">
+      <button :class="{ active: isPersonalExpense}" @click="showPersonalExpense" :disabled="loading">
         個人帳本
       </button>
-      <button :class="{ active: !isPersonalExpense && !isAllExpense }" @click="showGroupExpense" :disabled="loading">
+      <button :class="{ active: isGroupExpense}" @click="showGroupExpense" :disabled="loading">
         群組帳本
       </button>
       
@@ -29,7 +26,7 @@
       <span>{{ currentYearMonth }}</span>
       <button @click="nextMonth" :disabled="loading">→</button>
     </div>
-    
+
     <div class="fixed-container">
       <div class="scrollable-block">
         <table v-if="selectedAccounts.length > 0" class="account-area">
@@ -44,19 +41,28 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(account, index) in selectedAccounts" :key="index">
-              <td>{{ account.item }}</td>
-              
-              <td>{{ account.payment }}</td>
-              <td>{{ account.category_name }}</td>
-              
-              
-            </tr>
+            
+            <template v-if="isGroupExpense">
+              <tr v-for="(group_account, index) in selectedAccounts" :key="`group_account-${index}`">
+                <td>{{ group_account.item }}</td>
+                <td>{{ group_account.payment }}</td>
+                <td>{{ group_account.category_name }}</td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr v-for="(account, index) in selectedAccounts" :key="`account-${index}`">
+                <td>{{ account.item }}</td>
+                <td>{{ account.payment }}</td>
+                <td>{{ account.category_name }}</td>
+              </tr>
+            </template>
           </tbody>
+
+
         </table>
         <div v-else-if="loading" class="loading">載入中...</div>
         <div v-else class="account-area-placeholder"> 
-          <h2>當天花費：</h2>
+          <h2>當月花費：</h2>
           <p>暫無資料</p>
         </div>
       </div>
@@ -110,11 +116,10 @@ export default {
       joingroupimg: require("@/assets/joingroup.png"),
       selectedDate: '',
       accounts: [],
-      isPersonalExpense: false,
+      isPersonalExpense: true,
+      isGroupExpense: false,
       currentYearMonth: dayjs().format('YYYY-MM'),
-      isAllExpense: true,
       loading: true,
-      showCalendar: false,
       personal_id: '',
       categories: [],
       group: [],
@@ -182,6 +187,7 @@ export default {
       console.log(this.$root.$personal_id);
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
+          this.group_account = response.data.group_account;
           console.log(response);
           
         })
@@ -193,19 +199,14 @@ export default {
           
         });
     },
-    showAllExpense() {
-      this.isPersonalExpense = false;
-      this.isAllExpense = true;
-      console.log(this.personal_id)
-    },
     showPersonalExpense() {
       this.isPersonalExpense = true;
-      this.isAllExpense = false;
+      this.isGroupExpense = false;
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
-      this.isAllExpense = false;
-      console.log(this.group)
+      this.isGroupExpense = true ;
+      
     },
     filterByGroup(groupId) {
       this.selectedGroupId = groupId;
@@ -452,12 +453,15 @@ export default {
     selectedAccounts() {
       let filteredAccounts = this.accounts;
       filteredAccounts= filteredAccounts.filter(account => account.flag===1)
-      if (this.isAllExpense) {
-        if (this.showCalendar) {
-          filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'))
-        }
-      } else if (this.isPersonalExpense) {
-
+      filteredAccounts= filteredAccounts.filter(account => account.account_date.slice(0, 7)===this.currentYearMonth)
+      let filtereGroupdAccounts = this.group_account;
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.flag===1)
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.group_id===this.selectedGroupId)
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.account_date.slice(0, 7)===this.currentYearMonth)
+      if (this.isPersonalExpense) {
+        return filteredAccounts;
+      } else if (this.isGroupExpense) {
+        return filtereGroupdAccounts;
       }
 
       return filteredAccounts;
@@ -465,9 +469,10 @@ export default {
     selectedUnfinishAccounts() {
       let filteredAccounts = this.accounts;
       filteredAccounts= filteredAccounts.filter(account => account.flag===0)
+
       if (this.isAllExpense) {
         if (this.showCalendar) {
-          filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'))
+          
         }
       } else if (this.isPersonalExpense) {
 
