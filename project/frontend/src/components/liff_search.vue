@@ -122,7 +122,7 @@ export default {
       inputOptions:{},
       selectedGroupId: null,
       group_account: [],
-      
+      time:this.formatCurrentTime(),
     };
   },
   methods: {
@@ -327,6 +327,12 @@ export default {
             })
         })
     },
+    formatCurrentTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    },
     //快速記帳
     voiceTextAccounting() {
       Swal.fire({
@@ -351,7 +357,7 @@ export default {
             }
           });
           const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
-          this.$axios.post(apiUrl, { user_input: data, personal_id: this.$root.$personal_id })
+          this.$axios.post(apiUrl, { user_input: data, personal_id: this.$root.$personal_id})
             .then(response => {
               //把請稍候關掉
               Swal.close();

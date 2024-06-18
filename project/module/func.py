@@ -6,12 +6,9 @@ from module.langchain_tool import *
 from openai import OpenAI
 from django.conf import settings
 from linebot import LineBotApi
-from langchain.prompts.chat import ChatPromptTemplate
 from linebot.models import *
-from urllib.parse import quote
-from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-from langchain.chains import create_sql_query_chain
-from langchain_openai import ChatOpenAI
+import autogen
+import re
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -66,92 +63,38 @@ def JoinGroup(personal_id,group_code):
                 return '加入群組時發生錯誤，請稍後再試'
 
 
-def classification(text,personal_id,transaction_type):
-    #金額、地點、項目
-    messages = []
-    #user_category_set_str =''
-    #pred_category=''
-    return_data ={}
-    messages.append({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
-    messages.append({"role": "user", "content": text})
-    try:
-        chat_response = get_payment_location_item(
-            messages, tools=tools
-        )
-        assistant_message = chat_response.choices[0].message
-        messages.append(assistant_message)
-        tool_call = assistant_message.tool_calls[0].function.arguments
-        data = json.loads(tool_call)
-        payment = data.get("金額", "")
-        location = data.get("地點", "")
-        item = data.get("項目", "")
-        return_data = {
-            'category': '',
-            'item': item,
-            'payment':payment,
-            'location':location,
-            'transaction_type':transaction_type
+def classification(text,personal_id):
+    config_list = [{'model': 'gpt-3.5-turbo','api_key': os.environ["OPENAI_API_KEY"],}]
+    os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
+    # Create a user agent
+    user = autogen.UserProxyAgent(
+        name="user_proxy",
+        human_input_mode="NEVER",
+        max_consecutive_auto_reply=1,
+        is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+        code_execution_config={'use_docker':False}
+    )
+    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}"
+    # Create an assistant agent
+    assistant = autogen.AssistantAgent(
+        "assistant",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：項目名稱(根據使用者輸入產生最合適的，若沒有抓到請輸出無)，金額(總金額，若抓不到請為0),地點(若沒有抓到地點請輸出無)，產生一筆帳目後就TERMINATE，輸出格式為:"+format+"，若該行為與支出或收入無關，輸出ERROR，並在結尾TERMINATE",
+        llm_config={"config_list": config_list},
+    )
+    user_input=text
+    agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
+    result = agent.summary
+    if result[:5] == 'ERROR':
+        return "錯誤"
+    else:
+        result2 = agent.summary
+        data = json.loads(result2)
+        return_data={
+            "item":data["項目名稱"],
+            "payment":data["金額"],
+            "location":data["地點"],
         }
         return return_data
-    except Exception as e:
-        return "錯誤"
-    # #如果使用者有輸入項目，才丟到langchain裡面
-    # if item != '':
-    #     user_category=PersonalCategoryTable.objects.filter(personal=personal_id,transaction_type=transaction_type)
-    #     user_category_set=[]
-    #     for category in user_category:
-    #         category_name = category.category_name
-    #         user_category_set.append(category_name)
-    #     user_category_set_str = ', '.join(user_category_set)
-    #     #類別
-    #     agent = get_category_classification_tool(llm)
-    #     data = agent(f"=使用者輸入：{text}，類別:{user_category_set_str}，ex:預測餐費就輸出餐費")['output']
-    #     pred_category = str(data)
-    # #沒有的話就維持一樣空值
-    # else:
-    #     item = item
-
-def get_payment_location_item(messages, tools=None, tool_choice=None, model=GPT_MODEL):
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=tools,
-            tool_choice=tool_choice,
-        )
-        return response
-    except Exception as e:
-        print("Unable to generate ChatCompletion response")
-        print(f"Exception: {e}")
-        return e
-tools= [
-        {
-            "type": "function",
-            "function":{
-                "name": "get_record_info",
-                "description": """給了一個記帳資訊，請你幫我抓出地點、金額、項目
-                """,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "金額": {
-                            "type": "string",
-                            "description": "抓取金額，如果沒有抓到就為空值. e.g:50,200,2000,50000",
-                        },
-                        "地點": {
-                            "type": "string",
-                            "description": "抓取地點，如果沒有抓到就為空值. e.g:麥當勞、中央大學、LA",
-                        },
-                        "項目": {
-                            "type": "string",
-                            "description": "抓取花費的項目，如果沒有抓到就為空值. e.g:牛排、衣服、電影票",
-                        },
-                    },
-                    "required":['金額',"地點","項目"]
-                },
-            },
-        },
-]
 
 def address_temporary(personal_id,item,payment,location,category,time):
     unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
