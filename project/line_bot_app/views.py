@@ -14,12 +14,20 @@ from linebot.models import *
 from line_bot_app.models import *
 from module import func
 import json
-from langchain.agents import AgentType
 from langchain_community.utilities import SQLDatabase
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-from langchain.llms.openai import OpenAI
-from langchain.chat_models import ChatOpenAI
-from langchain_community.agent_toolkits import create_sql_agent
+from langchain.chains.openai_tools import create_extraction_chain_pydantic
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from typing import List
+from langchain.chains import create_sql_query_chain
+from langchain_core.runnables import RunnablePassthrough
+from operator import itemgetter
+# from langchain.agents import AgentType
+# from langchain_community.utilities import SQLDatabase
+# from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+# from langchain.llms.openai import OpenAI
+# from langchain.chat_models import ChatOpenAI
+# from langchain_community.agent_toolkits import create_sql_agent
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 #6/2
@@ -129,9 +137,8 @@ def get_user_account_info(request):
             data = json.loads(request.body.decode('utf-8'))
             personal_id = data.get('personal_id')
             input_text = data.get('user_input')
-            transaction_type = data.get('type')
             response_data = {'message': '成功接收數據','input': input_text}
-            temp = func.classification(input_text,personal_id,transaction_type)
+            temp = func.classification(input_text,personal_id)
             return JsonResponse({**response_data,'temp':temp})
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -148,12 +155,10 @@ def get_keep_temporary(request):
         try:
             data = json.loads(request.body.decode('utf-8'))
             personal_id = data.get('userID')
-            print(personal_id)
             item = data.get('item')
             payment = data.get('payment')
             location = data.get('location')
-            category = data.get('category')
-            category = category.get('category_name')
+            category = data.get('category_name')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
@@ -526,15 +531,37 @@ def catch_member(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-     
 def sqlagent(text,personal_id):
-    text = "personal_id"+personal_id+text
-    agent_executor = create_sql_agent(
-        llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0),
-        #這裡db密碼要改
-        toolkit=SQLDatabaseToolkit(db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project"),llm=OpenAI(temperature=0)),
-        verbose = False,
-        agent_type = AgentType.OPENAI_FUNCTIONS
+    db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")#要改你自己的
+    llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
+    class Table(BaseModel):
+        """Table in SQL database."""
+        name: str = Field(description="MYSQL資料庫的table名稱.")
+    system = """回傳所有關於使用者問題可能相關的SQL table. \
+    The tables are:
+
+    personal_info
+    group_info
+    """
+    category_chain = create_extraction_chain_pydantic(Table, llm, system_message=system)
+    category_chain.invoke({"input": text})
+    def get_tables(categories: List[Table]) -> List[str]:
+        tables = []
+        for category in categories:
+            if category.name == "personal_info":
+                tables.extend(["personal_table","personal_category_table","personal_account_table","group_table","split_table","return_table","group_account_table"])
+            elif category.name == "group_info":
+                tables.extend(["personal_table", "group_table", "group_category_table","group_account_table","personal_group_linking_table","split_table","return_table"])
+        return tables
+    table_chain = category_chain | get_tables  
+    table_chain.invoke({"input": text})
+
+    query_chain = create_sql_query_chain(llm, db)
+    table_chain = {"input": itemgetter("question")} | table_chain
+    full_chain = RunnablePassthrough.assign(table_names_to_use=table_chain) | query_chain
+    query = full_chain.invoke(
+        {"question": text+"，使用者的personal_id:"+personal_id+"最後回答不要有括號和資料庫型別且用有邏輯方式回答"}
     )
-    temp=agent_executor.run(text+"回答請用繁體中文回答，然後修飾一下回答，若與資料庫無關請回答(不好意思請給我更多資訊)")
+    print(query)
+    temp = db.run(query)
     return temp

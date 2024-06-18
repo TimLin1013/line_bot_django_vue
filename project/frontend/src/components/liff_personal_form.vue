@@ -124,9 +124,9 @@ export default {
       },
       //完成確定
       sure(){
-          if (this.personal_id==='' || this.formData.item==='' || this.formData.payment==='' || this.formData.location==='' || this.formData.category==='' || this.transaction==='' || this.currentTime==='') {
+          if (this.personal_id==='' || this.formData.item==='' || this.formData.payment===''  || this.formData.category==='' || this.transaction==='' || this.currentTime==='') {
             Swal.fire({
-              title: "有空白無法完成確認，只能按暫存!",
+              title: "無法完成(完成確認只有地點可為空)，只能按暫存!",
               icon: "warning"
             });
             return;
