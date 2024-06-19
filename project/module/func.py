@@ -78,7 +78,7 @@ def classification(text,personal_id):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(若使用者有買多個要去算總金額，若沒有抓取到請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，若沒有抓取到請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
         llm_config={"config_list": config_list},
     )
     user_input=text
@@ -198,7 +198,7 @@ def sqlagent(text,personal_id):
         return_info_list.append(data5)
     config_list = [
         {
-            'model': 'gpt-3.5-turbo',
+            'model': 'gpt-4',
             'api_key':os.environ["OPENAI_API_KEY"],
         },
         ]
@@ -228,8 +228,8 @@ def sqlagent(text,personal_id):
     print("group_account_list"+str(group_account_list))
     print("split_info_list"+str(split_info_list))
     print("return_info_list:"+str(return_info_list))
-    # output=user.initiate_chat(assistant, message="帳目資訊如下："+account+",問題:"+text,summary_method="last_msg",)
-    # print(output.summary)
+    output=user.initiate_chat(assistant, message="帳目資訊如下："+account+",問題:"+text,summary_method="last_msg",)
+    print(output.summary)
     return "OK"
     # db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")#要改你自己的
     # llm = ChatOpenAI(model="gpt-3.5-turbo",temperature=0)
