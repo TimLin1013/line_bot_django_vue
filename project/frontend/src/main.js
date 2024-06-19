@@ -4,10 +4,14 @@ import router from './router'
 import Calendar from 'vue-mobile-calendar'
 import axios from 'axios';
 import VueApexCharts from 'vue-apexcharts'
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
 Vue.use(VueApexCharts)
-
+Vue.use(BootstrapVue)
+Vue.use(IconsPlugin)
 Vue.component('apexchart', VueApexCharts)
-Vue.prototype.$apiUrl = 'https://1084-2401-e180-8940-6dd-a5e2-a8a7-477e-5295.ngrok-free.app';
+Vue.prototype.$apiUrl = 'https://c940-2401-e180-8940-dce-3db5-9b67-d4d2-a94.ngrok-free.app';
 Vue.prototype.$axios = axios;
 Vue.prototype.$userId = null;
 Vue.prototype.$userName = null;// 6/2
