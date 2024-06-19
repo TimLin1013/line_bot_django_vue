@@ -1,110 +1,188 @@
 <template>
   <div id="demo">
-    <div class="btn-group fixed-buttons">
-      <button :class="{ active: isPersonalExpense}" @click="showPersonalExpense" :disabled="loading">
-        個人帳本
-      </button>
-      <button :class="{ active: isGroupExpense}" @click="showGroupExpense" :disabled="loading">
-        群組帳本
-      </button>
-      
-    </div>
-    <div v-if="!isPersonalExpense && !isAllExpense" class="group-buttons-container">
-      <div class="group-buttons">
-        <button
-          v-for="groups in group"
-          :key="groups.group_id"
-          :class="{ active: selectedGroupId === groups.group_id }"
-          @click="filterByGroup(groups.group_id)"
-        >
-          {{ groups.group_name }}
+    <!-- 頂部 -->
+    <nav class="navbar navbar-light bg-light fixed-top">
+      <div class="container-fluid">
+        <button type="button" id="sidebarCollapse" class="btn btn-link" @click="toggleSidebar">
+          <i class="fas fa-bars"></i>
         </button>
+        <span class="navbar-brand mb-0 h1">記帳app</span>
       </div>
-    </div>
-    <div class="date-selector">
-      <button @click="prevMonth" :disabled="loading">←</button>
-      <span>{{ currentYearMonth }}</span>
-      <button @click="nextMonth" :disabled="loading">→</button>
-    </div>
+    </nav>
 
-    <div class="fixed-container">
-      <div class="scrollable-block">
-        <table v-if="selectedAccounts.length > 0" class="account-area">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>項目</th>
-              <th>金額</th>
-              <th>類別</th>
-              
-              
-            </tr>
-          </thead>
-          <tbody>
-            
-            <template v-if="isGroupExpense">
-              <tr v-for="(group_account, index) in selectedAccounts" :key="`group_account-${index}`">
-                <td>{{ group_account.account_date.slice(5, 10) }}</td>
-                <td>{{ group_account.item }}</td>
-                <td>{{ group_account.payment }}</td>
-                <td>{{ group_account.category_name }}</td>
-              </tr>
-            </template>
-            <template v-else>
-              <tr v-for="(account, index) in selectedAccounts" :key="`account-${index}`">
-                <td>{{ account.account_date.slice(5, 10) }}</td>
-                <td>{{ account.item }}</td>
-                <td>{{ account.payment }}</td>
-                <td>{{ account.category_name }}</td>
-              </tr>
-            </template>
-          </tbody>
+    <!-- 側邊 -->
+    <nav id="sidebar" class="bg-light">
+      <ul class="list-unstyled components">
+        <li>
+          <a href="#" @click="showPersonalExpense" :class="{ active: isPersonalExpense }">個人帳本</a>
+        </li>
+        <li>
+          <a href="#" @click="showGroupExpense" :class="{ active: isGroupExpense }">群組帳本</a>
+        </li>
+        <li>
+          <a href="#" @click="showPayBack" :class="{ active: isPayBack }">還錢通知</a>
+        </li>
+      </ul>
+    </nav>
 
-
-        </table>
-        <div v-else-if="loading" class="loading">載入中...</div>
-        <div v-else class="account-area-placeholder"> 
-          <h2>當月花費：</h2>
-          <p>暫無資料</p>
+    <!-- 页面内容 -->
+    <div id="content" class="p-4 p-md-5">
+      <!-- 個人帳本 -->
+      <div v-if="isPersonalExpense" class="personal-expense-container">
+        <div class="date-selector">
+          <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
+          <span class="mx-3">{{ currentYearMonth }}</span>
+          <button class="btn btn-outline-secondary" @click="nextMonth" :disabled="loading">→</button>
+        </div>
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th>金額</th>
+                  <th>類別</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="account in selectedAccounts" :key="account.id">
+                  <td>{{ account.item }}</td>
+                  <td>{{ account.payment }}</td>
+                  <td>{{ account.category_name }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <h2>當天花費：</h2>
+              <p>暫無資料</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
+      <!-- 群組帳本 -->
+      <div v-if="isGroupExpense" class="group-expense-container">
+        <div class="group-buttons-container">
+          <div class="group-buttons">
+            <button
+              v-for="groups in group"
+              :key="groups.group_id"
+              class="btn"
+              :class="{ 'btn-primary': selectedGroupId === groups.group_id, 'btn-outline-primary': selectedGroupId !== groups.group_id }"
+              @click="filterByGroup(groups.group_id)"
+            >
+              {{ groups.group_name }}
+            </button>
+          </div>
+        </div>
+        <div class="date-selector">
+          <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
+          <span class="mx-3">{{ currentYearMonth }}</span>
+          <button class="btn btn-outline-secondary" @click="nextMonth" :disabled="loading">→</button>
+        </div>
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th>金額</th>
+                  <th>類別</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="account in selectedAccounts" :key="account.id">
+                  <td>{{ account.item }}</td>
+                  <td>{{ account.payment }}</td>
+                  <td>{{ account.category_name }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <h2>當天花費：</h2>
+              <p>暫無資料</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 還錢通知 -->
+      <div v-if="isPayBack" class="payback-container">
+        <div class="scrollable-block">
+          <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
+            <thead>
+              <tr>
+                <th>歸還金額</th>
+                <th>欠款人</th>
+                <th>接收人</th>
+                <th>還錢狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(account, index) in payBackAccounts" :key="index">
+                <td>{{ account.return_payment }}</td>
+                <td>{{ account.payer }}</td>
+                <td>{{ account.receiver }}</td>
+                <td :class="{ 'unpaid': account.return_flag === 0 }">
+                  {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
+                </td>
+              </tr>
+              <tr v-for="(account, index) in payBackAccounts2" :key="index">
+                <td>{{ account.return_payment }}</td>
+                <td>{{ account.payer }}</td>
+                <td>{{ account.receiver }}</td>
+                <td :class="{ 'unpaid': account.return_flag === 0 }">
+                  {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}<!-- 這裡會相反 -->
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else-if="loading" class="loading">載入中...</div>
+          <div v-else class="account-area-placeholder">
+            <h2>還錢通知：</h2>
+            <p>暫無資料</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部按鈕 -->
       <div class="bottom-buttons">
         <div class="button-container" @click="navigateToOverview">
-          <button class="overview-button">
+          <button class="btn btn-outline-info overview-button">
             <img :src="analysisimg" class="analysis" width="30" height="30">
           </button>
           <div class="button-text">報表</div>
         </div>
         <div class="button-container" @click="manualAccounting">
-          <button class="manual-accounting">
+          <button class="btn btn-outline-info manual-accounting">
             <img :src="fromimg" class="form" width="30" height="30">
           </button>
           <div class="button-text">手動記帳</div>
         </div>
         <div class="button-container" @click="voiceTextAccounting">
-          <button class="voice-text-accounting">
+          <button class="btn btn-outline-info voice-text-accounting">
             <img :src="plusimg" class="plus" width="30" height="30">
           </button>
           <div class="button-text">快速記帳</div>
         </div>
         <div class="button-container" @click="joinGroupAccount">
-          <button class="group-account-button">
+          <button class="btn btn-outline-info group-account-button">
             <img :src="joingroupimg" class="joingroup" width="30" height="30">
           </button>
           <div class="button-text">加入群組</div>
         </div>
         <div class="button-container" @click="createGroupAccount">
-          <button class="group-account-button">
+          <button class="btn btn-outline-info group-account-button">
             <img :src="creategroupimg" class="creategroup" width="30" height="30">
           </button>
           <div class="button-text">創建群組</div>
         </div>
       </div>
-</div>
+    </div>
+  </div>
 </template>
-
 
 <script>
 import Swal from 'sweetalert2';
@@ -120,104 +198,165 @@ export default {
       accounts: [],
       isPersonalExpense: true,
       isGroupExpense: false,
+      isAllExpense: false,
+      isPayBack: false,
       currentYearMonth: dayjs().format('YYYY-MM'),
       loading: true,
       personal_id: '',
-      categories: [],
       group: [],
-      group2:[],
-      inputOptions:{},
+      group2: [],
+      inputOptions: {},
       selectedGroupId: null,
       group_account: [],
-      time:this.formatCurrentTime(),
+      payBackAccounts: [],
+      payBackAccounts2: [],
     };
   },
   methods: {
-    toggleCalendar() {
-      this.showCalendar = !this.showCalendar;
-      if (this.showCalendar) {
-        const formattedDate = dayjs(new Date()).format('YYYY-MM-DD');
-        this.selectedDate = formattedDate;
-        console.log(formattedDate)
-      }
-    },
-    onChange(date) {
-      const formattedDate = dayjs(date).format('YYYY-MM-DD');
-      this.selectedDate = formattedDate;
-    },
-    fetchAccounts() {
-
-      const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
-      console.log(apiUrl);
-      console.log(this.$root.$userId);
-      this.$axios.post(apiUrl, { userId: this.$root.$userId, name: this.$root.$userName })
-        .then(response => {
-          console.log(response);
-          this.accounts = response.data.accounts;
-          this.personal_id = this.$root.$personal_id
-        })
-        .catch(error => {
-          console.error(error);
-        })
-        .finally(() => {
-
-          
-        });
-    },
-    fetchGroup() {
-
-      const apiUrl = `${this.$apiUrl}/api/get_group/`;
-      console.log(apiUrl);
-      console.log(this.$root.$personal_id);
-      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
-        .then(response => {
-          console.log(response);
-          this.group = response.data.groups;
-        })
-        .catch(error => {
-          console.error(error);
-        })
-        .finally(() => {
-
-          
-        });
-    },
-    fetchGroupAccount() {
-
-      const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
-      console.log(apiUrl);
-      console.log(this.$root.$personal_id);
-      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
-        .then(response => {
-          this.group_account = response.data.group_account;
-          console.log(response);
-          
-        })
-        .catch(error => {
-          console.error(error);
-        })
-        .finally(() => {
-
-          
-        });
+    toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('active');
     },
     showPersonalExpense() {
       this.isPersonalExpense = true;
       this.isGroupExpense = false;
+      this.isAllExpense = false;
+      this.isPayBack = false;
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
-      this.isGroupExpense = true ;
-      
+      this.isGroupExpense = true;
+      this.isAllExpense = false;
+      this.isPayBack = false;
     },
-    filterByGroup(groupId) {
-      this.selectedGroupId = groupId;
+    showPayBack() {
+      this.isPersonalExpense = false;
+      this.isGroupExpense = false;
+      this.isAllExpense = false;
+      this.isPayBack = true;
+      this.fetchPayBack();
     },
-    //報表
+    prevMonth() {
+      const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
+      this.currentYearMonth = newDate.format('YYYY-MM');
+      if (this.isPersonalExpense) {
+        this.fetchPersonalExpenseDataForMonth(newDate);
+      } else if (this.isGroupExpense) {
+        this.fetchGroupExpenseDataForMonth(newDate);
+      }
+    },
+    nextMonth() {
+      const newDate = dayjs(this.currentYearMonth).add(1, 'month');
+      this.currentYearMonth = newDate.format('YYYY-MM');
+      if (this.isPersonalExpense) {
+        this.fetchPersonalExpenseDataForMonth(newDate);
+      } else if (this.isGroupExpense) {
+        this.fetchGroupExpenseDataForMonth(newDate);
+      }
+    },
+    fetchPersonalExpenseDataForMonth(date) {
+      console.log('Fetching personal expense data for:', date.format('YYYY-MM'));
+      const apiUrl = `${this.$apiUrl}/api/get_personal_expense_data/`;
+      this.loading = true;
+      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.personal_id })
+        .then(response => {
+          this.accounts = response.data.accounts;
+        })
+        .catch(error => {
+          console.error('Error fetching personal expense data:', error);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
+    fetchGroupExpenseDataForMonth(date) {
+      console.log('Fetching group expense data for:', date.format('YYYY-MM'));
+      const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
+      this.loading = true;
+      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
+        .then(response => {
+          this.accounts = response.data.accounts;
+        })
+        .catch(error => {
+          console.error('Error fetching group expense data:', error);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
     },
-    //加入群組
+    manualAccounting() {
+      const apiUrl = `${this.$apiUrl}/api/get_group/`;
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          this.group2 = response.data.groups;
+          this.inputOptions = { 0: '個人帳本' };
+          this.group2.forEach(group => {
+            this.inputOptions[group.group_id] = group.group_name;
+          });
+          Swal.fire({
+            title: "選擇帳本",
+            input: "select",
+            inputOptions: this.inputOptions,
+            inputPlaceholder: "選擇一個帳本",
+            showCancelButton: true,
+            inputValidator: (value) => {
+              if (!value) {
+                return "請選擇帳本";
+              }
+            }
+          }).then((result) => {
+            if (result.value == 0) {
+              this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
+            } else {
+              this.$router.push({ name: 'liff_group_form', params: { formData: { group_id: result.value, item: '', payment: '', location: '' } } });
+            }
+          });
+        });
+    },
+    voiceTextAccounting() {
+      Swal.fire({
+        title: "快速記帳",
+        input: "text",
+        confirmButtonText: "送出",
+        inputPlaceholder: "請輸入",
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入資訊!";
+          }
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = result.value;
+          Swal.fire({
+            title: '請稍候...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+          const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
+          this.$axios.post(apiUrl, { user_input: data, personal_id: this.$root.$personal_id })
+            .then(response => {
+              Swal.close();
+              if (response.data.temp === '錯誤') {
+                Swal.fire({
+                  text: "請檢查輸入的記帳內容!",
+                  icon: "warning"
+                });
+              } else {
+                this.$router.push({ name: 'liff_personal_form', params: { formData: response.data.temp } });
+              }
+            })
+            .catch(error => {
+              Swal.close();
+              console.error('Error:', error);
+            });
+        }
+      });
+    },
     joinGroupAccount() {
       const { value: groupcode } = Swal.fire({
         title: "輸入群組代碼",
@@ -230,13 +369,11 @@ export default {
           }
         }
       }).then((result) => {
-        console.log(result)
         if (result.isConfirmed) {
           const groupcode = result.value;
           const apiUrl = `${this.$apiUrl}/api/joingroup/`;
           this.$axios.post(apiUrl, { GroupCode: groupcode, Personal_ID: this.$root.$personal_id })
             .then(response => {
-              console.log(response);
               if (response.data == '查無此群組，請重新輸入') {
                 Swal.fire({
                   title: "查無此群組，請重新輸入!",
@@ -253,11 +390,10 @@ export default {
                   icon: "success"
                 });
               }
-            })
+            });
         }
-      })
+      });
     },
-    //創建群組
     createGroupAccount() {
       const { value: groupname } = Swal.fire({
         title: "輸入群組名稱",
@@ -272,7 +408,6 @@ export default {
           }
         }
       }).then((result) => {
-        console.log(result)
         if (result.isConfirmed) {
           const groupname = result.value;
           this.creategroup_axios(groupname);
@@ -281,8 +416,7 @@ export default {
             icon: "success"
           });
         }
-
-      })
+      });
     },
     creategroup_axios(groupname) {
       const apiUrl = `${this.$apiUrl}/api/creategroup/`;
@@ -297,421 +431,196 @@ export default {
           this.loading = false;
         });
     },
-    //手動記帳
-    manualAccounting() {
+    filterByGroup(groupId) {
+      this.selectedGroupId = groupId;
+    },
+    fetchPayBack() {
+      const apiUrl = `${this.$apiUrl}/api/get_payback/`;
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          this.payBackAccounts = response.data.payer_payback_list;
+          this.payBackAccounts2 = response.data.receiver_payback_list;
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
+    fetchAccounts() {
+      const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
+      this.$axios.post(apiUrl, { userId: this.$root.$userId, name: this.$root.$userName })
+        .then(response => {
+          this.accounts = response.data.accounts;
+          this.personal_id = this.$root.$personal_id;
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    },
+    fetchGroup() {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
-          this.group2 = response.data.groups;
-          this.inputOptions = {0: '個人帳本'};
-          this.group2.forEach(group => {
-            this.inputOptions[group.group_id] = group.group_name;
-          });
-          Swal.fire({
-            title: "選擇帳本",
-            input: "select",
-            inputOptions: this.inputOptions,
-            inputPlaceholder: "選擇一個帳本",
-            inputValidator: (value) => {
-              if (!value) {
-                return "請選擇帳本"
-              } 
-            }
-          }).then((result) => {
-              if(result.value == null){
-                  return 
-              }
-              if (result.value == 0) {
-                this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
-              }
-              else{
-                this.$router.push({name: 'liff_group_form', params: { formData: { group_id : result.value,item: '', payment: '', location: ''} } })
-              }
-            })
+          this.group = response.data.groups;
         })
-    },
-    formatCurrentTime() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    },
-    //快速記帳
-    voiceTextAccounting() {
-      Swal.fire({
-        title: "快速記帳",
-        input: "text",
-        confirmButtonText: "送出",
-        inputPlaceholder: "請輸入",
-        inputValidator: (value) => {
-          if (!value) {
-            return "請輸入資訊!";
-          }
-        }
-      }).then((result) => {
-        //點選送出，會有請稍候
-        if (result.isConfirmed) {
-          const data = result.value;
-          Swal.fire({
-            title: '請稍候...',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading();
-            }
-          });
-          const apiUrl = `${this.$apiUrl}/api/get_user_account_info/`;
-          this.$axios.post(apiUrl, { user_input: data, personal_id: this.$root.$personal_id})
-            .then(response => {
-              //把請稍候關掉
-              Swal.close();
-              //如果錯會跳出錯誤的alert
-              if (response.data.temp === '錯誤') {
-                Swal.fire({
-                  text: "請檢查輸入的記帳內容!",
-                  icon: "warning"
-                });
-              } else {
-                this.$router.push({ name: 'liff_personal_form', params: { formData: response.data.temp } });
-              }
-            })
-            .catch(error => {
-              Swal.close();
-              console.error('Error:', error);
-            });
-          }
+        .catch(error => {
+          console.error(error);
         });
     },
-
-    editAccount(account) {
-      // 處理修改帳目的邏輯，例如彈出表單進行編輯
-      Swal.fire({
-        title: '修改帳目',
-        html: `
-          <input id="swal-input1" class="swal2-input" placeholder="項目" value="${account.item}">
-          <input id="swal-input2" class="swal2-input" placeholder="日期" value="${account.account_date}">
-          <input id="swal-input3" class="swal2-input" placeholder="金額" value="${account.payment}">
-          <input id="swal-input4" class="swal2-input" placeholder="類別" value="${account.category_name}">
-        `,
-        focusConfirm: false,
-        preConfirm: () => {
-          const item = document.getElementById('swal-input1').value;
-          const account_date = document.getElementById('swal-input2').value;
-          const payment = document.getElementById('swal-input3').value;
-          const category_name = document.getElementById('swal-input4').value;
-          return { item, account_date, payment, category_name };
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // 處理更新帳目的邏輯，例如發送API請求
-          console.log('Updated data:', result.value);
-          // 此處可以調用更新帳目的API
-        }
-      });
+    fetchGroupAccount() {
+      const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          console.log(response);
+        })
+        .catch(error => {
+          console.error(error);
+        });
     },
-    deleteAccount(account) {
-      // 處理刪除帳目的邏輯，例如彈出確認對話框
-      Swal.fire({
-        title: '確定要刪除嗎？',
-        text: '此操作無法恢復！',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: '是的，刪除它！',
-        cancelButtonText: '取消'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // 處理刪除帳目的邏輯，例如發送API請求
-          console.log('Deleted account:', account);
-          // 此處可以調用刪除帳目的API
-        }
-      });
-    },
-    prevMonth() {
-      const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
-      this.currentYearMonth = newDate.format('YYYY-MM');
-      this.fetchDataForMonth(newDate);
-    },
-    nextMonth() {
-      const newDate = dayjs(this.currentYearMonth).add(1, 'month');
-      this.currentYearMonth = newDate.format('YYYY-MM');
-      this.fetchDataForMonth(newDate);
-    },
-    fetchDataForMonth(date) {
-      // 在這裡添加你獲取特定月份數據的邏輯
-      console.log('Fetching data for:', date.format('YYYY-MM'));
-    }
   },
   mounted() {
     const checkUserId = () => {
-    if (this.$root.$userId === null || this.$root.$personal_id === null) {
-      console.log();
-      setTimeout(checkUserId, 500);
-    } else {
-      Promise.all([this.fetchAccounts(), this.fetchGroup(), this.fetchGroupAccount()])
-        .then(() => {
-          this.loading = false;
-        })
-        .catch(error => {
-          console.error("An error occurred while fetching data:", error);
-          this.loading = false; // Optional: set loading to false even if there's an error
-        });
-    }
-  };
-
-  checkUserId();
+      if (this.$root.$userId === null || this.$root.$personal_id === null) {
+        setTimeout(checkUserId, 500);
+      } else {
+        Promise.all([this.fetchAccounts(), this.fetchGroup(), this.fetchGroupAccount()])
+          .then(() => {
+            this.loading = false;
+          })
+          .catch(error => {
+            console.error("An error occurred while fetching data:", error);
+            this.loading = false; 
+          });
+      }
+    };
+    checkUserId();
   },
   computed: {
     selectedAccounts() {
       let filteredAccounts = this.accounts;
-      filteredAccounts= filteredAccounts.filter(account => account.flag===1)
-      filteredAccounts= filteredAccounts.filter(account => account.account_date.slice(0, 7)===this.currentYearMonth)
-      let filtereGroupdAccounts = this.group_account;
-      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.flag===1)
-      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.group_id===this.selectedGroupId)
-      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.account_date.slice(0, 7)===this.currentYearMonth)
+      filteredAccounts = filteredAccounts.filter(account => account.flag === 1);
+      filteredAccounts = filteredAccounts.filter(account => account.account_date.slice(0, 7) === this.currentYearMonth);
       if (this.isPersonalExpense) {
         return filteredAccounts;
       } else if (this.isGroupExpense) {
-        return filtereGroupdAccounts;
+        return filteredAccounts.filter(account => account.group_id === this.selectedGroupId);
       }
-
       return filteredAccounts;
     },
-    selectedUnfinishAccounts() {
-      let filteredAccounts = this.accounts;
-      filteredAccounts= filteredAccounts.filter(account => account.flag===0)
-
-      if (this.isAllExpense) {
-        if (this.showCalendar) {
-          
-        }
-      } else if (this.isPersonalExpense) {
-
+    selectedPayBackAccounts() {
+      let filteredAccounts = this.payBackAccounts;
+      if (this.isPayBack) {
+        filteredAccounts = filteredAccounts.filter(account => dayjs(account.account_date).isSame(this.selectedDate, 'day'));
       }
-
       return filteredAccounts;
     },
   }
 };
 </script>
 
-
 <style scoped>
-#demo {
+body {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+  background-color: #fafafa;
+  color: #333;
 }
 
-.fixed-buttons {
+#demo {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: #FFEFDB;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1030; 
+}
+
+#sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  background-color: #f9f9f9;
-  z-index: 1000;
-  padding: 6px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: center;
+  width: 250px;
+  height: 100%;
+  background: #FFEFDB;
+  transition: all 0.3s;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1020; 
+  display: none;
 }
 
-.fixed-container {
-  border: 2px solid rgb(192, 233, 10); 
-  margin-top: 5px; /* Adjust margin to make space for fixed buttons */
-  height: calc(500px); 
-  overflow-y: auto;
+#sidebar.active {
+  display: block;
+}
+
+.sidebar-header {
+  padding: 20px; 
+  background: #FFE4B5;
+  border-bottom: 1px solid #FFCC99;
+}
+
+#sidebar ul.components {
+  padding: 60px 0 20px 0; 
+  border-bottom: 1px solid #FFCC99;
+}
+
+#sidebar ul li a {
+  padding: 15px;
+  font-size: 1.1em;
+  display: block;
+  color: #333;
+  transition: 0.3s;
+  border-radius: 4px;
+}
+
+#sidebar ul li a:hover {
+  background: #FFC299;
+  color: #fff;
+}
+
+#sidebar ul li a.active {
+  background: #FFA07A;
+  color: #fff;
+}
+
+#content {
+  flex-grow: 1;
+  padding: 20px;
+  margin-top: 56px; 
+}
+
+.payback-container, .fixed-container {
+  margin-top: 20px;
 }
 
 .scrollable-block {
-  max-height: 100%; 
+  max-height: 100%;
+  overflow-y: auto;
 }
 
-
 .account-area {
-  border: 2px solid black; 
-  padding: 1px; 
+  border: 2px solid #FFA07A;
+  padding: 1px;
   font-size: 15px;
   width: 100%;
 }
 
-
 .account-area-placeholder {
-  border: 2px solid black;
-  padding: 1px; 
-  opacity: 0.5; 
+  border: 2px solid #FFA07A;
+  padding: 1px;
+  opacity: 0.5;
 }
 
-.account-area table {
-  width: 100%; 
-  border-collapse: collapse; 
-}
-
-.account-area th {
-  border: 1px solid #ddd; 
-  padding: 8px; 
-}
-
-.account-area td {
-  border: 1px solid #ddd; 
-  padding: 8px; 
-  position: relative;
-}
-.account-area th {
-  background-color: #f2f2f2;
-}
-
-.account-area tr:nth-child(even) {
-  background-color: #f2f2f2; 
-}
-
-.account-area button {
-  padding: 4px 8px;
-  margin: 2px;
-  border: none;
-  border-radius: 4px;
-  background-color: #FFCC00;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-.account-area button:hover {
-  transform: scale(1.05);
-}
-
-.account-area button:first-child {
-  background-color: #007BFF; /* 藍色背景 */
-  color: white; /* 白色字體 */
-}
-
-.account-area button:last-child {
-  background-color: #DC3545; /* 紅色背景 */
-  color: white; /* 白色字體 */
-}
-.btn-group {
-  display: flex;
-  justify-content: center;
-  background-color:#FFEFDB;
-  gap: 10px;
-}
-
-.btn-group button {
-  padding: 8px 16px; 
-  border: none;
-  border-radius: 5px;
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.btn-group button.active {
-  background: #ff1e00; /* 更淺的黃色 */
-}
-
-.btn-group button:hover {
-  transform: scale(1.05);
-}
-
-.group-buttons-container {
-  display: flex;
-  justify-content: flex-start; 
-  overflow-x: auto;
-  padding: 10px 0;
-  white-space: nowrap;
-  background-color: #ffffff;
-}
-
-.group-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.group-buttons button {
-  padding: 8px 16px; 
-  border: none;
-  border-radius: 5px;
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.group-buttons button.active {
-  background: #ff1e00; /* 更淺的黃色 */
-}
-
-.group-buttons button:hover {
-  transform: scale(1.05);
-}
-
-.bottom-buttons {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color:#FFEFDB;
-  z-index: 1000;
-  padding: 10px 0;
-  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.bottom-buttons button {
-  padding: 6px 16px; 
-  border: none;
-  border-radius:10px;
-  background: #FFFF;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-.button-text {
-  font-size: 12px;
-  margin-top: 4px;
-  text-align: center;
-  color: black;
-  width: 50px;
-  line-height: 1.2;
-  white-space: pre-wrap; 
-  padding-left : 6px;
-}
-.bottom-buttons button:hover {
-  transform: scale(1.05);
-}
-
-.manual-accounting {
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.manual-accounting:hover {
-  transform: scale(1.05);
-}
-
-.voice-text-accounting {
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.voice-text-accounting:hover {
-  transform: scale(1.05);
+.table th, .table td {
+  vertical-align: middle;
 }
 
 .loading {
@@ -726,38 +635,109 @@ export default {
   z-index: 9999;
 }
 
-.toggle-calendar-button {
-  margin-bottom: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
+.group-buttons-container {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 10px 0;
+  white-space: nowrap;
+  background-color: #FFEFDB;
+}
+
+.group-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.group-buttons .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
   cursor: pointer;
-  border-radius: 20px;
-  background: #FFCC00; /* 深黃色背景 */
-  color: black; /* 黑色字體 */
   transition: background 0.3s ease, transform 0.3s ease;
 }
 
-.toggle-calendar-button:hover {
+.group-buttons .btn-primary {
+  background: #FFA07A;
+  color: white;
+}
+
+.group-buttons .btn-outline-primary {
+  background: #fff;
+  border: 2px solid #FFA07A;
+  color: #FFA07A;
+}
+
+.group-buttons .btn:hover {
   transform: scale(1.05);
 }
+
 .date-selector {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 20px;
 }
 
 .date-selector button {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
   margin: 0 10px;
+  background: #FFA07A;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
-.date-selector span {
-  font-size: 18px;
+.date-selector button:hover {
+  background: #FF7F50;
 }
+
+.bottom-buttons {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  background: #FFEFDB;
+  padding: 10px 0;
+  margin: 0;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.button-container {
+  text-align: center;
+}
+
+.button-container .btn-outline-info {
+  border-color: #FFA07A;
+  color: #FFA07A;
+}
+
+.button-container .btn-outline-info:hover {
+  background: #FFA07A;
+  color: white;
+}
+
+.button-text {
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: center;
+  color: black;
+  width: 50px;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  padding-left: 6px;
+}
+
+.unpaid {
+  color: red;
+}
+</style>
 
 </style>
