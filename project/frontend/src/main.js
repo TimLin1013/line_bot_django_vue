@@ -11,7 +11,7 @@ Vue.use(VueApexCharts)
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
 Vue.component('apexchart', VueApexCharts)
-Vue.prototype.$apiUrl = 'https://c940-2401-e180-8940-dce-3db5-9b67-d4d2-a94.ngrok-free.app';
+Vue.prototype.$apiUrl = 'https://4d51-2402-7500-5e7-3d41-99d3-971e-35c6-a609.ngrok-free.app';
 Vue.prototype.$axios = axios;
 Vue.prototype.$userId = null;
 Vue.prototype.$userName = null;// 6/2
