@@ -2,7 +2,7 @@
   <div class="row" style="margin: 10px">
     <div class="col-12" style="margin: 10px">
       <label >User_ID</label>
-      <input v-model="personal_id" type="text" class="form-control" />
+      <input v-model="personal_id" readonly ="text" class="form-control" />
       <br />
       <label >項目</label>
       <input v-model="formData.item" type="text" class="form-control" />
@@ -96,9 +96,9 @@ export default {
         
         const apiUrl = `${this.$apiUrl}/api/get_keep_temporary/`;
         console.log(apiUrl);
-        if(this.formData.category==''){
+        if(this.formData.category==''|| this.transaction===''){
             Swal.fire({
-              title: "請選擇類別或支出!!",
+              title: "請選擇類別和交易類型!!",
               icon: "warning"
           });
           return;
