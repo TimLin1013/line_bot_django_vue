@@ -78,7 +78,7 @@ def classification(text,personal_id):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(總金額，若沒有抓取到請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(若使用者有買多個要去算總金額，若沒有抓取到請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
         llm_config={"config_list": config_list},
     )
     user_input=text
