@@ -32,8 +32,8 @@
         <table v-if="selectedAccounts.length > 0" class="account-area">
           <thead>
             <tr>
+              <th>日期</th>
               <th>項目</th>
-              
               <th>金額</th>
               <th>類別</th>
               
@@ -44,6 +44,7 @@
             
             <template v-if="isGroupExpense">
               <tr v-for="(group_account, index) in selectedAccounts" :key="`group_account-${index}`">
+                <td>{{ group_account.account_date.slice(5, 10) }}</td>
                 <td>{{ group_account.item }}</td>
                 <td>{{ group_account.payment }}</td>
                 <td>{{ group_account.category_name }}</td>
@@ -51,6 +52,7 @@
             </template>
             <template v-else>
               <tr v-for="(account, index) in selectedAccounts" :key="`account-${index}`">
+                <td>{{ account.account_date.slice(5, 10) }}</td>
                 <td>{{ account.item }}</td>
                 <td>{{ account.payment }}</td>
                 <td>{{ account.category_name }}</td>
@@ -517,8 +519,8 @@ export default {
 
 .fixed-container {
   border: 2px solid rgb(192, 233, 10); 
-  margin-top: 40px; /* Adjust margin to make space for fixed buttons */
-  height: calc(600px); 
+  margin-top: 5px; /* Adjust margin to make space for fixed buttons */
+  height: calc(500px); 
   overflow-y: auto;
 }
 
@@ -618,7 +620,7 @@ export default {
   overflow-x: auto;
   padding: 10px 0;
   white-space: nowrap;
-  background-color: #FFEFDB;
+  background-color: #ffffff;
 }
 
 .group-buttons {
@@ -742,7 +744,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .date-selector button {

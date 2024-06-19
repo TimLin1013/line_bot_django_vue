@@ -15,9 +15,9 @@ class GroupAccountTable(models.Model):
     location = models.CharField(max_length=200, blank=True, null=True)
     payment = models.IntegerField(blank=True, null=True)
     info_complete_flag = models.IntegerField()
-    group = models.ForeignKey('GroupTable', models.DO_NOTHING)
-    category = models.ForeignKey('GroupCategoryTable', models.DO_NOTHING)
-    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
+    group = models.ForeignKey('GroupTable', on_delete=models.CASCADE)
+    category = models.ForeignKey('GroupCategoryTable', on_delete=models.CASCADE)
+    personal = models.ForeignKey('PersonalTable', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -30,7 +30,7 @@ class GroupCategoryTable(models.Model):
     category_name = models.CharField(max_length=200)
     transaction_type = models.CharField(max_length=45, blank=True, null=True)
     category_description = models.CharField(max_length=200, blank=True, null=True)
-    group = models.ForeignKey('GroupTable', models.DO_NOTHING)
+    group = models.ForeignKey('GroupTable', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -55,13 +55,14 @@ class PersonalAccountTable(models.Model):
     location = models.CharField(max_length=200, blank=True, null=True)
     payment = models.IntegerField(blank=True, null=True)
     info_complete_flag = models.IntegerField()
-    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
-    category = models.ForeignKey('PersonalCategoryTable', models.DO_NOTHING)
+    personal = models.ForeignKey('PersonalTable', on_delete=models.CASCADE)
+    category = models.ForeignKey('PersonalCategoryTable', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
         db_table = 'personal_account_table'
         unique_together = (('personal_account_id', 'personal', 'category'),)
+        ordering = ['account_date']
 
 
 class PersonalCategoryTable(models.Model):
@@ -69,7 +70,7 @@ class PersonalCategoryTable(models.Model):
     category_name = models.CharField(max_length=45)
     transaction_type = models.CharField(max_length=200, blank=True, null=True)
     category_description = models.CharField(max_length=200, blank=True, null=True)
-    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
+    personal = models.ForeignKey('PersonalTable', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -78,8 +79,8 @@ class PersonalCategoryTable(models.Model):
 
 
 class PersonalGroupLinkingTable(models.Model):
-    personal = models.ForeignKey('PersonalTable', models.DO_NOTHING)
-    group = models.ForeignKey(GroupTable, models.DO_NOTHING)
+    personal = models.ForeignKey('PersonalTable', on_delete=models.CASCADE)
+    group = models.ForeignKey(GroupTable, on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -103,7 +104,7 @@ class ReturnTable(models.Model):
     payer = models.CharField(max_length=45)
     receiver = models.CharField(max_length=45)
     return_flag = models.CharField(max_length=1)
-    split = models.ForeignKey('SplitTable', models.DO_NOTHING)
+    split = models.ForeignKey('SplitTable', on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -115,8 +116,8 @@ class SplitTable(models.Model):
     split_id = models.AutoField(primary_key=True)
     payment = models.IntegerField(blank=True, null=True)
     advance_payment = models.IntegerField(blank=True, null=True)
-    group_account = models.ForeignKey(GroupAccountTable, models.DO_NOTHING)
-    personal = models.ForeignKey(PersonalTable, models.DO_NOTHING)
+    group_account = models.ForeignKey(GroupAccountTable, on_delete=models.CASCADE)
+    personal = models.ForeignKey(PersonalTable, on_delete=models.CASCADE)
 
     class Meta:
         managed = False
