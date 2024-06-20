@@ -116,7 +116,7 @@
               <tr>
                 <th>歸還金額</th>
                 <th>欠款人</th>
-                <th>接收人</th>
+                <th>收款人</th>
                 <th>還錢狀態</th>
               </tr>
             </thead>
@@ -165,7 +165,7 @@
           <button class="btn btn-outline-info voice-text-accounting">
             <img :src="plusimg" class="plus" width="30" height="30">
           </button>
-          <div class="button-text">快速記帳</div>
+          <div class="button-text">個人記帳</div>
         </div>
         <div class="button-container" @click="joinGroupAccount">
           <button class="btn btn-outline-info group-account-button">
@@ -287,12 +287,12 @@ export default {
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
     },
+    //群組記帳
     manualAccounting() {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
           this.group2 = response.data.groups;
-          this.inputOptions = { 0: '個人帳本' };
           this.group2.forEach(group => {
             this.inputOptions[group.group_id] = group.group_name;
           });
@@ -308,11 +308,7 @@ export default {
               }
             }
           }).then((result) => {
-            if (result.value == 0) {
-              this.$router.push({ name: 'liff_personal_form', params: { formData: { item: '', payment: '', location: '', category: '', transaction_type: '' } } });
-            } else {
               this.$router.push({ name: 'liff_group_form', params: { formData: { group_id: result.value, item: '', payment: '', location: '' } } });
-            }
           });
         });
     },
@@ -698,7 +694,7 @@ body {
 .bottom-buttons {
   display: flex;
   justify-content: space-evenly;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   position: fixed;
   bottom: 0;
@@ -708,6 +704,7 @@ body {
   padding: 10px 0;
   margin: 0;
   box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  z-index: 1030; 
 }
 
 .button-container {
@@ -726,10 +723,10 @@ body {
 
 .button-text {
   font-size: 12px;
-  margin-top: 4px;
+  margin-top: 5px;
   text-align: center;
   color: black;
-  width: 50px;
+  width: 55px;
   line-height: 1.2;
   white-space: pre-wrap;
   padding-left: 6px;
