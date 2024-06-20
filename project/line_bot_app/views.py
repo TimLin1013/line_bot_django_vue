@@ -14,20 +14,6 @@ from linebot.models import *
 from line_bot_app.models import *
 from module import func
 import json
-
-# from langchain.chains.openai_tools import create_extraction_chain_pydantic
-# from langchain_core.pydantic_v1 import BaseModel, Field
-# from langchain_openai import ChatOpenAI
-# from typing import List
-# from langchain.chains import create_sql_query_chain
-# from langchain_core.runnables import RunnablePassthrough
-# from operator import itemgetter
-# from langchain.agents import AgentType
-# from langchain_community.utilities import SQLDatabase
-# from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-# from langchain.llms.openai import OpenAI
-# from langchain.chat_models import ChatOpenAI
-# from langchain_community.agent_toolkits import create_sql_agent
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
