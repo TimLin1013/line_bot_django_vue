@@ -1,7 +1,7 @@
 <template>
     <div class="row" style="margin: 10px">
         <label>群組id</label>
-        <input v-model="formData.group_id" type="text" class="form-control" />
+        <input v-model="formData.group_id" readonly type="text" class="form-control" />
         <label >付款人</label>
         <select v-model="person" class="form-control" >
           <option v-for="personItem in persons" :key="personItem" :value="personItem">

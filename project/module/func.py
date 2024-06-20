@@ -211,23 +211,13 @@ def sqlagent(text,personal_id):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={"use_docker": False}
     )
-    person = "使用者是:"+personal_id
-    account=person+'，personal_info_list:'+str(personal_info_list)+'。group_info_list:'+str(group_info_list)+'。group_account_list:'+str(group_account_list)+'。split_info_list:'+str(split_info_list)+'return_info_list:'+str(return_info_list)
-    personal_info_list_description = "personal_info_list為個人帳目的資訊，當中的資料完整flag(0為不完整、1為完整)"
-    group_info_list_description="group_info_list為群組的詳細資訊。"
-    group_account_list_description="group_account_list為群組帳目資訊，除非使用者自己問群組的帳目，當中資料完整flag(0為不完整、1為完整)。"
-    split_info_list_description ="split_info_list為使用者的分帳資訊與還錢資訊，還錢flag(0為沒有還錢、1為還錢)。若產生一筆資訊後就TERMINATE"
-    return_info_list_description=""
+
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問器，回答時盡量完整、有邏輯不要輸出list名稱與個人與帳目等等的id，以下為各個list的詳細資訊"+personal_info_list_description+group_info_list_description+group_account_list_description+split_info_list_description+return_info_list_description,
+        system_message="你是一個帳目詢問器，回答時盡量完整、有邏輯不要輸出list名稱與個人與帳目等等的id，以下為各個list的詳細資訊，若與資料庫無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
         llm_config={"config_list": config_list},
     )
-    print("personal_info_list:"+str(personal_info_list))
-    print("group_info_list"+str(group_info_list))
-    print("group_account_list"+str(group_account_list))
-    print("split_info_list"+str(split_info_list))
-    print("return_info_list:"+str(return_info_list))
+    account = str(personal_info_list)+str(group_info_list)+str(group_account_list)+str(split_info_list)+str(return_info_list)
     output=user.initiate_chat(assistant, message="帳目資訊如下："+account+",問題:"+text,summary_method="last_msg",)
     print(output.summary)
     return "OK"
