@@ -17,7 +17,7 @@ import json
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
-#6/17
+#6/21
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_payback(request):
@@ -32,44 +32,53 @@ def get_payback(request):
             personal_id = data.get('personal_id')
             user_instance = PersonalTable.objects.get(personal_id=personal_id)
             user_name = user_instance.user_name
+
+            # 加入群組名稱的查詢
+            group_links = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
+            group_names = {link.group.group_id: link.group.group_name for link in group_links}
+
             # 使用 ReturnTable 模型來檢索還錢通知數據
             payback_notifications = ReturnTable.objects.filter(payer=user_name)
             payer_payback_list = []
             for payback in payback_notifications:
+                group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
                 payback_data = {
-                    "return_payment":payback.return_payment,
-                    "payer":payback.payer,
-                    "receiver":payback.receiver,
-                    "return_flag":payback.return_flag
+                    "return_payment": payback.return_payment,
+                    "payer": payback.payer,
+                    "receiver": payback.receiver,
+                    "return_flag": payback.return_flag,
+                    "group_name": group_name  # 加入群組名稱
                 }
                 payer_payback_list.append(payback_data)
-                
+
             payback_notifications2 = ReturnTable.objects.filter(receiver=user_name)
             receiver_payback_list = []
             for payback in payback_notifications2:
+                group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
                 payback_data = {
-                    "return_payment":payback.return_payment,
-                    "payer":payback.payer,
-                    "receiver":payback.receiver,
-                    "return_flag":payback.return_flag
+                    "return_payment": payback.return_payment,
+                    "payer": payback.payer,
+                    "receiver": payback.receiver,
+                    "return_flag": payback.return_flag,
+                    "group_name": group_name  # 加入群組名稱
                 }
                 receiver_payback_list.append(payback_data)
+
             response_data = {
                 "message": "Data received successfully",
                 "payer_payback_list": payer_payback_list,
-                "receiver_payback_list":receiver_payback_list
+                "receiver_payback_list": receiver_payback_list
             }
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
         except PersonalTable.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
-        except SplitTable.DoesNotExist:
-            return JsonResponse({'error': 'Split record not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': '支持POST請求'}, status=405)
+
 
 #6/2
 @csrf_exempt

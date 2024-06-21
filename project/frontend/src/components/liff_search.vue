@@ -25,7 +25,7 @@
       </ul>
     </nav>
 
-    <!-- 页面内容 -->
+    <!-- 頁面内容 -->
     <div id="content" class="p-4 p-md-5">
       <!-- 個人帳本 -->
       <div v-if="isPersonalExpense" class="personal-expense-container">
@@ -110,41 +110,45 @@
 
       <!-- 還錢通知 -->
       <div v-if="isPayBack" class="payback-container">
-        <div class="scrollable-block">
-          <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
-            <thead>
-              <tr>
-                <th>歸還金額</th>
-                <th>欠款人</th>
-                <th>收款人</th>
-                <th>還錢狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(account, index) in payBackAccounts" :key="index">
-                <td>{{ account.return_payment }}</td>
-                <td>{{ account.payer }}</td>
-                <td>{{ account.receiver }}</td>
-                <td :class="{ 'unpaid': account.return_flag === 0 }">
-                  {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
-                </td>
-              </tr>
-              <tr v-for="(account, index) in payBackAccounts2" :key="index">
-                <td>{{ account.return_payment }}</td>
-                <td>{{ account.payer }}</td>
-                <td>{{ account.receiver }}</td>
-                <td :class="{ 'unpaid': account.return_flag === 0 }">
-                  {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}<!-- 這裡會相反 -->
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-else-if="loading" class="loading">載入中...</div>
-          <div v-else class="account-area-placeholder">
-            <h2>還錢通知：</h2>
-            <p>暫無資料</p>
+          <div class="scrollable-block">
+              <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
+                  <thead>
+                      <tr>
+                          <th>歸還金額</th>
+                          <th>欠款人</th>
+                          <th>收款人</th>
+                          <th>群組名稱</th>
+                          <th>還錢狀態</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr v-for="(account, index) in payBackAccounts" :key="index">
+                          <td>{{ account.return_payment }}</td>
+                          <td>{{ account.payer }}</td>
+                          <td>{{ account.receiver }}</td>
+                          <td>{{ account.group_name }}</td> <!-- 新增顯示群組名稱 -->
+                          <td :class="{ 'unpaid': account.return_flag === 0 }">
+                              {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
+                          </td>
+                      </tr>
+                      <!-- 如果有第二個列表也需要顯示群組名稱 -->
+                      <tr v-for="(account, index) in payBackAccounts2" :key="index">
+                          <td>{{ account.return_payment }}</td>
+                          <td>{{ account.payer }}</td>
+                          <td>{{ account.receiver }}</td>
+                          <td>{{ account.group_name }}</td> <!-- 新增顯示群組名稱 -->
+                          <td :class="{ 'unpaid': account.return_flag === 0 }">
+                              {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }} <!-- 注意這裡的顯示邏輯是否需要調整 -->
+                          </td>
+                      </tr>
+                  </tbody>
+              </table>
+              <div v-else-if="loading" class="loading">載入中...</div>
+              <div v-else class="account-area-placeholder">
+                  <h2>還錢通知：</h2>
+                  <p>暫無資料</p>
+              </div>
           </div>
-        </div>
       </div>
 
       <!-- 底部按鈕 -->
@@ -222,12 +226,14 @@ export default {
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.toggleSidebar();
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
       this.isGroupExpense = true;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.toggleSidebar();
     },
     showPayBack() {
       this.isPersonalExpense = false;
@@ -235,6 +241,7 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = true;
       this.fetchPayBack();
+      this.toggleSidebar();
     },
     prevMonth() {
       const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
@@ -544,17 +551,17 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 250px;
+  width: 150px;
   height: 100%;
   background: #FFEFDB;
-  transition: all 0.3s;
+  transition: all 0.5s ease;
+  transform: translateX(-250px);
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   z-index: 1020; 
-  display: none;
 }
 
 #sidebar.active {
-  display: block;
+  transform: translateX(0);
 }
 
 .sidebar-header {
@@ -735,6 +742,4 @@ body {
 .unpaid {
   color: red;
 }
-</style>
-
 </style>
