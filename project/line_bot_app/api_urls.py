@@ -16,4 +16,6 @@ urlpatterns = [
     path('return_group_category/',views.return_group_category,name='return_group_category_api'),
     path('catch_member/',views.catch_member,name='catch_member_api'),
     path('get_payback/',views.get_payback,name='get_payback_api'),
+    path('get_personal_expense_data/', views.get_personal_expense_data, name='get_personal_expense_data'),
+    path('get_group_expense_data/', views.get_group_expense_data, name='get_group_expense_data'),
 ]

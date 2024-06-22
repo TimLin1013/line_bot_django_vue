@@ -11,7 +11,7 @@
     </nav>
 
     <!-- 側邊 -->
-    <nav id="sidebar" class="bg-light">
+    <nav id="sidebar" ref="sidebar" :class="{ 'active': sidebarActive }" class="bg-light">
       <ul class="list-unstyled components">
         <li>
           <a href="#" @click="showPersonalExpense" :class="{ active: isPersonalExpense }">個人帳本</a>
@@ -36,7 +36,7 @@
         </div>
         <div class="fixed-container">
           <div class="scrollable-block">
-            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+            <table v-if="filteredAccounts.length > 0" class="table table-striped">
               <thead>
                 <tr>
                   <th>項目</th>
@@ -45,10 +45,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="account in selectedAccounts" :key="account.id">
+                <tr v-for="account in filteredAccounts" :key="account.id">
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
-                  <td>{{ account.category_name }}</td>
+                  <td>{{ account.category__category_name }}</td>
                 </tr>
               </tbody>
             </table>
@@ -83,7 +83,7 @@
         </div>
         <div class="fixed-container">
           <div class="scrollable-block">
-            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+            <table v-if="group_accounts.length > 0" class="table table-striped">
               <thead>
                 <tr>
                   <th>項目</th>
@@ -92,10 +92,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="account in selectedAccounts" :key="account.id">
+                <tr v-for="account in group_accounts" :key="account.id">
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
-                  <td>{{ account.category_name }}</td>
+                  <td>{{ account.category__category_name }}</td>
                 </tr>
               </tbody>
             </table>
@@ -126,19 +126,18 @@
                           <td>{{ account.return_payment }}</td>
                           <td>{{ account.payer }}</td>
                           <td>{{ account.receiver }}</td>
-                          <td>{{ account.group_name }}</td> <!-- 新增顯示群組名稱 -->
+                          <td>{{ account.group_name }}</td>
                           <td :class="{ 'unpaid': account.return_flag === 0 }">
                               {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
                           </td>
                       </tr>
-                      <!-- 如果有第二個列表也需要顯示群組名稱 -->
                       <tr v-for="(account, index) in payBackAccounts2" :key="index">
                           <td>{{ account.return_payment }}</td>
                           <td>{{ account.payer }}</td>
                           <td>{{ account.receiver }}</td>
-                          <td>{{ account.group_name }}</td> <!-- 新增顯示群組名稱 -->
+                          <td>{{ account.group_name }}</td>
                           <td :class="{ 'unpaid': account.return_flag === 0 }">
-                              {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }} <!-- 注意這裡的顯示邏輯是否需要調整 -->
+                              {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}
                           </td>
                       </tr>
                   </tbody>
@@ -190,6 +189,8 @@
 
 <script>
 import Swal from 'sweetalert2';
+import dayjs from 'dayjs'; 
+
 export default {
   data() {
     return {
@@ -214,18 +215,27 @@ export default {
       group_account: [],
       payBackAccounts: [],
       payBackAccounts2: [],
+      sidebarActive: false,
+      group_account: [],
     };
   },
   methods: {
     toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('active');
+      this.sidebarActive = !this.sidebarActive;
+    },
+    handleOutsideClick(e) {
+      const sidebar = this.$refs.sidebar;
+      const sidebarButton = document.getElementById('sidebarCollapse');
+      if (!sidebar.contains(e.target) && !sidebarButton.contains(e.target) && this.sidebarActive) {
+        this.sidebarActive = false;
+      }
     },
     showPersonalExpense() {
       this.isPersonalExpense = true;
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
       this.toggleSidebar();
     },
     showGroupExpense() {
@@ -233,6 +243,7 @@ export default {
       this.isGroupExpense = true;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
       this.toggleSidebar();
     },
     showPayBack() {
@@ -265,36 +276,53 @@ export default {
       console.log('Fetching personal expense data for:', date.format('YYYY-MM'));
       const apiUrl = `${this.$apiUrl}/api/get_personal_expense_data/`;
       this.loading = true;
-      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.personal_id })
-        .then(response => {
-          this.accounts = response.data.accounts;
-        })
-        .catch(error => {
-          console.error('Error fetching personal expense data:', error);
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+      this.error = null;
+      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.$root.$personal_id })
+          .then(response => {
+              this.accounts = response.data.accounts;
+          })
+          .catch(error => {
+              console.error('Error fetching personal expense data:', error);
+              if (error.response && error.response.status === 404) {
+                  this.error = 'No data found for this month.';
+              } else {
+                  this.error = 'Failed to fetch data. Please check your network and try again.';
+              }
+          })
+          .finally(() => {
+              this.loading = false;
+          });
     },
     fetchGroupExpenseDataForMonth(date) {
-      console.log('Fetching group expense data for:', date.format('YYYY-MM'));
-      const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
-      this.loading = true;
-      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
+  console.log('Fetching group expense data for:', date.format('YYYY-MM'));
+  const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
+  this.loading = true;
+    this.error = null;
+    this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
         .then(response => {
-          this.accounts = response.data.accounts;
+            if (response.data.accounts) {
+                this.group_accounts = response.data.accounts;
+            } else {
+                this.group_accounts = [];
+            }
         })
         .catch(error => {
-          console.error('Error fetching group expense data:', error);
+            console.error('Error fetching group expense data:', error);
+            this.group_accounts = []; // 确保在发生错误时也初始化为空数组
+            if (error.response && error.response.status === 404) {
+                this.error = 'No data found for this month.';
+            } else {
+                this.error = 'Failed to fetch data. Please check your network and try again.';
+            }
         })
         .finally(() => {
-          this.loading = false;
+            this.loading = false;
         });
-    },
+  },
+
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
     },
-    //群組記帳
     manualAccounting() {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
@@ -436,6 +464,7 @@ export default {
     },
     filterByGroup(groupId) {
       this.selectedGroupId = groupId;
+      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
     },
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
@@ -482,11 +511,9 @@ export default {
           console.error(error);
         });
     },
-  },
-  mounted() {
-    const checkUserId = () => {
+    checkUserId() {
       if (this.$root.$userId === null || this.$root.$personal_id === null) {
-        setTimeout(checkUserId, 500);
+        setTimeout(() => this.checkUserId(), 500);
       } else {
         Promise.all([this.fetchAccounts(), this.fetchGroup(), this.fetchGroupAccount()])
           .then(() => {
@@ -494,22 +521,23 @@ export default {
           })
           .catch(error => {
             console.error("An error occurred while fetching data:", error);
-            this.loading = false; 
+            this.loading = false;
           });
       }
-    };
-    checkUserId();
+    },
+  },
+  mounted() {
+    this.checkUserId();
+    document.addEventListener('click', this.handleOutsideClick);
+    this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleOutsideClick);
   },
   computed: {
-    selectedAccounts() {
+    filteredAccounts() {
       let filteredAccounts = this.accounts;
-      filteredAccounts = filteredAccounts.filter(account => account.flag === 1);
       filteredAccounts = filteredAccounts.filter(account => account.account_date.slice(0, 7) === this.currentYearMonth);
-      if (this.isPersonalExpense) {
-        return filteredAccounts;
-      } else if (this.isGroupExpense) {
-        return filteredAccounts.filter(account => account.group_id === this.selectedGroupId);
-      }
       return filteredAccounts;
     },
     selectedPayBackAccounts() {

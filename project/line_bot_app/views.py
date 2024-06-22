@@ -17,6 +17,60 @@ import json
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
+#6/22
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_personal_expense_data(request):
+    if request.method == "OPTIONS":
+        return HttpResponse(status=204)  # To handle pre-flight requests if needed
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            account_date = data.get('account_date')
+            personal_id = data.get('personal_id')
+
+            # 拆分 account_date 以獲取年份和月份
+            year, month = account_date.split('-')
+
+            # 查詢該用戶在指定月份的賬本數據
+            accounts = PersonalAccountTable.objects.filter(
+                personal_id=personal_id,
+                account_date__year=year,
+                account_date__month=month
+            ).values('item', 'payment', 'category__category_name', 'account_date', 'location')
+
+            accounts_list = list(accounts)  # 將查詢結果轉換為字典列表
+
+            return JsonResponse({'accounts': accounts_list}, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def get_group_expense_data(request):
+    try:
+        data = json.loads(request.body)
+        group_id = data['group_id']
+        account_date = data['account_date']
+
+        # Assuming the account_date is being sent as 'YYYY-MM'
+        # and your models have an 'account_date' that is a DateField
+        expenses = GroupAccountTable.objects.filter(
+            group_id=group_id,
+            account_date__year=account_date[:4],  # First four characters are the year
+            account_date__month=account_date[5:7]  # Characters 6 and 7 are the month
+        ).values('item', 'payment', 'category__category_name', 'account_date')  # Include necessary fields
+
+        return JsonResponse({"accounts": list(expenses)}, safe=False)
+    except KeyError as e:
+        return JsonResponse({'error': str(e) + ' is missing'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 #6/21
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
