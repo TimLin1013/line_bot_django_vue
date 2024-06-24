@@ -16,6 +16,11 @@ urlpatterns = [
     path('return_group_category/',views.return_group_category,name='return_group_category_api'),
     path('catch_member/',views.catch_member,name='catch_member_api'),
     path('get_payback/',views.get_payback,name='get_payback_api'),
+
+    path('get_group_account_info/',views.get_group_account_info,name = 'get_group_account_info_api'),
+    path('get_group_keep_temporary/',views.get_group_keep_temporary,name = 'get_group_key_temporary_api'),
+
     path('get_personal_expense_data/', views.get_personal_expense_data, name='get_personal_expense_data'),
     path('get_group_expense_data/', views.get_group_expense_data, name='get_group_expense_data'),
+
 ]

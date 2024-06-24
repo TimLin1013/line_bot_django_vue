@@ -134,6 +134,8 @@ def get_payback(request):
         return JsonResponse({'error': '支持POST請求'}, status=405)
 
 
+
+
 #6/2
 @csrf_exempt
 def callback(request):
@@ -164,7 +166,6 @@ def callback(request):
         return HttpResponseBadRequest()
 
 
-#6/2 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_user_account(request):
@@ -186,11 +187,38 @@ def get_user_account(request):
                 digits = string.digits#產生字串
                 # 如果有和資料庫重複會重新生成
                 while True:
-                    virtual_personal= ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(5))#數字和英文字母串接
+                    virtual_personal= ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(3))#數字和英文字母串接
                     if not PersonalTable.objects.filter(personal_id=virtual_personal).exists():
                         break
+                #預設類別
                 unit2 = PersonalTable(personal_id=virtual_personal,user_name=user_name,line_id=user_id)
                 unit2.save()
+                unit3 = PersonalCategoryTable(category_name = "早餐",transaction_type ='支出',persoanl =unit2)
+                unit4 = PersonalCategoryTable(category_name = "午餐",transaction_type ='支出',persoanl =unit2 )
+                unit5 = PersonalCategoryTable(category_name = "晚餐",transaction_type ='支出',persoanl =unit2 )
+                unit6 = PersonalCategoryTable(category_name = "宵夜",transaction_type ='支出',persoanl =unit2 )
+                unit7 = PersonalCategoryTable(category_name = "點心",transaction_type ='支出',persoanl =unit2 )
+                unit8 = PersonalCategoryTable(category_name = "交通",transaction_type ='支出',persoanl =unit2 )
+                unit9 = PersonalCategoryTable(category_name = "娛樂",transaction_type ='支出',persoanl =unit2 )
+                unit10 = PersonalCategoryTable(category_name = "醫療",transaction_type ='支出',persoanl =unit2)
+                unit11 = PersonalCategoryTable(category_name = "薪水",transaction_type ='收入',persoanl =unit2 )
+                unit12 = PersonalCategoryTable(category_name = "房租",transaction_type ='收入',persoanl =unit2 )
+                unit13 = PersonalCategoryTable(category_name = "房租",transaction_type ='支出',persoanl =unit2 )
+                unit14 = PersonalCategoryTable(category_name = "購物",transaction_type ='支出',persoanl =unit2)
+                unit15 = PersonalCategoryTable(category_name = "無",transaction_type ='無',persoanl =unit2)
+                unit3.save()
+                unit4.save()
+                unit5.save()
+                unit6.save()
+                unit7.save()
+                unit8.save()
+                unit9.save()
+                unit10.save()
+                unit11.save()
+                unit12.save()
+                unit13.save()
+                unit14.save()
+                unit15.save()
             #抓出資料到首頁上
             user_instance = PersonalTable.objects.get(line_id=user_id)
             user_account = PersonalAccountTable.objects.filter(personal=user_instance)
@@ -239,15 +267,39 @@ def get_user_account_info(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            personal_id = data.get('personal_id')
             input_text = data.get('user_input')
             response_data = {'message': '成功接收數據','input': input_text}
-            temp = func.classification(input_text,personal_id)
+            temp = func.classification(input_text)
             return JsonResponse({**response_data,'temp':temp})
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_account_info(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            input_text = data.get('user_input')
+            input_text2 = data.get('user_input2')
+            if input_text2 == '':
+                temp2 = []
+            group_id = data.get('group_id')
+            response_data = {'message': '成功接收數據','input': input_text}
+            temp = func.classification(input_text)
+            temp2 = func.group_account_spliter(group_id,input_text2)
+            temp['group_id'] = group_id
+            return JsonResponse({**response_data,'temp':temp,'temp2':temp2})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#暫存
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_keep_temporary(request):
@@ -262,8 +314,10 @@ def get_keep_temporary(request):
             item = data.get('item')
             payment = data.get('payment')
             location = data.get('location')
-            category = data.get('category')
-            category = category.get('category_name')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = category.get('category_name')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
@@ -274,7 +328,7 @@ def get_keep_temporary(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-
+#完成確認
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def get_keep_sure(request):
@@ -417,7 +471,6 @@ def get_group(request):
 
             user_instance = PersonalTable.objects.get(personal_id=personal_id)
             group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
-            print("id :"+personal_id)
             group_list = []
             for group_link in group_instances:
                 group_instance = group_link.group
@@ -536,6 +589,7 @@ def personal_report(request):
             records = records
             for group_account_id in group_account_expense_ids:
                 records2.extend(SplitTable.objects.filter(group_account=group_account_id))
+            records2 = records2
             #把每筆資料的payment加起來
             for income in income_accounts:
                 temp = income.payment
@@ -636,36 +690,33 @@ def catch_member(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
-    # db = SQLDatabase.from_uri("mysql+mysqlconnector://root:0981429209@localhost:3306/my_project")#要改你自己的
-    # llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
-    # class Table(BaseModel):
-    #     """Table in SQL database."""
-    #     name: str = Field(description="MYSQL資料庫的table名稱.")
-    # system = """回傳所有關於使用者問題可能相關的SQL table. \
-    # The tables are:
-
-    # personal_info
-    # group_info
-    # """
-    # category_chain = create_extraction_chain_pydantic(Table, llm, system_message=system)
-    # category_chain.invoke({"input": text})
-    # def get_tables(categories: List[Table]) -> List[str]:
-    #     tables = []
-    #     for category in categories:
-    #         if category.name == "personal_info":
-    #             tables.extend(["personal_table","personal_category_table","personal_account_table","group_table","split_table","return_table","group_account_table"])
-    #         elif category.name == "group_info":
-    #             tables.extend(["personal_table", "group_table", "group_category_table","group_account_table","personal_group_linking_table","split_table","return_table"])
-    #     return tables
-    # table_chain = category_chain | get_tables  
-    # table_chain.invoke({"input": text})
-
-    # query_chain = create_sql_query_chain(llm, db)
-    # table_chain = {"input": itemgetter("question")} | table_chain
-    # full_chain = RunnablePassthrough.assign(table_names_to_use=table_chain) | query_chain
-    # query = full_chain.invoke(
-    #     {"question": text+"，使用者的personal_id:"+personal_id+"最後回答不要有括號和資料庫型別且用有邏輯方式回答"}
-    # )
-    # print(query)
-    # temp = db.run(query)
-    # return temp
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_keep_temporary(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('group_id')
+            payer_id = data.get('payer')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = category.get('category_name')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            shares = data.get('shares')
+            func.address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares)
+            response_data ='成功接收數據'
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

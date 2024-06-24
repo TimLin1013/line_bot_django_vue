@@ -158,11 +158,11 @@
           </button>
           <div class="button-text">報表</div>
         </div>
-        <div class="button-container" @click="manualAccounting">
+        <div class="button-container" @click="groupAccounting">
           <button class="btn btn-outline-info manual-accounting">
             <img :src="fromimg" class="form" width="30" height="30">
           </button>
-          <div class="button-text">手動記帳</div>
+          <div class="button-text">群組記帳</div>
         </div>
         <div class="button-container" @click="voiceTextAccounting">
           <button class="btn btn-outline-info voice-text-accounting">
@@ -323,33 +323,99 @@ export default {
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
     },
-    manualAccounting() {
+
+    //群組記帳
+    groupAccounting() {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
           this.group2 = response.data.groups;
           this.group2.forEach(group => {
-            this.inputOptions[group.group_id] = group.group_name;
-          });
-          Swal.fire({
-            title: "選擇帳本",
-            input: "select",
-            inputOptions: this.inputOptions,
-            inputPlaceholder: "選擇一個帳本",
-            showCancelButton: true,
-            inputValidator: (value) => {
-              if (!value) {
-                return "請選擇帳本";
-              }
-            }
-          }).then((result) => {
-              this.$router.push({ name: 'liff_group_form', params: { formData: { group_id: result.value, item: '', payment: '', location: '' } } });
-          });
+          this.inputOptions[group.group_id] = group.group_name;
         });
-    },
+        Swal.fire({
+          title: "選擇帳本",
+          input: "select",
+          inputOptions: this.inputOptions,
+          inputPlaceholder: "選擇一個帳本",
+          inputValidator: (value) => {
+            if (!value) {
+              return "請選擇帳本";
+            }
+          }
+        }).then((result) => {
+          if (result.value === null) {
+            return;
+          }
+          if (result.isConfirmed) {
+            Swal.fire({
+              title: "群組記帳",
+              input: "text",
+              confirmButtonText: "送出",
+              inputPlaceholder: "請輸入",
+              inputValidator: (value2) => {
+                if (!value2) {
+                  return "請輸入資訊!";
+                }
+              }
+            }).then((result2) => {
+              if (result2.value) {
+                const data = result2.value;
+                Swal.fire({
+                  title: "分帳人資訊",
+                  input: "text",
+                  confirmButtonText: "送出",
+                  inputPlaceholder: "請輸入",
+                }).then((result3) => {
+                  if(result3.value){
+                    const data2 = result3.value
+                    Swal.fire({
+                      title: '請稍候...',
+                      allowOutsideClick: false,
+                      didOpen: () => {
+                        Swal.showLoading();
+                      }
+                    });
+                    const apiUrl = `${this.$apiUrl}/api/get_group_account_info/`;
+                    this.$axios.post(apiUrl, {user_input:data,user_input2:data2,group_id : result.value})
+                      .then(response => {
+                        Swal.close();
+                        console.log(response.data)
+                        if (response.data.temp === '錯誤') {
+                          Swal.fire({
+                            text: "請檢查輸入的記帳內容!",
+                            icon: "warning"
+                          });
+                        }
+                        if(response.data.temp2 ==='錯誤'){
+                          Swal.fire({
+                            text: "請檢查輸入的記帳內容!",
+                            icon: "warning"
+                          });
+                        }
+                        else {
+                          this.$router.push({ name: 'liff_group_form', params: { formData: response.data.temp,formData2:response.data.temp2 } });
+                        }
+                      })
+                      .catch(error => {
+                        Swal.close();
+                        console.error('Error:', error);
+                      })
+                  }
+                });
+            }
+          });
+        }
+      });
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+},
+
     voiceTextAccounting() {
       Swal.fire({
-        title: "快速記帳",
+        title: "個人記帳",
         input: "text",
         confirmButtonText: "送出",
         inputPlaceholder: "請輸入",
