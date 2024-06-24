@@ -14,13 +14,13 @@
     <nav id="sidebar" ref="sidebar" :class="{ 'active': sidebarActive }" class="bg-light">
       <ul class="list-unstyled components">
         <li>
-          <a href="#" @click="showPersonalExpense" :class="{ active: isPersonalExpense }">個人帳本</a>
+          <a href="#" @click="showPersonalExpense()" :class="{ active: isPersonalExpense }">個人帳本</a>
         </li>
         <li>
-          <a href="#" @click="showGroupExpense" :class="{ active: isGroupExpense }">群組帳本</a>
+          <a href="#" @click="showGroupExpense()" :class="{ active: isGroupExpense }">群組帳本</a>
         </li>
         <li>
-          <a href="#" @click="showPayBack" :class="{ active: isPayBack }">還錢通知</a>
+          <a href="#" @click="showPayBack()" :class="{ active: isPayBack }">還錢通知</a>
         </li>
       </ul>
     </nav>
@@ -29,6 +29,55 @@
     <div id="content" class="p-4 p-md-5">
       <!-- 個人帳本 -->
       <div v-if="isPersonalExpense" class="personal-expense-container">
+        <div class="date-selector">
+          <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
+          <span class="mx-3">{{ currentYearMonth }}</span>
+          <button class="btn btn-outline-secondary" @click="nextMonth" :disabled="loading">→</button>
+        </div>
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="filteredAccounts.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>項目</th>
+                  <th>金額</th>
+                  <th>類別</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="account in filteredAccounts" :key="account.id">
+                  <td>{{ account.account_date.slice(5, 10)}}</td>
+                  <td>{{ account.item }}</td>
+                  <td>{{ account.payment }}</td>
+                  <td>{{ account.category_name }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <h2>當天花費：</h2>
+              <p>暫無資料</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 群組帳本 -->
+      <div v-if="isGroupExpense" class="group-expense-container">
+        <div class="group-buttons-container">
+          <div class="group-buttons">
+            <button
+              v-for="groups in group"
+                :key="groups.group_id"
+                class="btn"
+                :class="{ 'btn-primary': selectedGroupId === groups.group_id, 'btn-outline-primary': selectedGroupId !== groups.group_id }"
+                @click="filterByGroup(groups.group_id)"
+            >
+              {{ groups.group_name }}
+            </button>
+          </div>
+        </div>
         <div class="date-selector">
           <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
           <span class="mx-3">{{ currentYearMonth }}</span>
@@ -48,54 +97,7 @@
                 <tr v-for="account in filteredAccounts" :key="account.id">
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
-                  <td>{{ account.category__category_name }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <div v-else-if="loading" class="loading">載入中...</div>
-            <div v-else class="account-area-placeholder">
-              <h2>當天花費：</h2>
-              <p>暫無資料</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 群組帳本 -->
-      <div v-if="isGroupExpense" class="group-expense-container">
-        <div class="group-buttons-container">
-          <div class="group-buttons">
-            <button
-              v-for="groups in group"
-              :key="groups.group_id"
-              class="btn"
-              :class="{ 'btn-primary': selectedGroupId === groups.group_id, 'btn-outline-primary': selectedGroupId !== groups.group_id }"
-              @click="filterByGroup(groups.group_id)"
-            >
-              {{ groups.group_name }}
-            </button>
-          </div>
-        </div>
-        <div class="date-selector">
-          <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
-          <span class="mx-3">{{ currentYearMonth }}</span>
-          <button class="btn btn-outline-secondary" @click="nextMonth" :disabled="loading">→</button>
-        </div>
-        <div class="fixed-container">
-          <div class="scrollable-block">
-            <table v-if="group_accounts.length > 0" class="table table-striped">
-              <thead>
-                <tr>
-                  <th>項目</th>
-                  <th>金額</th>
-                  <th>類別</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="account in group_accounts" :key="account.id">
-                  <td>{{ account.item }}</td>
-                  <td>{{ account.payment }}</td>
-                  <td>{{ account.category__category_name }}</td>
+                  <td>{{ account.category_name }}</td>
                 </tr>
               </tbody>
             </table>
@@ -235,15 +237,14 @@ export default {
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = false;
-      this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
       this.toggleSidebar();
     },
     showGroupExpense() {
+      
       this.isPersonalExpense = false;
       this.isGroupExpense = true;
       this.isAllExpense = false;
       this.isPayBack = false;
-      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
       this.toggleSidebar();
     },
     showPayBack() {
@@ -257,68 +258,13 @@ export default {
     prevMonth() {
       const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
       this.currentYearMonth = newDate.format('YYYY-MM');
-      if (this.isPersonalExpense) {
-        this.fetchPersonalExpenseDataForMonth(newDate);
-      } else if (this.isGroupExpense) {
-        this.fetchGroupExpenseDataForMonth(newDate);
-      }
     },
     nextMonth() {
       const newDate = dayjs(this.currentYearMonth).add(1, 'month');
       this.currentYearMonth = newDate.format('YYYY-MM');
-      if (this.isPersonalExpense) {
-        this.fetchPersonalExpenseDataForMonth(newDate);
-      } else if (this.isGroupExpense) {
-        this.fetchGroupExpenseDataForMonth(newDate);
-      }
     },
-    fetchPersonalExpenseDataForMonth(date) {
-      console.log('Fetching personal expense data for:', date.format('YYYY-MM'));
-      const apiUrl = `${this.$apiUrl}/api/get_personal_expense_data/`;
-      this.loading = true;
-      this.error = null;
-      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.$root.$personal_id })
-          .then(response => {
-              this.accounts = response.data.accounts;
-          })
-          .catch(error => {
-              console.error('Error fetching personal expense data:', error);
-              if (error.response && error.response.status === 404) {
-                  this.error = 'No data found for this month.';
-              } else {
-                  this.error = 'Failed to fetch data. Please check your network and try again.';
-              }
-          })
-          .finally(() => {
-              this.loading = false;
-          });
-    },
-    fetchGroupExpenseDataForMonth(date) {
-  console.log('Fetching group expense data for:', date.format('YYYY-MM'));
-  const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
-  this.loading = true;
-    this.error = null;
-    this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
-        .then(response => {
-            if (response.data.accounts) {
-                this.group_accounts = response.data.accounts;
-            } else {
-                this.group_accounts = [];
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching group expense data:', error);
-            this.group_accounts = []; // 确保在发生错误时也初始化为空数组
-            if (error.response && error.response.status === 404) {
-                this.error = 'No data found for this month.';
-            } else {
-                this.error = 'Failed to fetch data. Please check your network and try again.';
-            }
-        })
-        .finally(() => {
-            this.loading = false;
-        });
-  },
+    
+    
 
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
@@ -530,7 +476,7 @@ export default {
     },
     filterByGroup(groupId) {
       this.selectedGroupId = groupId;
-      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
+      
     },
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
@@ -561,6 +507,7 @@ export default {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
+          console.log(response.data.groups);
           this.group = response.data.groups;
         })
         .catch(error => {
@@ -571,6 +518,7 @@ export default {
       const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
+          this.group_account= response.data.group_account
           console.log(response);
         })
         .catch(error => {
@@ -595,7 +543,7 @@ export default {
   mounted() {
     this.checkUserId();
     document.addEventListener('click', this.handleOutsideClick);
-    this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
+    
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleOutsideClick);
@@ -603,7 +551,18 @@ export default {
   computed: {
     filteredAccounts() {
       let filteredAccounts = this.accounts;
-      filteredAccounts = filteredAccounts.filter(account => account.account_date.slice(0, 7) === this.currentYearMonth);
+      filteredAccounts= filteredAccounts.filter(account => account.flag===1)
+      filteredAccounts= filteredAccounts.filter(account => account.account_date.slice(0, 7)===this.currentYearMonth)
+      let filtereGroupdAccounts = this.group_account;
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.flag===1)
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.group_id===this.selectedGroupId)
+      filtereGroupdAccounts= filtereGroupdAccounts.filter(group_account => group_account.account_date.slice(0, 7)===this.currentYearMonth)
+      if (this.isPersonalExpense) {
+        return filteredAccounts;
+      } else if (this.isGroupExpense) {
+        return filtereGroupdAccounts;
+      }
+
       return filteredAccounts;
     },
     selectedPayBackAccounts() {

@@ -157,8 +157,7 @@ def group_account_spliter(group_id,text):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，輸出格式"+format+"，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE",
-        llm_config={"config_list": config_list},
+        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，輸出格式"+format+"，若與分帳人無關的資訊請輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
     )
     agent = user.initiate_chat(assistant, message="成員名單:"+str(personal_name_list)+"使用者輸入:"+text+"",summary_method="last_msg")
     result = agent.summary
