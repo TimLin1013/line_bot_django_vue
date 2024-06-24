@@ -11,7 +11,7 @@
     </nav>
 
     <!-- 側邊 -->
-    <nav id="sidebar" class="bg-light">
+    <nav id="sidebar" ref="sidebar" :class="{ 'active': sidebarActive }" class="bg-light">
       <ul class="list-unstyled components">
         <li>
           <a href="#" @click="showPersonalExpense" :class="{ active: isPersonalExpense }">個人帳本</a>
@@ -25,7 +25,7 @@
       </ul>
     </nav>
 
-    <!-- 页面内容 -->
+    <!-- 頁面内容 -->
     <div id="content" class="p-4 p-md-5">
       <!-- 個人帳本 -->
       <div v-if="isPersonalExpense" class="personal-expense-container">
@@ -36,7 +36,7 @@
         </div>
         <div class="fixed-container">
           <div class="scrollable-block">
-            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+            <table v-if="filteredAccounts.length > 0" class="table table-striped">
               <thead>
                 <tr>
                   <th>項目</th>
@@ -45,10 +45,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="account in selectedAccounts" :key="account.id">
+                <tr v-for="account in filteredAccounts" :key="account.id">
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
-                  <td>{{ account.category_name }}</td>
+                  <td>{{ account.category__category_name }}</td>
                 </tr>
               </tbody>
             </table>
@@ -83,7 +83,7 @@
         </div>
         <div class="fixed-container">
           <div class="scrollable-block">
-            <table v-if="selectedAccounts.length > 0" class="table table-striped">
+            <table v-if="group_accounts.length > 0" class="table table-striped">
               <thead>
                 <tr>
                   <th>項目</th>
@@ -92,10 +92,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="account in selectedAccounts" :key="account.id">
+                <tr v-for="account in group_accounts" :key="account.id">
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
-                  <td>{{ account.category_name }}</td>
+                  <td>{{ account.category__category_name }}</td>
                 </tr>
               </tbody>
             </table>
@@ -110,41 +110,44 @@
 
       <!-- 還錢通知 -->
       <div v-if="isPayBack" class="payback-container">
-        <div class="scrollable-block">
-          <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
-            <thead>
-              <tr>
-                <th>歸還金額</th>
-                <th>欠款人</th>
-                <th>收款人</th>
-                <th>還錢狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(account, index) in payBackAccounts" :key="index">
-                <td>{{ account.return_payment }}</td>
-                <td>{{ account.payer }}</td>
-                <td>{{ account.receiver }}</td>
-                <td :class="{ 'unpaid': account.return_flag === 0 }">
-                  {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
-                </td>
-              </tr>
-              <tr v-for="(account, index) in payBackAccounts2" :key="index">
-                <td>{{ account.return_payment }}</td>
-                <td>{{ account.payer }}</td>
-                <td>{{ account.receiver }}</td>
-                <td :class="{ 'unpaid': account.return_flag === 0 }">
-                  {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}<!-- 這裡會相反 -->
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-else-if="loading" class="loading">載入中...</div>
-          <div v-else class="account-area-placeholder">
-            <h2>還錢通知：</h2>
-            <p>暫無資料</p>
+          <div class="scrollable-block">
+              <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
+                  <thead>
+                      <tr>
+                          <th>歸還金額</th>
+                          <th>欠款人</th>
+                          <th>收款人</th>
+                          <th>群組名稱</th>
+                          <th>還錢狀態</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr v-for="(account, index) in payBackAccounts" :key="index">
+                          <td>{{ account.return_payment }}</td>
+                          <td>{{ account.payer }}</td>
+                          <td>{{ account.receiver }}</td>
+                          <td>{{ account.group_name }}</td>
+                          <td :class="{ 'unpaid': account.return_flag === 0 }">
+                              {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
+                          </td>
+                      </tr>
+                      <tr v-for="(account, index) in payBackAccounts2" :key="index">
+                          <td>{{ account.return_payment }}</td>
+                          <td>{{ account.payer }}</td>
+                          <td>{{ account.receiver }}</td>
+                          <td>{{ account.group_name }}</td>
+                          <td :class="{ 'unpaid': account.return_flag === 0 }">
+                              {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}
+                          </td>
+                      </tr>
+                  </tbody>
+              </table>
+              <div v-else-if="loading" class="loading">載入中...</div>
+              <div v-else class="account-area-placeholder">
+                  <h2>還錢通知：</h2>
+                  <p>暫無資料</p>
+              </div>
           </div>
-        </div>
       </div>
 
       <!-- 底部按鈕 -->
@@ -186,6 +189,8 @@
 
 <script>
 import Swal from 'sweetalert2';
+import dayjs from 'dayjs'; 
+
 export default {
   data() {
     return {
@@ -210,24 +215,36 @@ export default {
       group_account: [],
       payBackAccounts: [],
       payBackAccounts2: [],
+      sidebarActive: false,
+      group_account: [],
     };
   },
   methods: {
     toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('active');
+      this.sidebarActive = !this.sidebarActive;
+    },
+    handleOutsideClick(e) {
+      const sidebar = this.$refs.sidebar;
+      const sidebarButton = document.getElementById('sidebarCollapse');
+      if (!sidebar.contains(e.target) && !sidebarButton.contains(e.target) && this.sidebarActive) {
+        this.sidebarActive = false;
+      }
     },
     showPersonalExpense() {
       this.isPersonalExpense = true;
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
+      this.toggleSidebar();
     },
     showGroupExpense() {
       this.isPersonalExpense = false;
       this.isGroupExpense = true;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
+      this.toggleSidebar();
     },
     showPayBack() {
       this.isPersonalExpense = false;
@@ -235,6 +252,7 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = true;
       this.fetchPayBack();
+      this.toggleSidebar();
     },
     prevMonth() {
       const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
@@ -258,35 +276,54 @@ export default {
       console.log('Fetching personal expense data for:', date.format('YYYY-MM'));
       const apiUrl = `${this.$apiUrl}/api/get_personal_expense_data/`;
       this.loading = true;
-      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.personal_id })
-        .then(response => {
-          this.accounts = response.data.accounts;
-        })
-        .catch(error => {
-          console.error('Error fetching personal expense data:', error);
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+      this.error = null;
+      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), personal_id: this.$root.$personal_id })
+          .then(response => {
+              this.accounts = response.data.accounts;
+          })
+          .catch(error => {
+              console.error('Error fetching personal expense data:', error);
+              if (error.response && error.response.status === 404) {
+                  this.error = 'No data found for this month.';
+              } else {
+                  this.error = 'Failed to fetch data. Please check your network and try again.';
+              }
+          })
+          .finally(() => {
+              this.loading = false;
+          });
     },
     fetchGroupExpenseDataForMonth(date) {
-      console.log('Fetching group expense data for:', date.format('YYYY-MM'));
-      const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
-      this.loading = true;
-      this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
+  console.log('Fetching group expense data for:', date.format('YYYY-MM'));
+  const apiUrl = `${this.$apiUrl}/api/get_group_expense_data/`;
+  this.loading = true;
+    this.error = null;
+    this.$axios.post(apiUrl, { account_date: date.format('YYYY-MM'), group_id: this.selectedGroupId })
         .then(response => {
-          this.accounts = response.data.accounts;
+            if (response.data.accounts) {
+                this.group_accounts = response.data.accounts;
+            } else {
+                this.group_accounts = [];
+            }
         })
         .catch(error => {
-          console.error('Error fetching group expense data:', error);
+            console.error('Error fetching group expense data:', error);
+            this.group_accounts = []; // 确保在发生错误时也初始化为空数组
+            if (error.response && error.response.status === 404) {
+                this.error = 'No data found for this month.';
+            } else {
+                this.error = 'Failed to fetch data. Please check your network and try again.';
+            }
         })
         .finally(() => {
-          this.loading = false;
+            this.loading = false;
         });
-    },
+  },
+
     navigateToOverview() {
       this.$router.push({ name: 'liff_account_overview' });
     },
+
     //群組記帳
     groupAccounting() {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
@@ -493,6 +530,7 @@ export default {
     },
     filterByGroup(groupId) {
       this.selectedGroupId = groupId;
+      this.fetchGroupExpenseDataForMonth(dayjs(this.currentYearMonth));
     },
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
@@ -539,11 +577,9 @@ export default {
           console.error(error);
         });
     },
-  },
-  mounted() {
-    const checkUserId = () => {
+    checkUserId() {
       if (this.$root.$userId === null || this.$root.$personal_id === null) {
-        setTimeout(checkUserId, 500);
+        setTimeout(() => this.checkUserId(), 500);
       } else {
         Promise.all([this.fetchAccounts(), this.fetchGroup(), this.fetchGroupAccount()])
           .then(() => {
@@ -551,22 +587,23 @@ export default {
           })
           .catch(error => {
             console.error("An error occurred while fetching data:", error);
-            this.loading = false; 
+            this.loading = false;
           });
       }
-    };
-    checkUserId();
+    },
+  },
+  mounted() {
+    this.checkUserId();
+    document.addEventListener('click', this.handleOutsideClick);
+    this.fetchPersonalExpenseDataForMonth(dayjs(this.currentYearMonth));
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleOutsideClick);
   },
   computed: {
-    selectedAccounts() {
+    filteredAccounts() {
       let filteredAccounts = this.accounts;
-      filteredAccounts = filteredAccounts.filter(account => account.flag === 1);
       filteredAccounts = filteredAccounts.filter(account => account.account_date.slice(0, 7) === this.currentYearMonth);
-      if (this.isPersonalExpense) {
-        return filteredAccounts;
-      } else if (this.isGroupExpense) {
-        return filteredAccounts.filter(account => account.group_id === this.selectedGroupId);
-      }
       return filteredAccounts;
     },
     selectedPayBackAccounts() {
@@ -608,17 +645,17 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 250px;
+  width: 150px;
   height: 100%;
   background: #FFEFDB;
-  transition: all 0.3s;
+  transition: all 0.5s ease;
+  transform: translateX(-250px);
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   z-index: 1020; 
-  display: none;
 }
 
 #sidebar.active {
-  display: block;
+  transform: translateX(0);
 }
 
 .sidebar-header {
@@ -799,6 +836,4 @@ body {
 .unpaid {
   color: red;
 }
-</style>
-
 </style>
