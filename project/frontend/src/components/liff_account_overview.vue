@@ -186,8 +186,8 @@
   display: flex;
   justify-content: space-between;
   position: fixed;
-  width: calc(100% - 20px);
-  height: 25px;
+  width:100% ;
+  height: 35px;
   top: 0;
 }
 
@@ -206,8 +206,8 @@
     margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
-    width: calc(100% - 20px);
-    height: 25px;
+    width: 100%;
+    height: 35px;
 }
 
 .summary-item2 {
