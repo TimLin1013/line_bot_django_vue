@@ -56,14 +56,11 @@ def get_group_expense_data(request):
         data = json.loads(request.body)
         group_id = data['group_id']
         account_date = data['account_date']
-
-        # Assuming the account_date is being sent as 'YYYY-MM'
-        # and your models have an 'account_date' that is a DateField
         expenses = GroupAccountTable.objects.filter(
             group_id=group_id,
             account_date__year=account_date[:4],  # First four characters are the year
             account_date__month=account_date[5:7]  # Characters 6 and 7 are the month
-        ).values('item', 'payment', 'category__category_name', 'account_date')  # Include necessary fields
+        ).values('item', 'payment', 'category_name', 'account_date')  # Include necessary fields
 
         return JsonResponse({"accounts": list(expenses)}, safe=False)
     except KeyError as e:
