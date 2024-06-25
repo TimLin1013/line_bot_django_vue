@@ -56,7 +56,7 @@
             </table>
             <div v-else-if="loading" class="loading">載入中...</div>
             <div v-else class="account-area-placeholder">
-              <h2>當天花費：</h2>
+              <h2>當月花費：</h2>
               <p>暫無資料</p>
             </div>
           </div>
@@ -65,18 +65,12 @@
 
       <!-- 群組帳本 -->
       <div v-if="isGroupExpense" class="group-expense-container">
-        <div class="group-buttons-container">
-          <div class="group-buttons">
-            <button
-              v-for="groups in group"
-                :key="groups.group_id"
-                class="btn"
-                :class="{ 'btn-primary': selectedGroupId === groups.group_id, 'btn-outline-primary': selectedGroupId !== groups.group_id }"
-                @click="filterByGroup(groups.group_id)"
-            >
+        <div class="group-selector">
+          <select class="form-select" v-model="selectedGroupId" @change="filterByGroup">
+            <option v-for="groups in group" :key="groups.group_id" :value="groups.group_id">
               {{ groups.group_name }}
-            </button>
-          </div>
+            </option>
+          </select>
         </div>
         <div class="date-selector">
           <button class="btn btn-outline-secondary" @click="prevMonth" :disabled="loading">←</button>
@@ -88,6 +82,7 @@
             <table v-if="filteredAccounts.length > 0" class="table table-striped">
               <thead>
                 <tr>
+                  <th>日期</th>
                   <th>項目</th>
                   <th>金額</th>
                   <th>類別</th>
@@ -95,6 +90,7 @@
               </thead>
               <tbody>
                 <tr v-for="account in filteredAccounts" :key="account.id">
+                  <td>{{ account.account_date }}</td>
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
@@ -103,7 +99,7 @@
             </table>
             <div v-else-if="loading" class="loading">載入中...</div>
             <div v-else class="account-area-placeholder">
-              <h2>當天花費：</h2>
+              <h2>當月花費：</h2>
               <p>暫無資料</p>
             </div>
           </div>
@@ -218,7 +214,6 @@ export default {
       payBackAccounts: [],
       payBackAccounts2: [],
       sidebarActive: false,
-      group_account: [],
     };
   },
   methods: {
@@ -474,10 +469,25 @@ export default {
           this.loading = false;
         });
     },
-    filterByGroup(groupId) {
-      this.selectedGroupId = groupId;
-      
+    filterByGroup() {
+      console.log('Selected Group ID:', this.selectedGroupId); 
+      this.loading = true;
+      this.$axios.post(`${this.$apiUrl}/api/get_group_expense_data/`, {
+        account_date: this.currentYearMonth,
+        group_id: this.selectedGroupId
+      })
+      .then(response => {
+        console.log('Group Expense Data:', response.data.accounts);
+        this.group_account = response.data.accounts;
+      })
+      .catch(error => {
+        console.error('Error fetching group expense data:', error);
+      })
+      .finally(() => {
+        this.loading = false;
+      });
     },
+
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
@@ -543,7 +553,11 @@ export default {
   mounted() {
     this.checkUserId();
     document.addEventListener('click', this.handleOutsideClick);
-    
+    // 初始化 selectedGroupId
+    // if (this.group.length > 0) {
+    //   this.selectedGroupId = this.group[0].group_id;
+    //   this.filterByGroup();
+    // }
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleOutsideClick);
