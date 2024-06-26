@@ -108,45 +108,56 @@
 
       <!-- 還錢通知 -->
       <div v-if="isPayBack" class="payback-container">
-          <div class="scrollable-block">
-              <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
-                  <thead>
-                      <tr>
-                          <th>歸還金額</th>
-                          <th>欠款人</th>
-                          <th>收款人</th>
-                          <th>群組名稱</th>
-                          <th>還錢狀態</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr v-for="(account, index) in payBackAccounts" :key="index">
-                          <td>{{ account.return_payment }}</td>
-                          <td>{{ account.payer }}</td>
-                          <td>{{ account.receiver }}</td>
-                          <td>{{ account.group_name }}</td>
-                          <td :class="{ 'unpaid': account.return_flag === 0 }">
-                              {{ account.return_flag === 0 ? '尚未歸還' : '已歸還' }}
-                          </td>
-                      </tr>
-                      <tr v-for="(account, index) in payBackAccounts2" :key="index">
-                          <td>{{ account.return_payment }}</td>
-                          <td>{{ account.payer }}</td>
-                          <td>{{ account.receiver }}</td>
-                          <td>{{ account.group_name }}</td>
-                          <td :class="{ 'unpaid': account.return_flag === 0 }">
-                              {{ account.return_flag === 0 ? '已歸還' : '尚未歸還' }}
-                          </td>
-                      </tr>
-                  </tbody>
-              </table>
-              <div v-else-if="loading" class="loading">載入中...</div>
-              <div v-else class="account-area-placeholder">
-                  <h2>還錢通知：</h2>
-                  <p>暫無資料</p>
-              </div>
+        <div class="scrollable-block">
+          <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
+            <thead>
+              <tr>
+                <th>歸還金額</th>
+                <th>欠款人</th>
+                <th>收款人</th>
+                <th>群組名稱</th>
+                <th>還錢狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(account, index) in payBackAccounts" :key="index">
+                <td>{{ account.return_payment }}</td>
+                <td>{{ account.payer }}</td>
+                <td>{{ account.receiver }}</td>
+                <td>{{ account.group_name }}</td>
+                <td>
+                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index)" class="btn btn-warning w-100">
+                    尚未歸還
+                  </button>
+                  <span v-else>
+                    已歸還
+                  </span>
+                </td>
+              </tr>
+              <tr v-for="(account, index) in payBackAccounts2" :key="index">
+                <td>{{ account.return_payment }}</td>
+                <td>{{ account.payer }}</td>
+                <td>{{ account.receiver }}</td>
+                <td>{{ account.group_name }}</td>
+                <td>
+                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index)" class="btn btn-warning w-100">
+                    尚未歸還
+                  </button>
+                  <span v-else>
+                    已歸還
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else-if="loading" class="loading">載入中...</div>
+          <div v-else class="account-area-placeholder">
+            <h2>還錢通知：</h2>
+            <p>暫無資料</p>
           </div>
+        </div>
       </div>
+
 
       <!-- 底部按鈕 -->
       <div class="bottom-buttons">
@@ -217,6 +228,45 @@ export default {
     };
   },
   methods: {
+    markAsPaid(index) {
+      Swal.fire({
+        title: '確認歸還?',
+        text: "您確定要將此條目標記為已歸還嗎?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '是的, 標記!',
+        cancelButtonText: '取消'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const apiUrl = `${this.$apiUrl}/api/mark_as_paid/`;
+          this.$axios.post(apiUrl, { account_id: this.payBackAccounts[index].return_id })
+            .then(response => {
+              if (response.data.success) {
+                this.payBackAccounts[index].return_flag = 1; // 更新本地状态
+                Swal.fire(
+                  '已標記!',
+                  '該條目已標記為已歸還.',
+                  'success'
+                );
+              } else {
+                Swal.fire(
+                  '錯誤!',
+                  '標記過程中出錯，請稍後再試.',
+                  'error'
+                );
+              }
+            })
+            .catch(error => {
+              console.error('Error marking as paid:', error);
+              Swal.fire(
+                '錯誤!',
+                '標記過程中出錯，請稍後再試.',
+                'error'
+              );
+            });
+        }
+      });
+    },
     toggleSidebar() {
       this.sidebarActive = !this.sidebarActive;
     },
@@ -234,8 +284,7 @@ export default {
       this.isPayBack = false;
       this.toggleSidebar();
     },
-    showGroupExpense() {
-      
+    showGroupExpense() {    
       this.isPersonalExpense = false;
       this.isGroupExpense = true;
       this.isAllExpense = false;
@@ -830,4 +879,9 @@ body {
 .unpaid {
   color: red;
 }
+.table .btn {
+  width: 100%;
+  padding: 6px 12px;
+}
+
 </style>

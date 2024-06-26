@@ -16,6 +16,29 @@ from module import func
 import json
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
+#6/25
+@csrf_exempt
+@require_http_methods(["POST"])
+def mark_as_paid(request):
+    try:
+        data = json.loads(request.body)
+        account_id = data['account_id']
+        print(f"Received account_id: {account_id}")  # 调试信息
+
+        account = ReturnTable.objects.get(return_id=account_id)  
+        account.return_flag = '1'  
+        account.save()
+
+        print("Account marked as paid successfully.")  # 调试信息
+        return JsonResponse({'success': True})
+    except ReturnTable.DoesNotExist:
+        print("Account not found.")  # 调试信息
+        return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
+    except Exception as e:
+        print(f"Error: {str(e)}")  # 打印异常信息
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 
 #6/22
 @csrf_exempt
@@ -94,6 +117,7 @@ def get_payback(request):
             for payback in payback_notifications:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
                 payback_data = {
+                    "return_id": payback.return_id,
                     "return_payment": payback.return_payment,
                     "payer": payback.payer,
                     "receiver": payback.receiver,

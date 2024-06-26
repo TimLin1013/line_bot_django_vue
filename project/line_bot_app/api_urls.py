@@ -22,5 +22,6 @@ urlpatterns = [
     path('get_group_keep_sure/',views.get_group_keep_sure,name = 'get_group_key_sure_api'),
     path('get_personal_expense_data/', views.get_personal_expense_data, name='get_personal_expense_data'),
     path('get_group_expense_data/', views.get_group_expense_data, name='get_group_expense_data'),
+    path('mark_as_paid/', views.mark_as_paid, name='mark_as_paid'),
 
 ]
