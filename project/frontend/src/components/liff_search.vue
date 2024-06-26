@@ -290,7 +290,8 @@ export default {
           }
           if (result.isConfirmed) {
             Swal.fire({
-              title: "群組記帳",
+              title: "群組帳目記帳",
+              inputLabel:"輸入記帳資訊ex:項目地點金額",
               input: "text",
               confirmButtonText: "送出",
               inputPlaceholder: "請輸入",
@@ -302,49 +303,69 @@ export default {
             }).then((result2) => {
               if (result2.value) {
                 const data = result2.value;
-                Swal.fire({
-                  title: "分帳人資訊",
-                  input: "text",
-                  confirmButtonText: "送出",
-                  inputPlaceholder: "請輸入",
-                }).then((result3) => {
-                  if(result3.value){
-                    const data2 = result3.value
+                const apiUrl = `${this.$apiUrl}/api/get_group_account_info_classification/`;
+                this.$axios.post(apiUrl, {user_input:data,group_id : result.value})
+                .then(response => {
+                  const classdata = response.data.temp;
+                  if (response.data.temp === '錯誤'){
                     Swal.fire({
-                      title: '請稍候...',
-                      allowOutsideClick: false,
-                      didOpen: () => {
-                        Swal.showLoading();
-                      }
+                        text: "請檢查輸入的記帳內容!",
+                        icon: "warning"
                     });
-                    const apiUrl = `${this.$apiUrl}/api/get_group_account_info/`;
-                    this.$axios.post(apiUrl, {user_input:data,user_input2:data2,group_id : result.value})
-                      .then(response => {
-                        Swal.close();
-                        console.log(response.data)
-                        if (response.data.temp === '錯誤') {
-                          Swal.fire({
-                            text: "請檢查輸入的記帳內容!",
-                            icon: "warning"
-                          });
-                        }
-                        if(response.data.temp2 ==='錯誤'){
-                          Swal.fire({
-                            text: "請檢查輸入的記帳內容!",
-                            icon: "warning"
-                          });
-                        }
-                        else {
-                          this.$router.push({ name: 'liff_group_form', params: { formData: response.data.temp,formData2:response.data.temp2 } });
-                        }
-                      })
-                      .catch(error => {
-                        Swal.close();
-                        console.error('Error:', error);
-                      })
                   }
+                  else{
+                    let data2 = ''
+                    Swal.fire({
+                      title: "分帳人資訊",
+                      inputLabel:"全部人之外，可輸入除外誰以外都要分帳，若不用分帳直接按送出！",
+                      html: `
+                          <button id="allPeopleButton" class="swal2-styled" style="background-color:#FFC299; ; color: black; padding: 10px 20px; font-size: 16px">全部人</button>
+                          `,
+                      input: "text",
+                      confirmButtonText: "送出",
+                      allowOutsideClick: false,
+                      inputPlaceholder: "請輸入",
+                      preConfirm: () => {
+                        if(data2 === ''){
+                          data2 = Swal.getInput().value;
+                        }
+                        return data2;
+                      }
+                    }).then((result3) => {
+                      data2 = result3.value
+                      Swal.fire({
+                        title: '請稍候...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                          Swal.showLoading();
+                        }
+                      });
+                      const apiUrl = `${this.$apiUrl}/api/get_group_account_info/`;
+                      this.$axios.post(apiUrl, {user_input2:data2,group_id : result.value})
+                        .then(response => {
+                          Swal.close();
+                          if(response.data.temp2 ==='錯誤'){
+                           Swal.fire({
+                              text: "請檢查輸入的記帳內容!",
+                              icon: "warning"
+                           });
+                          }
+                          else {
+                            this.$router.push({ name: 'liff_group_form', params: { formData: classdata,formData2:response.data.temp2 } });
+                          }
+                        })
+                        .catch(error => {
+                          Swal.close();
+                          console.error('Error:', error);
+                        })
+                  })
+                  document.getElementById('allPeopleButton').addEventListener('click', () => {
+                    data2 = '全部人';
+                    Swal.getInput().value = '全部人';
+                  })
+                }
                 });
-            }
+              } 
           });
         }
       });

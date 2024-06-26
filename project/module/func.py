@@ -35,21 +35,20 @@ def CreateGroup(groupname,user_id):
         user_instance = PersonalTable.objects.get(line_id=user_id)
         try:
             unit3 = PersonalGroupLinkingTable.objects.create(personal=user_instance,group=group)
-            #預設類別
-            unit3 = GroupCategoryTable(category_name = "早餐",transaction_type ='支出',group =unit.group_id )
-            unit4 = GroupCategoryTable(category_name = "午餐",transaction_type ='支出',group =unit.group_id)
-            unit5 = GroupCategoryTable(category_name = "晚餐",transaction_type ='支出',group =unit.group_id )
-            unit6 = GroupCategoryTable(category_name = "宵夜",transaction_type ='支出',group =unit.group_id)
-            unit7 = GroupCategoryTable(category_name = "點心",transaction_type ='支出',group =unit.group_id )
-            unit8 = GroupCategoryTable(category_name = "交通",transaction_type ='支出',group =unit.group_id)
-            unit9 = GroupCategoryTable(category_name = "娛樂",transaction_type ='支出',group =unit.group_id )
-            unit10 = GroupCategoryTable(category_name = "醫療",transaction_type ='支出',group =unit.group_id )
-            unit11 = GroupCategoryTable(category_name = "薪水",transaction_type ='收入',group =unit.group_id)
-            unit12 = GroupCategoryTable(category_name = "房租",transaction_type ='收入',group =unit.group_id)
-            unit13 = GroupCategoryTable(category_name = "房租",transaction_type ='支出',pgroup =unit.group_id )
-            unit14 = GroupCategoryTable(category_name = "購物",transaction_type ='支出',group =unit.group_id)
-            unit15 = GroupCategoryTable(category_name = "無",transaction_type ='無',group =unit.group_id)
             unit3.save()
+            #預設類別
+            unit16 = GroupCategoryTable(category_name = "早餐",transaction_type ='支出',group =unit )
+            unit4 = GroupCategoryTable(category_name = "午餐",transaction_type ='支出',group =unit)
+            unit5 = GroupCategoryTable(category_name = "晚餐",transaction_type ='支出',group =unit)
+            unit6 = GroupCategoryTable(category_name = "宵夜",transaction_type ='支出',group =unit)
+            unit7 = GroupCategoryTable(category_name = "點心",transaction_type ='支出',group =unit )
+            unit8 = GroupCategoryTable(category_name = "交通",transaction_type ='支出',group =unit)
+            unit9 = GroupCategoryTable(category_name = "娛樂",transaction_type ='支出',group =unit )
+            unit10 = GroupCategoryTable(category_name = "醫療",transaction_type ='支出',group =unit )
+            unit11 = GroupCategoryTable(category_name = "薪水",transaction_type ='收入',group =unit)
+            unit14 = GroupCategoryTable(category_name = "購物",transaction_type ='支出',group =unit)
+            unit15 = GroupCategoryTable(category_name = "無",transaction_type ='無',group =unit)
+            unit16.save()
             unit4.save()
             unit5.save()
             unit6.save()
@@ -58,8 +57,6 @@ def CreateGroup(groupname,user_id):
             unit9.save()
             unit10.save()
             unit11.save()
-            unit12.save()
-            unit13.save()
             unit14.save()
             unit15.save()
         except Exception as e:
@@ -91,7 +88,7 @@ def JoinGroup(personal_id,group_code):
 
 
 def classification(text):
-    config_list = [{'model': 'gpt-3.5-turbo','api_key': os.environ["OPENAI_API_KEY"],}]
+    config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
     os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
     # Create a user agent
     user = autogen.UserProxyAgent(
@@ -143,7 +140,7 @@ def group_account_spliter(group_id,text):
                 "personal_name":personal_name,
             }
         personal_name_list.append(personal_info)
-    config_list = [{'model': 'gpt-3.5-turbo','api_key': os.environ["OPENAI_API_KEY"],}]
+    config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
     os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
     # Create a user agent
     user = autogen.UserProxyAgent(
@@ -157,7 +154,8 @@ def group_account_spliter(group_id,text):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，輸出格式"+format+"，若與分帳人無關的資訊請輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
+        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，輸出格式"+format+"，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE",
+        llm_config={"config_list": config_list},
     )
     agent = user.initiate_chat(assistant, message="成員名單:"+str(personal_name_list)+"使用者輸入:"+text+"",summary_method="last_msg")
     result = agent.summary
@@ -174,20 +172,14 @@ def address_temporary(personal_id,item,payment,location,category,time):
     if category == "無" or '':
         unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name='無')
         category_id = unit.personal_category_id
-        if payment == '':
-            payment = 0
-        else:
-            payment = int(payment)
+        payment = int(payment)
         unit3 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
         unit3.save() 
     else:
         unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
         category_id = unit.personal_category_id
         #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
-        if payment == '':
-            payment = 0
-        else:
-            payment = int(payment)
+        payment = int(payment)
         unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
         unit2.save()    
 
@@ -212,6 +204,7 @@ def sqlagent(text,personal_id):
         personal_instance = i.personal
         category_instance = i.category
         data = {
+            "個人帳目編號":i.personal_account_id,
             '花費項目': i.item,
             "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
             '地點': i.location,
@@ -235,10 +228,10 @@ def sqlagent(text,personal_id):
         
     for k in linking_table:
         group_instance2 = k.group
-        group_table = GroupAccountTable.objects.filter(group=group_instance2)
+        group_category = GroupCategoryTable.objects.filter(group=group_instance2)
+        group_table = GroupAccountTable.objects.filter(category__in = group_category)
         for group in group_table:
-            group_instance3 = group.group
-            group_category = GroupCategoryTable.objects.get(group=group_instance3)
+            group_category = group.category
             data3 = {
                 '群組帳目編號': group.group_account_id,
                 '花費項目': group.item,
@@ -255,19 +248,21 @@ def sqlagent(text,personal_id):
 
     # 獲取拆帳信息
     split_info = SplitTable.objects.filter(personal=personal_id)
-
-    for l in split_info:
-        return_info = ReturnTable.objects.get(split=l.split_id)
+    return_info = ReturnTable.objects.filter(split__in=split_info)
+    for j in split_info:
         data4 = {
-            '我要付款的金額': l.payment,
-            '已經付款的金額': l.advance_payment,
-            '群組帳目編號':l.group_account_id,
+            "分帳編號":j.split_id,
+            '我要付款的金額': j.payment,
+            '已經付款的金額': j.advance_payment,
+            '群組帳目編號':j.group_account
         }
+    for l in return_info :
         data5={
-            '還錢金額': return_info.return_payment,
-            '付款人': return_info.payer,
-            '收款人': return_info.receiver,
-            '還錢flag(0為沒有還錢、1為還錢)': return_info.return_flag,
+            '分帳編號':l.split,
+            '還錢金額': l.return_payment,
+            '付款人': l.payer,
+            '收款人': l.receiver,
+            '還錢flag(0為沒有還錢、1為還錢)': l.return_flag,
         }
         split_info_list.append(data4)
         return_info_list.append(data5)
@@ -305,28 +300,79 @@ def address_group_temporary(group_id,item,payment,location,category,time,payer_i
     if category == "無" or '':
         unit = GroupCategoryTable.objects.get(group=group_instance,category_name='無')
         category_id = unit.group_category_id
-        if payment == '':
-            payment = 0
-        else:
-            payment = int(payment)
+        payment = int(payment)
         unit3 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
         unit3.save() 
-        unit = GroupAccountTable(group_account_id = unit3.group_account_id)
+        unit5 = GroupAccountTable.objects.get(group_account_id = unit3.group_account_id)
         for share in shares:
             person = share['person']
             percentage = share['percentage']
             advance = share['advance_percentage']
+            if advance == None:
+                advance = 0
+            else:
+                advance = int(advance)
             unit_instance = PersonalTable(personal_id = person)
-            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit,personal = unit_instance)
+            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
             unit4.save()
     else:
         unit = GroupCategoryTable.objects.get(group=group_instance,category_name=category)
         category_id = unit.group_category_id
         #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
-        if payment == '':
-            payment = 0
-        else:
-            payment = int(payment)
+        payment = int(payment)
         unit2 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
         unit2.save() 
+        unit5 = GroupAccountTable(group_account_id = unit2.group_account_id)
+        for share in shares:
+            person = share['person']
+            percentage = share['percentage']
+            advance = share['advance_percentage']
+            if advance == None:
+                advance = 0
+            else:
+                advance = int(advance)
+            unit_instance = PersonalTable(personal_id = person)
+            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
+            unit4.save()
+        
+#群組完成
+def address_group_sure(group_id,item,payment,location,category,time,payer_id,shares):
+    group_instance = GroupTable.objects.get(group_id=group_id)
+    unit = GroupCategoryTable.objects.get(group=group_instance,category_name=category)
+    category_id = unit.group_category_id
+    #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
+    payment = int(payment)
+    unit2 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,group = group_instance,category_id=category_id,personal_id=payer_id)
+    unit2.save() 
+    unit3 = GroupAccountTable.objects.get(group_account_id = unit2.group_account_id)
+    for share in shares:
+        person = share['person']
+        percentage = share['percentage']
+        advance = share['advance_percentage']
+        if advance == None:
+            advance = 0
+        else :
+            advance = int(advance)
+        unit_instance = PersonalTable(personal_id = person)
+        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit3,personal = unit_instance)
+        unit4.save()
+        #分帳
+        should = unit4.payment
+        pre  = unit4.advance_payment
+        spliter = unit4.personal.personal_id
+        spliters = PersonalTable.objects.get(personal_id = spliter)
+        spliter_name = spliters.user_name
+        total_payer = unit3.personal.personal_id
+        total_payers = PersonalTable.objects.get(personal_id = total_payer)
+        total_payers_name = total_payers.user_name
+        if person != total_payers.personal_id:
+            if (should - pre)>0:
+                pay = should - pre
+                unit_return = ReturnTable(return_payment = pay,payer = spliter_name,receiver =total_payers_name,return_flag = 0,split = unit4)
+                unit_return.save()
+            elif (should - pre)<0:
+                pay = pre - should 
+                unit_return2= ReturnTable(return_payment = pay,payer = total_payers_name,receiver=spliter_name,return_flag = 0,split = unit4)
+                unit_return2.save()
+    
     

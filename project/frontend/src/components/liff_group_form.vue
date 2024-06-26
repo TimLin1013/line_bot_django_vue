@@ -106,7 +106,7 @@ export default {
           }
         });
         if (person_member_id !== null) {
-          this.shares.push({ person: person_member_id, percentage: divide });
+          this.shares.push({ person: person_member_id, percentage: divide ,advance_percentage:null});
         }
       });
     },
@@ -148,16 +148,21 @@ export default {
       if (!this.indexList.includes(index)) {
         this.indexList.push(index);
       }
-      const modifiedShare = this.shares[index];
-      const modifiedAmount = Number(modifiedShare.percentage);
-      const remainingAmount = this.formData.payment - modifiedAmount;
-      this.shares[index].percentage = modifiedAmount
-      const temp = remainingAmount/(this.shares.length - this.indexList.length)
+      const totalAmount = this.formData.payment;
+      // 計算已修改的總金額
+      const totalModifiedAmount = this.indexList.reduce((sum, idx) => sum + Number(this.shares[idx].percentage), 0);
+      // 剩餘金額
+      const remainingAmount = totalAmount - totalModifiedAmount;
+      // 剩餘未修改的人數
+      const remainingPeopleCount = this.shares.length - this.indexList.length;
+      // 計算其他人的分帳金額
+      const newShareAmount = remainingPeopleCount > 0 ? remainingAmount / remainingPeopleCount : 0;
+
       for (let i = 0; i < this.shares.length; i++) {
         if (!this.indexList.includes(i)) {
-          this.shares[i].percentage = temp;
+          this.shares[i].percentage = newShareAmount;
         }
-      }    
+      }
     },
     updateAllShares() {
       const totalShares = this.shares.length;
@@ -204,18 +209,18 @@ export default {
         });
     },
     sure() {
-      if (this.person === '' || this.formData.item === '' || this.formData.payment === '' || this.category_temp === '' || this.transaction === '' || this.currentTime === '') {
+      if (this.formData.item === '' || this.formData.payment === '' || this.category_temp === '' || this.transaction === '' || this.currentTime === '') {
         Swal.fire({
           title: "無法完成(完成確認只有地點可為空)，只能按暫存!",
           icon: "warning"
         });
         return;
       }
-
       const apiUrl = `${this.$apiUrl}/api/get_group_keep_sure/`;
       console.log(apiUrl);
       this.$axios.post(apiUrl, {
-        userID: this.$root.$personal_id,
+        group_id: this.formData.group_id,
+        payer: this.personal,
         item: this.formData.item,
         payment: this.formData.payment,
         location: this.formData.location,
