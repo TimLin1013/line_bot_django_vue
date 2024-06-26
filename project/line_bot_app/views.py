@@ -202,7 +202,7 @@ def get_user_account(request):
                 unit9 = PersonalCategoryTable(category_name = "娛樂",transaction_type ='支出',personal =unit2 )
                 unit10 = PersonalCategoryTable(category_name = "醫療",transaction_type ='支出',personal =unit2)
                 unit11 = PersonalCategoryTable(category_name = "薪水",transaction_type ='收入',personal =unit2 )
-                unit12 = PersonalCategoryTable(category_name = "房租",transaction_type ='收入',personal =unit2 )
+                unit12 = PersonalCategoryTable(category_name = "付房租",transaction_type ='收入',personal =unit2 )
                 unit13 = PersonalCategoryTable(category_name = "房租",transaction_type ='支出',personal =unit2 )
                 unit14 = PersonalCategoryTable(category_name = "購物",transaction_type ='支出',personal =unit2)
                 unit15 = PersonalCategoryTable(category_name = "無",transaction_type ='無',personal =unit2)
@@ -285,16 +285,38 @@ def get_group_account_info(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            input_text = data.get('user_input')
+            #input_text = data.get('user_input')
             input_text2 = data.get('user_input2')
             if input_text2 == '':
                 temp2 = []
             group_id = data.get('group_id')
-            response_data = {'message': '成功接收數據','input': input_text}
-            temp = func.classification(input_text)
+            response_data = {'message': '成功接收數據'}
+            #temp = func.classification(input_text)
             temp2 = func.group_account_spliter(group_id,input_text2)
-            temp['group_id'] = group_id
-            return JsonResponse({**response_data,'temp':temp,'temp2':temp2})
+            #temp['group_id'] = group_id
+            return JsonResponse({**response_data,'temp2':temp2})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_account_info_classificaiton(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            input_text = data.get('user_input')
+            group_id = data.get('group_id')
+            print(group_id)
+            response_data = {'message': '成功接收數據'}
+            temp = func.classification(input_text)
+            if temp != '錯誤':
+                temp['group_id'] = group_id
+            return JsonResponse({**response_data,'temp':temp})
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
@@ -673,7 +695,7 @@ def catch_member(request):
                 existing_names = [info["personal_name"] for info in personal_name_list]
                 if personal_name in existing_names:
                     personal_info={
-                        "personal_name":personal_name + "id:" +personal_id,
+                        "personal_name":personal_name + "" +personal_id,
                         "personal_id":personal_id
                     }
                 else:
@@ -705,6 +727,7 @@ def get_group_keep_temporary(request):
             item = data.get('item')
             payment = data.get('payment')
             location = data.get('location')
+            category = data.get('category')
             if data.get('category') == '':
                 category='無'
             else:
@@ -714,6 +737,38 @@ def get_group_keep_temporary(request):
             time += timedelta(hours=8)
             shares = data.get('shares')
             func.address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares)
+            response_data ='成功接收數據'
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_keep_sure(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('group_id')
+            payer_id = data.get('payer')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            category = data.get('category')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = category.get('category_name')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            shares = data.get('shares')
+            func.address_group_sure(group_id,item,payment,location,category,time,payer_id,shares)
             response_data ='成功接收數據'
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
