@@ -102,7 +102,7 @@ def classification(text):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200元,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租等等就是抓花費的項目或是支出的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200,100等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租等等就是抓花費的項目或是支出的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
         llm_config={"config_list": config_list},
     )
     user_input=text
@@ -194,8 +194,7 @@ def sqlagent(text,personal_id):
     personal_info_list = []
     group_info_list = []
     group_account_list = []
-    split_info_list = []
-    return_info_list=[]
+    split_return_list = []
     personal_info = PersonalTable.objects.get(personal_id=personal_id)
     personal_category_info = PersonalCategoryTable.objects.filter(personal=personal_id)
     personal_account_info = PersonalAccountTable.objects.filter(personal=personal_info, category__in=personal_category_info)
@@ -247,25 +246,20 @@ def sqlagent(text,personal_id):
             group_account_list.append(data3)
 
     # 獲取拆帳信息
-    split_info = SplitTable.objects.filter(personal=personal_id)
-    return_info = ReturnTable.objects.filter(split__in=split_info)
-    for j in split_info:
-        data4 = {
-            "分帳編號":j.split_id,
-            '我要付款的金額': j.payment,
-            '已經付款的金額': j.advance_payment,
-            '群組帳目編號':j.group_account
-        }
-    for l in return_info :
-        data5={
-            '分帳編號':l.split,
-            '還錢金額': l.return_payment,
-            '付款人': l.payer,
-            '收款人': l.receiver,
-            '還錢flag(0為沒有還錢、1為還錢)': l.return_flag,
-        }
-        split_info_list.append(data4)
-        return_info_list.append(data5)
+    split_instance  = SplitTable.objects.filter(personal = personal_info)
+    for m in split_instance:
+        group_account = m.group_account
+        split = SplitTable.objects.filter(group_account = group_account)
+        for l in split:
+            return_account = ReturnTable.objects.filter(split = l)
+            for h in return_account:
+                data4 = {
+                    '還錢金額':h.return_payment,
+                    '欠款人':h.payer,
+                    '收款人':h.receiver,
+                    '還錢flag':h.return_flag
+                }  
+                split_return_list.append(data4) 
     config_list = [
         {
             'model': 'gpt-4',
@@ -284,11 +278,11 @@ def sqlagent(text,personal_id):
 
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問器，有邏輯且適當精簡不要輸出list名稱與個人與帳目等等的id，以下為各個list的詳細資訊，若與資料庫無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目詢問器，請全部看完給予的list，然後有邏輯且適當精簡去回答，並不要輸出list名稱與個人與帳目等等的id，還錢flag(0為未還錢、1為已經還錢)，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
         llm_config={"config_list": config_list},
     )
-    account = str(personal_info_list)+str(group_info_list)+str(group_account_list)+str(split_info_list)+str(return_info_list)
-    output=user.initiate_chat(assistant, message="帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
+    account = str(personal_info_list)+str(group_info_list)+str(group_account_list)+str(split_return_list)
+    output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
     result = output.summary
     if result[:5] == 'ERROR':
         return "這問題與資料庫無關，請重新詢問！"
