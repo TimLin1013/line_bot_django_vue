@@ -98,11 +98,11 @@ def classification(text):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}"
+    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點,交易類型)}"
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200元,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租等等就是抓花費的項目或是支出的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若與抓取參數無關請輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200元,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，交易類型(收入/支出)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
         llm_config={"config_list": config_list},
     )
     user_input=text
@@ -176,8 +176,14 @@ def address_temporary(personal_id,item,payment,location,category,time):
         unit3 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
         unit3.save() 
     else:
+        if personal_id is None:
+            personal_id = "Unknown"
+        if category is None:
+            category = "Unknown"
+        print(personal_id + "  " + category)
         unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
         category_id = unit.personal_category_id
+        
         #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
         payment = int(payment)
         unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
