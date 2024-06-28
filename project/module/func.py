@@ -98,12 +98,12 @@ def classification(text):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點,交易類型)}"
+    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}"
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
 
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200元,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，交易類型(收入/支出)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200元,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
 
         llm_config={"config_list": config_list},
     )
@@ -156,7 +156,7 @@ def group_account_spliter(group_id,text):
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，輸出格式"+format+"，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE",
+        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表沒有人要進行分帳，輸出格式"+format+"，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE",
         llm_config={"config_list": config_list},
     )
     agent = user.initiate_chat(assistant, message="成員名單:"+str(personal_name_list)+"使用者輸入:"+text+"",summary_method="last_msg")
@@ -167,7 +167,6 @@ def group_account_spliter(group_id,text):
         result2 = agent.summary
         names = result2.strip().rstrip(',').split(',')
         split = [name.strip() for name in names]
-        print(split)
         return split
 #暫存
 def address_temporary(personal_id,item,payment,location,category,time):
@@ -362,19 +361,15 @@ def address_group_sure(group_id,item,payment,location,category,time,payer_id,sha
         should = unit4.payment
         pre  = unit4.advance_payment
         spliter = unit4.personal.personal_id
-        spliters = PersonalTable.objects.get(personal_id = spliter)
-        spliter_name = spliters.user_name
         total_payer = unit3.personal.personal_id
-        total_payers = PersonalTable.objects.get(personal_id = total_payer)
-        total_payers_name = total_payers.user_name
-        if person != total_payers.personal_id:
+        if person != total_payer:
             if (should - pre)>0:
                 pay = should - pre
-                unit_return = ReturnTable(return_payment = pay,payer = spliter_name,receiver =total_payers_name,return_flag = 0,split = unit4)
+                unit_return = ReturnTable(return_payment = pay,payer = spliter,receiver =total_payer,return_flag = 0,split = unit4)
                 unit_return.save()
             elif (should - pre)<0:
                 pay = pre - should 
-                unit_return2= ReturnTable(return_payment = pay,payer = total_payers_name,receiver=spliter_name,return_flag = 0,split = unit4)
+                unit_return2= ReturnTable(return_payment = pay,payer = total_payer,receiver=spliter,return_flag = 0,split = unit4)
                 unit_return2.save()
     
     

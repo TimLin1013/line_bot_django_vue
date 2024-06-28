@@ -496,6 +496,8 @@ export default {
                 Swal.fire({
                   title: "成功加入群組!",
                   icon: "success"
+                }).then(() => {
+                  this.fetchGroup()
                 });
               }
             });
@@ -519,10 +521,6 @@ export default {
         if (result.isConfirmed) {
           const groupname = result.value;
           this.creategroup_axios(groupname);
-          Swal.fire({
-            title: "創建成功!",
-            icon: "success"
-          });
         }
       });
     },
@@ -531,6 +529,14 @@ export default {
       this.$axios.post(apiUrl, { GroupName: groupname, userId: this.$root.$userId })
         .then(response => {
           console.log(response);
+          if(response.data==='成功接收數據'){
+              Swal.fire({
+              title: "創建成功!",
+              icon: "success"
+            }).then(() => {
+              this.fetchGroup()
+            });
+          }
         })
         .catch(error => {
           console.error(error);
@@ -539,25 +545,6 @@ export default {
           this.loading = false;
         });
     },
-    /*filterByGroup() {
-      console.log('Selected Group ID:', this.selectedGroupId); 
-      this.loading = true;
-      this.$axios.post(`${this.$apiUrl}/api/get_group_expense_data/`, {
-        account_date: this.currentYearMonth,
-        group_id: this.selectedGroupId
-      })
-      .then(response => {
-        console.log('Group Expense Data:', response.data.accounts);
-        this.group_account = response.data.accounts;
-      })
-      .catch(error => {
-        console.error('Error fetching group expense data:', error);
-      })
-      .finally(() => {
-        this.loading = false;
-      });
-    },*/ 
-    
 
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
