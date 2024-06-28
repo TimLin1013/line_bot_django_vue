@@ -90,7 +90,7 @@
               </thead>
               <tbody>
                 <tr v-for="account in filteredAccounts" :key="account.id">
-                  <td>{{ account.account_date }}</td>
+                  <td>{{ account.account_date.slice(5, 10) }}</td>
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
@@ -130,7 +130,7 @@
                     尚未歸還
                   </button>
                   <span v-else>
-                    已歸還
+                    {{ 已歸還 }}
                   </span>
                 </td>
               </tr>
@@ -140,12 +140,12 @@
                 <td>{{ account.receiver }}</td>
                 <td>{{ account.group_name }}</td>
                 <td>
-                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index)" class="btn btn-warning w-100">
+                  <p v-if="account.return_flag === '0'">
                     尚未歸還
-                  </button>
-                  <span v-else>
+                  </p>
+                  <p v-else>
                     已歸還
-                  </span>
+                  </p>
                 </td>
               </tr>
             </tbody>
@@ -239,7 +239,7 @@ export default {
       }).then((result) => {
         if (result.isConfirmed) {
           const apiUrl = `${this.$apiUrl}/api/mark_as_paid/`;
-          this.$axios.post(apiUrl, { account_id: this.payBackAccounts[index].return_id })
+          this.$axios.post(apiUrl, { return_id: this.payBackAccounts[index].return_id })
             .then(response => {
               if (response.data.success) {
                 this.payBackAccounts[index].return_flag = 1; // 更新本地状态
@@ -419,10 +419,10 @@ export default {
         }
       });
     })
-    .catch(error => {
-      console.error('Error:', error);
-    });
-},
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    },
 
     voiceTextAccounting() {
       Swal.fire({
@@ -564,6 +564,7 @@ export default {
         .then(response => {
           this.payBackAccounts = response.data.payer_payback_list;
           this.payBackAccounts2 = response.data.receiver_payback_list;
+          console.log(response.data)
         })
         .catch(error => {
           console.error(error);
@@ -594,22 +595,22 @@ export default {
           console.error(error);
         });
     },
-    fetchGroupAccount() {
-      const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
-      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
-        .then(response => {
-          this.group_account= response.data.group_account
-          console.log(response);
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    },
+    // fetchGroupAccount() {
+    //   const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
+    //   this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+    //     .then(response => {
+    //       this.group_account= response.data.group_account
+    //       console.log(response);
+    //     })
+    //     .catch(error => {
+    //       console.error(error);
+    //     });
+    // },
     checkUserId() {
       if (this.$root.$userId === null || this.$root.$personal_id === null) {
         setTimeout(() => this.checkUserId(), 500);
       } else {
-        Promise.all([this.fetchAccounts(), this.fetchGroup(), this.fetchGroupAccount()])
+        Promise.all([this.fetchAccounts(), this.fetchGroup()])
           .then(() => {
             this.loading = false;
           })
@@ -623,11 +624,6 @@ export default {
   mounted() {
     this.checkUserId();
     document.addEventListener('click', this.handleOutsideClick);
-    // 初始化 selectedGroupId
-    // if (this.group.length > 0) {
-    //   this.selectedGroupId = this.group[0].group_id;
-    //   this.filterByGroup();
-    // }
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleOutsideClick);
@@ -646,8 +642,6 @@ export default {
       } else if (this.isGroupExpense) {
         return filtereGroupdAccounts;
       }
-
-      return filteredAccounts;
     },
     selectedPayBackAccounts() {
       let filteredAccounts = this.payBackAccounts;

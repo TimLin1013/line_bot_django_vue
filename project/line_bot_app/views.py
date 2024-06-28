@@ -13,32 +13,47 @@ from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import *
 from line_bot_app.models import *
 from module import func
+from line_bot_app import mail
 import json
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
+
+def get_line_id_by_name(name):
+    try:
+        person = PersonalTable.objects.get(user_name=name)
+        return person.line_id
+    except Exception as e:
+        print("Error retrieving user by name:", str(e))
+        return None
+
 #6/25
 @csrf_exempt
 @require_http_methods(["POST"])
 def mark_as_paid(request):
     try:
         data = json.loads(request.body)
-        account_id = data['account_id']
-        print(f"Received account_id: {account_id}")  # 调试信息
+        return_id = data['return_id']
 
-        account = ReturnTable.objects.get(return_id=account_id)  
-        account.return_flag = '1'  
+        account = ReturnTable.objects.get(return_id=return_id)
+        account.return_flag = '1'
         account.save()
 
-        print("Account marked as paid successfully.")  # 调试信息
-        return JsonResponse({'success': True})
+        # 從名字獲取line_id
+        receiver_line_id = get_line_id_by_name(account.receiver)
+        if receiver_line_id:
+            receiver_message = f"{account.payer} 已歸還款項給你。"
+            mail(receiver_line_id, receiver_message)
+            print("Account marked as paid successfully.")
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Receiver LINE ID not found'}, status=404)
+
     except ReturnTable.DoesNotExist:
-        print("Account not found.")  # 调试信息
+        print("Account not found.")
         return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
     except Exception as e:
-        print(f"Error: {str(e)}")  # 打印异常信息
+        print(f"Error: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
 
 #6/22
 @csrf_exempt
@@ -61,7 +76,7 @@ def get_personal_expense_data(request):
                 personal_id=personal_id,
                 account_date__year=year,
                 account_date__month=month
-            ).values('item', 'payment', 'category__category_name', 'account_date', 'location')
+            ).values('item', 'payment', 'category_name', 'account_date', 'location')
 
             accounts_list = list(accounts)  # 將查詢結果轉換為字典列表
 
@@ -84,8 +99,8 @@ def get_group_expense_data(request):
             account_date__year=account_date[:4],  # First four characters are the year
             account_date__month=account_date[5:7]  # Characters 6 and 7 are the month
         ).values('item', 'payment', 'category_name', 'account_date')  # Include necessary fields
-
-        return JsonResponse({"accounts": list(expenses)}, safe=False)
+        account_list = list(expenses)
+        return JsonResponse({"accounts": account_list}, safe=False)
     except KeyError as e:
         return JsonResponse({'error': str(e) + ' is missing'}, status=400)
     except Exception as e:
@@ -104,15 +119,13 @@ def get_payback(request):
         try:
             data = json.loads(request.body.decode('utf-8'))
             personal_id = data.get('personal_id')
-            user_instance = PersonalTable.objects.get(personal_id=personal_id)
-            user_name = user_instance.user_name
 
             # 加入群組名稱的查詢
-            group_links = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
+            group_links = PersonalGroupLinkingTable.objects.filter(personal=personal_id)
             group_names = {link.group.group_id: link.group.group_name for link in group_links}
 
             # 使用 ReturnTable 模型來檢索還錢通知數據
-            payback_notifications = ReturnTable.objects.filter(payer=user_name)
+            payback_notifications = ReturnTable.objects.filter(payer=personal_id)
             payer_payback_list = []
             for payback in payback_notifications:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
@@ -126,7 +139,7 @@ def get_payback(request):
                 }
                 payer_payback_list.append(payback_data)
 
-            payback_notifications2 = ReturnTable.objects.filter(receiver=user_name)
+            payback_notifications2 = ReturnTable.objects.filter(receiver=personal_id)
             receiver_payback_list = []
             for payback in payback_notifications2:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
@@ -538,51 +551,51 @@ def get_group(request):
     else:
         return HttpResponse('Only POST requests are allowed', status=405)
     
-@csrf_exempt
-@require_http_methods(["POST", "OPTIONS"])
-def get_group_account(request):
-    if request.method == "OPTIONS":
-        response = HttpResponse()
-        response['Allow'] = 'POST, OPTIONS'
-        return response
+# @csrf_exempt
+# @require_http_methods(["POST", "OPTIONS"])
+# def get_group_account(request):
+#     if request.method == "OPTIONS":
+#         response = HttpResponse()
+#         response['Allow'] = 'POST, OPTIONS'
+#         return response
 
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body.decode('utf-8'))
-            personal_id = data.get('personal_id')
-            user_instance = PersonalTable.objects.get(personal_id=personal_id)
-            group_account = GroupAccountTable.objects.filter(personal=user_instance)
-            #print("id :"+personal_id)
-            group_account_list = []
-            for account in group_account:
-                group_instance=account.group
-                category_instance=account.category
-                group_account_data = {
-                    "item": account.item,
-                    "group_name": group_instance.group_name,
-                    "account_date": account.account_date.strftime(
-                        '%Y-%m-%d') if account.account_date else None,
-                    "location":account.location,
-                    "payment":account.payment,
-                    "category_name":category_instance.category_name,
-                    "flag":account.info_complete_flag,
-                    "group_id":account.group_account_id
-                }
-                group_account_list.append(group_account_data)
-            response_data = {
-                "message": "Data received successfully",
-                "group_account": group_account_list,
-                "user_id": personal_id,
-            }
-            return HttpResponse(json.dumps(response_data), content_type="application/json")
-        except json.JSONDecodeError:
-            return HttpResponse('Invalid JSON', status=400)
-        except PersonalTable.DoesNotExist:
-            return HttpResponse('User not found', status=404)
-        except Exception as e:
-            return HttpResponse(str(e), status=500)
-    else:
-        return HttpResponse('Only POST requests are allowed', status=405)
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body.decode('utf-8'))
+#             personal_id = data.get('personal_id')
+#             user_instance = PersonalTable.objects.get(personal_id=personal_id)
+#             group_account = GroupAccountTable.objects.filter(personal=user_instance)
+#             #print("id :"+personal_id)
+#             group_account_list = []
+#             for account in group_account:
+#                 group_instance=account.group
+#                 category_instance=account.category
+#                 group_account_data = {
+#                     "item": account.item,
+#                     "group_name": group_instance.group_name,
+#                     "account_date": account.account_date.strftime(
+#                         '%Y-%m-%d') if account.account_date else None,
+#                     "location":account.location,
+#                     "payment":account.payment,
+#                     "category_name":category_instance.category_name,
+#                     "flag":account.info_complete_flag,
+#                     "group_id":account.group_account_id
+#                 }
+#                 group_account_list.append(group_account_data)
+#             response_data = {
+#                 "message": "Data received successfully",
+#                 "group_account": group_account_list,
+#                 "user_id": personal_id,
+#             }
+#             return HttpResponse(json.dumps(response_data), content_type="application/json")
+#         except json.JSONDecodeError:
+#             return HttpResponse('Invalid JSON', status=400)
+#         except PersonalTable.DoesNotExist:
+#             return HttpResponse('User not found', status=404)
+#         except Exception as e:
+#             return HttpResponse(str(e), status=500)
+#     else:
+#         return HttpResponse('Only POST requests are allowed', status=405)
 #報表個人資料
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
@@ -651,6 +664,7 @@ def personal_report(request):
                 "income_total": income_total,
                 "expense_total":expense_total
             }
+            print(response_data)
             return JsonResponse(json.dumps(response_data), safe=False)
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
