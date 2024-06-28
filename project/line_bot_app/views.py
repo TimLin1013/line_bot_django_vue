@@ -84,7 +84,6 @@ def get_group_expense_data(request):
             account_date__year=account_date[:4],  # First four characters are the year
             account_date__month=account_date[5:7]  # Characters 6 and 7 are the month
         ).values('item', 'payment', 'category_name', 'account_date')  # Include necessary fields
-
         return JsonResponse({"accounts": list(expenses)}, safe=False)
     except KeyError as e:
         return JsonResponse({'error': str(e) + ' is missing'}, status=400)
@@ -600,52 +599,25 @@ def personal_report(request):
             date = str(date)
             income_total=0
             expense_total=0
+            split_total=0
             #把income和expense的資料抓出來
             income_accounts = PersonalAccountTable.objects.filter(personal=personal_id,info_complete_flag=1 ,category__transaction_type='收入',account_date__startswith = date)
             expense_accounts = PersonalAccountTable.objects.filter(personal=personal_id,info_complete_flag=1, category__transaction_type='支出',account_date__startswith = date)
-            #先把使用者所有的群組抓出來
-            user_instance = PersonalTable.objects.get(personal_id=personal_id)
-            group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
-            temp = 0
-            temp2 = 0
-            temp3 = 0
-            records = []
-            records2 = []
-            group_account_income_ids = []
-            group_account_expense_ids = []
-            #然後有關於使用者所有的群組相關帳全部抓出來
-            for group_instance in group_instances:
-                group_table_instance = group_instance.group
-                group_accounts = GroupAccountTable.objects.filter(group=group_table_instance)
-                #這裡分的就是每筆群組帳收入還是支出，因為這樣抓是split_table需要連動到個人的報表
-                for account in group_accounts:
-                    category_instance = account.category
-                    account_date =account.account_date
-                    year_month = account_date.strftime('%Y-%m')
-                    if category_instance.transaction_type == '收入' and year_month == date:
-                        group_account_income_ids.append(account.group_account_id)
-                    if category_instance.transaction_type =='支出' and  year_month == date:
-                        group_account_expense_ids.append(account.group_account_id)
-            #這裡就是抓收入和支出的資訊
-            for group_account_id in group_account_income_ids:
-                records.extend(SplitTable.objects.filter(group_account=group_account_id))
-            records = records
-            for group_account_id in group_account_expense_ids:
-                records2.extend(SplitTable.objects.filter(group_account=group_account_id))
-            records2 = records2
-            #把每筆資料的payment加起來
+            split_accounts = SplitTable.objects.filter(personal = personal_id)
+            
+            #收入加起來
             for income in income_accounts:
                 temp = income.payment
                 income_total += temp
-            for record in records:
-                temp2 = record.payment
-                income_total += temp2
+            #支出加起來
             for expense in expense_accounts:
                 temp2 = expense.payment
                 expense_total += temp2
-            for record2 in records2:
-                temp3 = record2.payment
-                expense_total += temp3
+            #群組分帳之後的加起來
+            for split in split_accounts:
+                temp3 = split.payment
+                split_total += temp3
+            expense_total = expense_total + split_total
             response_data = {
                 "message": "Data received successfully",
                 "income_total": income_total,
