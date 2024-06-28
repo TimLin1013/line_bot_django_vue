@@ -359,7 +359,7 @@ def get_keep_temporary(request):
             if data.get('category') == '':
                 category='無'
             else:
-                category = category.get('category_name')
+                category = data.get('category')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)

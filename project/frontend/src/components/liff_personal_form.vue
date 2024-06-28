@@ -1,9 +1,9 @@
 <template>
   <div class="row" style="margin: 10px">
-      <label >個人ID</label>
+      <label>個人ID</label>
       <input v-model="personal_id" readonly type="text" class="form-control" />
       <br>
-      <label >項目</label>
+      <label>項目</label>
       <input v-model="formData.item" type="text" class="form-control" />
       <br>
       <label>金額</label>
@@ -16,7 +16,7 @@
       <input v-model="formData.location" type="text" class="form-control" />
       <br>
       <label>交易類型</label>
-      <select v-model="transaction" class="form-control" >
+      <select v-model="transaction" class="form-control">
         <option value="" disabled>請選擇</option>
         <option value="expenditure">支出</option>
         <option value="income">收入</option>
@@ -25,13 +25,15 @@
       <label>類別</label>
       <select v-model="formData.category" class="form-control">
         <option value="" disabled>請選擇</option>
-        <option v-for="category in this.tmp_list" :key="category" :value="category">
+        <option v-for="category in tmp_list" :key="category" :value="category.category_name">
           {{ category.category_name }}
         </option>
       </select>
       <br>
       <button @click="temporary" class="btn btn-warning btn-block">暫存</button>
       <button @click="sure" class="btn btn-warning btn-block">完成確定</button>
+      <br>
+      
   </div>
 </template>
 
@@ -48,7 +50,8 @@ export default {
       currentTime: this.formatCurrentTime(),
       tmp_list: [],
       date: '',
-      transaction: this.formData.transaction_type
+      transaction: this.formData.transaction_type,
+      selectedCategory: ''
     };
   },
   watch: {
@@ -60,6 +63,9 @@ export default {
       } else if (newValue === 'income') {
         this.handleIncome();
       }
+    },
+    selectedCategory(newValue) {
+      this.formData.category = newValue; 
     }
   },
   mounted() {
@@ -146,7 +152,6 @@ export default {
     },
     handleIncome() {
       this.tmp_list = this.category_list.filter(category_list => category_list.transaction_type === "收入")
-
     }
   },
 };
@@ -182,5 +187,4 @@ export default {
   background-color: #e0a800;
   border-color: #d39e00;
 }
-
 </style>
