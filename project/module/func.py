@@ -270,7 +270,7 @@ def sqlagent(text,personal_id):
                 split_return_list.append(data4) 
     config_list = [
         {
-            'model': 'gpt-4',
+            'model': 'gpt-4o',
             'api_key':os.environ["OPENAI_API_KEY"],
         },
         ]

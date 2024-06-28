@@ -66,7 +66,7 @@
       <!-- 群組帳本 -->
       <div v-if="isGroupExpense" class="group-expense-container">
         <div class="group-selector">
-          <select class="form-select" v-model="selectedGroupId" @change="filterByGroup">
+          <select class="form-select" v-model="selectedGroupId">
             <option v-for="groups in group" :key="groups.group_id" :value="groups.group_id">
               {{ groups.group_name }}
             </option>
@@ -91,7 +91,7 @@
               <tbody>
                 <tr v-for="account in filteredAccounts" :key="account.id">
                   <td>{{ account.account_date.slice(5, 10) }}</td>
-                  <td>{{ account.item }}</td>
+                  <td>{{ account.group_account_item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                 </tr>
@@ -539,7 +539,7 @@ export default {
           this.loading = false;
         });
     },
-    filterByGroup() {
+    /*filterByGroup() {
       console.log('Selected Group ID:', this.selectedGroupId); 
       this.loading = true;
       this.$axios.post(`${this.$apiUrl}/api/get_group_expense_data/`, {
@@ -556,7 +556,8 @@ export default {
       .finally(() => {
         this.loading = false;
       });
-    },
+    },*/ 
+    
 
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
@@ -595,22 +596,22 @@ export default {
           console.error(error);
         });
     },
-    // fetchGroupAccount() {
-    //   const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
-    //   this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
-    //     .then(response => {
-    //       this.group_account= response.data.group_account
-    //       console.log(response);
-    //     })
-    //     .catch(error => {
-    //       console.error(error);
-    //     });
-    // },
+    fetchGroupAccount() {
+      const apiUrl = `${this.$apiUrl}/api/get_group_account/`;
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+        .then(response => {
+          this.group_account= response.data.group_account
+          console.log(response.data);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    },
     checkUserId() {
       if (this.$root.$userId === null || this.$root.$personal_id === null) {
         setTimeout(() => this.checkUserId(), 500);
       } else {
-        Promise.all([this.fetchAccounts(), this.fetchGroup()])
+        Promise.all([this.fetchAccounts(), this.fetchGroup(),this.fetchGroupAccount()])
           .then(() => {
             this.loading = false;
           })
@@ -627,6 +628,11 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('click', this.handleOutsideClick);
+  },
+  watch: {
+    selectedGroupId(newValue) {
+      this.selectedGroupId = newValue; 
+    }
   },
   computed: {
     filteredAccounts() {

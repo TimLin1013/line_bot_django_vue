@@ -402,7 +402,6 @@ def get_keep_sure(request):
             payment = data.get('payment')
             location = data.get('location')
             category = data.get('category')
-            category = category.get('category_name')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
@@ -553,51 +552,55 @@ def get_group(request):
     else:
         return HttpResponse('Only POST requests are allowed', status=405)
     
-# @csrf_exempt
-# @require_http_methods(["POST", "OPTIONS"])
-# def get_group_account(request):
-#     if request.method == "OPTIONS":
-#         response = HttpResponse()
-#         response['Allow'] = 'POST, OPTIONS'
-#         return response
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_group_account(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
 
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body.decode('utf-8'))
-#             personal_id = data.get('personal_id')
-#             user_instance = PersonalTable.objects.get(personal_id=personal_id)
-#             group_account = GroupAccountTable.objects.filter(personal=user_instance)
-#             #print("id :"+personal_id)
-#             group_account_list = []
-#             for account in group_account:
-#                 group_instance=account.group
-#                 category_instance=account.category
-#                 group_account_data = {
-#                     "item": account.item,
-#                     "group_name": group_instance.group_name,
-#                     "account_date": account.account_date.strftime(
-#                         '%Y-%m-%d') if account.account_date else None,
-#                     "location":account.location,
-#                     "payment":account.payment,
-#                     "category_name":category_instance.category_name,
-#                     "flag":account.info_complete_flag,
-#                     "group_id":account.group_account_id
-#                 }
-#                 group_account_list.append(group_account_data)
-#             response_data = {
-#                 "message": "Data received successfully",
-#                 "group_account": group_account_list,
-#                 "user_id": personal_id,
-#             }
-#             return HttpResponse(json.dumps(response_data), content_type="application/json")
-#         except json.JSONDecodeError:
-#             return HttpResponse('Invalid JSON', status=400)
-#         except PersonalTable.DoesNotExist:
-#             return HttpResponse('User not found', status=404)
-#         except Exception as e:
-#             return HttpResponse(str(e), status=500)
-#     else:
-#         return HttpResponse('Only POST requests are allowed', status=405)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+            group_account_list= [] 
+            user_instance = PersonalTable.objects.get(personal_id= personal_id)
+            group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
+            group_account_list = []
+            for group_link in group_instances:
+                group_instance = group_link.group
+                group_account_instance= GroupAccountTable.objects.filter(group = group_instance)
+                for group_account in group_account_instance:
+                    group_account_data = {
+                        "group_account_id": group_account.group_account_id,
+                        "group_account_item": group_account.item,
+                        "flag": group_account.info_complete_flag,
+                        "account_date": group_account.account_date.strftime(
+                        '%Y-%m-%d') if group_account.account_date else None,
+                        "payment":group_account.payment,
+                        "category_name":GroupCategoryTable.objects.get(group_category_id=group_account.category_id).category_name,
+                        "group_id":group_account.group_id
+                        
+                    }
+                    group_account_list.append(group_account_data)
+                
+                
+
+            response_data = {
+                "message": "Data received successfully",
+                "group_account": group_account_list,
+                "user_id": personal_id,
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return HttpResponse('Invalid JSON', status=400)
+        except PersonalTable.DoesNotExist:
+            return HttpResponse('User not found', status=404)
+        except Exception as e:
+            return HttpResponse(str(e), status=500)
+    else:
+        return HttpResponse('Only POST requests are allowed', status=405)
 #報表個人資料
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
