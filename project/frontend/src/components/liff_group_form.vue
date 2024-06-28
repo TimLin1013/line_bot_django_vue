@@ -65,7 +65,7 @@ export default {
       person2: '',
       persons: [],
       persons2: [],
-      transaction: '',
+      transaction:'',
       category_temp: '',
       shares: []
     }
