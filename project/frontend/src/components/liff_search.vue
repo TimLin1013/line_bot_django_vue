@@ -51,6 +51,9 @@
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
+                  <td>
+                    <button class="delete" @click="deleteAccount(account.personal_account_id)">刪除</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -94,6 +97,9 @@
                   <td>{{ account.group_account_item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
+                  <td>
+                    <button class="delete" @click="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -608,6 +614,55 @@ export default {
           });
       }
     },
+    deleteAccount(id) {
+      Swal.fire({
+        title:'確認刪除',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        cancelButtonText:'取消'
+      }).then((result) => {
+        if(result.isConfirmed){
+          const apiUrl = `${this.$apiUrl}/api/delete_personal/`;
+          const requestdata={personal_id:this.$root.$personal_id,account_id:id}
+          this.$axios.post(apiUrl,requestdata)
+          .then(response => {
+            Swal.fire({
+                title: "刪除成功!",
+                icon: "success"
+            })
+            this.fetchAccounts()
+          }).catch(error => {
+              console.error(error);
+            });
+        }
+      })
+    },
+    deletegroupAccount(account,group) {
+      Swal.fire({
+        title:'確認刪除',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        cancelButtonText:'取消'
+      }).then((result) => {
+        if(result.isConfirmed){
+          const apiUrl = `${this.$apiUrl}/api/delete_group/`;
+          const requestdata={group_id:group,account_id:account}
+          this.$axios.post(apiUrl,requestdata)
+          .then(response => {
+            Swal.fire({
+                title: "刪除成功!",
+                icon: "success"
+            })
+            this.fetchGroupAccount()
+            this.selectedGroupId = group
+          }).catch(error => {
+              console.error(error);
+            });
+        }
+      })
+    },
   },
   mounted() {
     this.checkUserId();
@@ -749,7 +804,12 @@ body {
 .table th, .table td {
   vertical-align: middle;
 }
-
+.delete{
+  padding: 6px 10px;
+  background-color: #ffc107; 
+  color: black;
+  border-radius: 6px;
+}
 .loading {
   position: absolute;
   top: 50%;

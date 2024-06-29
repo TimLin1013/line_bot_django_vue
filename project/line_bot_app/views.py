@@ -788,3 +788,44 @@ def get_group_keep_sure(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def delete_personal(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal_id = data.get('personal_id')
+            account_id = data.get('account_id')
+            account = PersonalAccountTable.objects.get(personal_account_id = account_id, personal=personal_id)
+            account.delete()
+            
+            return HttpResponse(json.dumps('成功'), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def delete_group(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('group_id')
+            account_id = data.get('account_id')
+            account = GroupAccountTable.objects.get(group_account_id = account_id, group=group_id)
+            account.delete()
+            
+            return HttpResponse(json.dumps('成功'), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
