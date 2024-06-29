@@ -51,6 +51,9 @@
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
+                  <td>
+                    <button class="delete" @click="deleteAccount(account.personal_account_id)">刪除</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -94,6 +97,9 @@
                   <td>{{ account.group_account_item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
+                  <td>
+                    <button class="delete" @click="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -496,6 +502,8 @@ export default {
                 Swal.fire({
                   title: "成功加入群組!",
                   icon: "success"
+                }).then(() => {
+                  this.fetchGroup()
                 });
               }
             });
@@ -519,10 +527,6 @@ export default {
         if (result.isConfirmed) {
           const groupname = result.value;
           this.creategroup_axios(groupname);
-          Swal.fire({
-            title: "創建成功!",
-            icon: "success"
-          });
         }
       });
     },
@@ -531,6 +535,14 @@ export default {
       this.$axios.post(apiUrl, { GroupName: groupname, userId: this.$root.$userId })
         .then(response => {
           console.log(response);
+          if(response.data==='成功接收數據'){
+              Swal.fire({
+              title: "創建成功!",
+              icon: "success"
+            }).then(() => {
+              this.fetchGroup()
+            });
+          }
         })
         .catch(error => {
           console.error(error);
@@ -539,25 +551,6 @@ export default {
           this.loading = false;
         });
     },
-    /*filterByGroup() {
-      console.log('Selected Group ID:', this.selectedGroupId); 
-      this.loading = true;
-      this.$axios.post(`${this.$apiUrl}/api/get_group_expense_data/`, {
-        account_date: this.currentYearMonth,
-        group_id: this.selectedGroupId
-      })
-      .then(response => {
-        console.log('Group Expense Data:', response.data.accounts);
-        this.group_account = response.data.accounts;
-      })
-      .catch(error => {
-        console.error('Error fetching group expense data:', error);
-      })
-      .finally(() => {
-        this.loading = false;
-      });
-    },*/ 
-    
 
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
@@ -620,6 +613,55 @@ export default {
             this.loading = false;
           });
       }
+    },
+    deleteAccount(id) {
+      Swal.fire({
+        title:'確認刪除',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        cancelButtonText:'取消'
+      }).then((result) => {
+        if(result.isConfirmed){
+          const apiUrl = `${this.$apiUrl}/api/delete_personal/`;
+          const requestdata={personal_id:this.$root.$personal_id,account_id:id}
+          this.$axios.post(apiUrl,requestdata)
+          .then(response => {
+            Swal.fire({
+                title: "刪除成功!",
+                icon: "success"
+            })
+            this.fetchAccounts()
+          }).catch(error => {
+              console.error(error);
+            });
+        }
+      })
+    },
+    deletegroupAccount(account,group) {
+      Swal.fire({
+        title:'確認刪除',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        cancelButtonText:'取消'
+      }).then((result) => {
+        if(result.isConfirmed){
+          const apiUrl = `${this.$apiUrl}/api/delete_group/`;
+          const requestdata={group_id:group,account_id:account}
+          this.$axios.post(apiUrl,requestdata)
+          .then(response => {
+            Swal.fire({
+                title: "刪除成功!",
+                icon: "success"
+            })
+            this.fetchGroupAccount()
+            this.selectedGroupId = group
+          }).catch(error => {
+              console.error(error);
+            });
+        }
+      })
     },
   },
   mounted() {
@@ -762,7 +804,12 @@ body {
 .table th, .table td {
   vertical-align: middle;
 }
-
+.delete{
+  padding: 6px 10px;
+  background-color: #ffc107; 
+  color: black;
+  border-radius: 6px;
+}
 .loading {
   position: absolute;
   top: 50%;
