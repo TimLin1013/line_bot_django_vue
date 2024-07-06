@@ -121,13 +121,15 @@ def get_payback(request):
         try:
             data = json.loads(request.body.decode('utf-8'))
             personal_id = data.get('personal_id')
-
+            user_name = data.get('user_name')
             # 加入群組名稱的查詢
             group_links = PersonalGroupLinkingTable.objects.filter(personal=personal_id)
             group_names = {link.group.group_id: link.group.group_name for link in group_links}
 
             # 使用 ReturnTable 模型來檢索還錢通知數據
-            payback_notifications = ReturnTable.objects.filter(payer=personal_id)
+            p = user_name + " "+ personal_id
+
+            payback_notifications = ReturnTable.objects.filter(payer=p)
             payer_payback_list = []
             for payback in payback_notifications:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
@@ -141,7 +143,7 @@ def get_payback(request):
                 }
                 payer_payback_list.append(payback_data)
 
-            payback_notifications2 = ReturnTable.objects.filter(receiver=personal_id)
+            payback_notifications2 = ReturnTable.objects.filter(receiver=p)
             receiver_payback_list = []
             for payback in payback_notifications2:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
