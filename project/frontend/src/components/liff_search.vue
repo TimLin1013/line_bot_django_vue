@@ -120,12 +120,13 @@
 
       <!-- 還錢通知 -->
       <div v-if="isPayBack" class="payback-container">
-        <div class="scrollable-block">
-          <table v-if="payBackAccounts.length > 0 || payBackAccounts2.length > 0" class="table table-striped account-area">
+        <!-- 應付帳款（我是欠款人） -->
+        <div class="payback-section">
+          <h3>應付帳款</h3>
+          <table v-if="payBackAccounts.length > 0" class="table table-striped account-area">
             <thead>
               <tr>
                 <th>歸還金額</th>
-                <th>欠款人</th>
                 <th>收款人</th>
                 <th>群組名稱</th>
                 <th>還錢狀態</th>
@@ -134,41 +135,58 @@
             <tbody>
               <tr v-for="(account, index) in payBackAccounts" :key="index">
                 <td>{{ account.return_payment }}</td>
-                <td>{{ account.payer }}</td>
                 <td>{{ account.receiver }}</td>
                 <td>{{ account.group_name }}</td>
                 <td>
-                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index)" class="btn btn-warning w-100">
+                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index, 'payer')" class="btn btn-warning w-100">
                     尚未歸還
                   </button>
                   <span v-else>
-                    {{ 已歸還 }}
+                    已歸還
                   </span>
                 </td>
               </tr>
+            </tbody>
+          </table>
+          <div v-else class="account-area-placeholder">
+            <p>暫無應付帳款資料</p>
+          </div>
+        </div>
+
+        <!-- 應收帳款（我是收款人） -->
+        <div class="payback-section">
+          <h3>應收帳款</h3>
+          <table v-if="payBackAccounts2.length > 0" class="table table-striped account-area">
+            <thead>
+              <tr>
+                <th>歸還金額</th>
+                <th>欠款人</th>
+                <th>群組名稱</th>
+                <th>還錢狀態</th>
+              </tr>
+            </thead>
+            <tbody>
               <tr v-for="(account, index) in payBackAccounts2" :key="index">
                 <td>{{ account.return_payment }}</td>
                 <td>{{ account.payer }}</td>
-                <td>{{ account.receiver }}</td>
                 <td>{{ account.group_name }}</td>
                 <td>
                   <p v-if="account.return_flag === '0'">
-                    尚未歸還
+                    尚未收到還款
                   </p>
                   <p v-else>
-                    已歸還
+                    已收到還款
                   </p>
                 </td>
               </tr>
             </tbody>
           </table>
-          <div v-else-if="loading" class="loading">載入中...</div>
           <div v-else class="account-area-placeholder">
-            <h2>還錢通知：</h2>
-            <p>暫無資料</p>
+            <p>暫無應收帳款資料</p>
           </div>
         </div>
       </div>
+
 
 
       <!-- 底部按鈕 -->
@@ -604,7 +622,7 @@ export default {
 
     fetchPayBack() {
       const apiUrl = `${this.$apiUrl}/api/get_payback/`;
-      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
+      this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id ,user_name:this.$root.$userName})
         .then(response => {
           this.payBackAccounts = response.data.payer_payback_list;
           this.payBackAccounts2 = response.data.receiver_payback_list;
