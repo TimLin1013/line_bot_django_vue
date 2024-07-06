@@ -4,6 +4,8 @@ from . import views
 urlpatterns = [
     path('delete_personal/', views.delete_personal, name='delete_personal_api'),
     path('delete_group/', views.delete_group, name='delete_group_api'),
+    path('join_group/', views.join_group, name='join_group_api'),
+    path('show_member/', views.show_member, name='show_member_api'),
     path('get_personal_account/', views.get_user_account, name='get_user_account_api'),
     path('get_user_account_info/',views.get_user_account_info,name = 'get_user_account_info_api'),
     path('get_keep_temporary/',views.get_keep_temporary,name = 'get_keep_temporary_api'),
