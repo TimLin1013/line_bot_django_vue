@@ -533,7 +533,9 @@ def get_group(request):
                 group_instance = group_link.group
                 group_data = {
                     "group_id": group_instance.group_id,
-                    "group_name": group_instance.group_name
+                    "group_name": group_instance.group_name,
+                    "member_id":group_link.personal_id,
+                    "group_code":group_instance.group_code
                 }
                 group_list.append(group_data)
 
@@ -819,12 +821,60 @@ def delete_group(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body.decode('utf-8'))
-            group_id = data.get('group_id')
             account_id = data.get('account_id')
-            account = GroupAccountTable.objects.get(group_account_id = account_id, group=group_id)
+            account = GroupAccountTable.objects.get(group_account_id = account_id)
             account.delete()
             
             return HttpResponse(json.dumps('成功'), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def join_group(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            input_text = data.get('input')
+            group_id = data.get('groupID')
+            output = func.join_group(input_text,group_id)
+            
+            return HttpResponse(json.dumps(output), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def show_member(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('groupId')
+            group_instance = GroupTable.objects.get(group_id=group_id)
+            group_member = PersonalGroupLinkingTable.objects.filter(group=group_instance)
+            personal_name_list=[]
+            for member in group_member:
+                personal_instance = member.personal
+                personal_name = personal_instance.user_name
+                personal_id = personal_instance.personal_id
+                data={
+                    'personal_id':personal_id,
+                    'personal_name':personal_name
+                }
+                personal_name_list.append(data)
+            return HttpResponse(json.dumps(personal_name_list), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:

@@ -21,7 +21,7 @@ def CreateGroup(groupname,user_id):
     digits = string.digits#產生字串
     # 如果有和資料庫重複會重新生成
     while True:
-        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(8))#數字和英文字母串接
+        secure_random_string = ''.join(secrets.choice(letters) + secrets.choice(digits) for i in range(4))#數字和英文字母串接
         if not GroupTable.objects.filter(group_code=secure_random_string).exists():
             break
     group_name = groupname
@@ -371,5 +371,19 @@ def address_group_sure(group_id,item,payment,location,category,time,payer_id,sha
                 pay = pre - should 
                 unit_return2= ReturnTable(return_payment = pay,payer = total_payer,receiver=spliter,return_flag = 0,split = unit4)
                 unit_return2.save()
-    
+#拉人
+def join_group(input,group_id):
+    #判斷使用者輸入有無此群組
+        personal = PersonalTable.objects.filter(personal_id = input)
+        if not personal:
+            return '查無此使用者，請重新輸入'
+        else:
+            user_instance = PersonalTable.objects.get(personal_id = input)
+            group_instance =GroupTable.objects.get(group_id = group_id)
+            unit4 = PersonalGroupLinkingTable.objects.filter(personal=user_instance, group=group_instance)
+            if unit4:
+                return '此使用者已加入該群組'
+            else:
+                unit5 = PersonalGroupLinkingTable.objects.create(personal=user_instance,group=group_instance)
+                return '成功加入群組'
     

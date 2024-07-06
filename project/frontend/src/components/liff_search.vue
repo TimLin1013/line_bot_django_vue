@@ -7,6 +7,9 @@
           <i class="fas fa-bars"></i>
         </button>
         <span class="navbar-brand mb-0 h1">記帳app</span>
+        <div class="ml-auto">
+          <span class="personal-id">Personal_id: {{ personal_id }}</span>
+        </div>
       </div>
     </nav>
 
@@ -21,6 +24,9 @@
         </li>
         <li>
           <a href="#" @click="showPayBack()" :class="{ active: isPayBack }">還錢通知</a>
+        </li>
+        <li>
+          <a href="#" @click="isInfo()" :class="{ active: isPersonalInfo }">群組資訊</a>
         </li>
       </ul>
     </nav>
@@ -198,8 +204,38 @@
           <div class="button-text">創建群組</div>
         </div>
       </div>
+      <!-- 個人群組資訊 -->
+      <div v-if="isPersonalInfo" class="personalInfo-container">
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="group3.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>名稱</th>
+                  <th>群組代碼</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="group_member in group3" :key="group_member.id">
+                  <td>{{ group_member.group_name }}</td>
+                  <td>{{ group_member.group_code }}</td>
+                  <td>
+                    <button class="delete" @click="showmember(group_member.group_id)">顯示成員</button>
+                    <button class="delete" @click="joingroup(group_member.group_id)">加成員</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <p>暫無資料</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+  
 </template>
 
 <script>
@@ -220,11 +256,14 @@ export default {
       isGroupExpense: false,
       isAllExpense: false,
       isPayBack: false,
+      isPersonalInfo:false,
+      member:[],
       currentYearMonth: dayjs().format('YYYY-MM'),
       loading: true,
       personal_id: '',
       group: [],
       group2: [],
+      group3:[],
       inputOptions: {},
       selectedGroupId: null,
       group_account: [],
@@ -288,6 +327,7 @@ export default {
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.isPersonalInfo = false;
       this.toggleSidebar();
     },
     showGroupExpense() {    
@@ -295,6 +335,7 @@ export default {
       this.isGroupExpense = true;
       this.isAllExpense = false;
       this.isPayBack = false;
+      this.isPersonalInfo = false;
       this.toggleSidebar();
     },
     showPayBack() {
@@ -302,8 +343,18 @@ export default {
       this.isGroupExpense = false;
       this.isAllExpense = false;
       this.isPayBack = true;
+      this.isPersonalInfo = false;
       this.fetchPayBack();
       this.toggleSidebar();
+    },
+    isInfo(){
+      this.isPersonalExpense = false;
+      this.isGroupExpense = false;
+      this.isAllExpense = false;
+      this.isPayBack = false;
+      this.isPersonalInfo = true;
+      this.fetchGroup();
+      this.toggleSidebar()
     },
     prevMonth() {
       const newDate = dayjs(this.currentYearMonth).subtract(1, 'month');
@@ -313,7 +364,6 @@ export default {
       const newDate = dayjs(this.currentYearMonth).add(1, 'month');
       this.currentYearMonth = newDate.format('YYYY-MM');
     },
-    
     
 
     navigateToOverview() {
@@ -372,7 +422,7 @@ export default {
                     let data2 = ''
                     Swal.fire({
                       title: "分帳人資訊",
-                      inputLabel:"全部人之外，可輸入除外誰以外都要分帳，若不用分帳直接按送出！",
+                      inputLabel:"全部人之外，可輸入除外誰以外都要分帳\n，若不用分帳直接按送出！",
                       html: `
                           <button id="allPeopleButton" class="swal2-styled" style="background-color:#FFC299; ; color: black; padding: 10px 20px; font-size: 16px">全部人</button>
                           `,
@@ -584,6 +634,7 @@ export default {
         .then(response => {
           console.log(response.data.groups);
           this.group = response.data.groups;
+          this.group3 = response.data.groups;
         })
         .catch(error => {
           console.error(error);
@@ -637,6 +688,76 @@ export default {
             });
         }
       })
+    },
+    //拉人
+    joingroup(group_id){
+      Swal.fire({
+        title:'輸入欲加入群組者的id',
+        input: "text",
+        confirmButtonText: '加入',
+        inputPlaceholder: "請輸入",
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入id!";
+          } else if (value.length > 6) {
+            return "不能超過6位數!";
+          }
+        }
+      }).then((result) => {
+        if(result.isConfirmed){
+          const temp = result.value
+          const apiUrl = `${this.$apiUrl}/api/join_group/`;
+          const requestdata={input:temp,groupID:group_id}
+          this.$axios.post(apiUrl,requestdata)
+          .then(response => {
+            if (response.data ==='成功加入群組'){
+              Swal.fire({
+                  title: "加入成功!",
+                  icon: "success"
+              })
+            }else if(response.data === '此使用者已加入該群組'){
+              Swal.fire({
+                  title: "此使用者已加入該群組!",
+                  icon: "warning"
+              })
+            }else if(response.data ==='查無此使用者，請重新輸入'){
+              Swal.fire({
+                  title: "查無此使用者，請重新輸入!",
+                  icon: "warning"
+              })
+            }
+          }).catch(error => {
+              console.error(error);
+            });
+        }
+      })
+    },
+    showmember(group_id){
+      const apiUrl = `${this.$apiUrl}/api/show_member/`;
+      this.$axios.post(apiUrl, {groupId:group_id })
+        .then(response => {
+          this.member = response.data;
+          const membersTable = `
+          <table class="table members-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名字</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${this.member.map(member => `
+                <tr>
+                  <td>${member.personal_id}</td>
+                  <td>${member.personal_name}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+          Swal.fire({
+            title: '成員列表',
+            html: membersTable,
+          });
+        })
     },
     deletegroupAccount(account,group) {
       Swal.fire({
@@ -929,6 +1050,10 @@ body {
 .table .btn {
   width: 100%;
   padding: 6px 12px;
+}
+
+.float-right {
+  float: right;
 }
 
 </style>
