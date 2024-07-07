@@ -104,7 +104,7 @@
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                   <td>
-                    <button class="delete" @click="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
+                    <button class="delete_group" @click="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -126,10 +126,10 @@
           <table v-if="payBackAccounts.length > 0" class="table table-striped account-area">
             <thead>
               <tr>
-                <th>歸還金額</th>
+                <th>金額</th>
                 <th>收款人</th>
-                <th>群組名稱</th>
-                <th>還錢狀態</th>
+                <th>群組</th>
+                <th>狀態</th>
               </tr>
             </thead>
             <tbody>
@@ -139,10 +139,10 @@
                 <td>{{ account.group_name }}</td>
                 <td>
                   <button v-if="account.return_flag === '0'" @click="markAsPaid(index, 'payer')" class="btn btn-warning w-100">
-                    尚未歸還
+                    尚未還款
                   </button>
                   <span v-else>
-                    已歸還
+                    已還款
                   </span>
                 </td>
               </tr>
@@ -159,10 +159,10 @@
           <table v-if="payBackAccounts2.length > 0" class="table table-striped account-area">
             <thead>
               <tr>
-                <th>歸還金額</th>
+                <th>金額</th>
                 <th>欠款人</th>
-                <th>群組名稱</th>
-                <th>還錢狀態</th>
+                <th>群組</th>
+                <th>狀態</th>
               </tr>
             </thead>
             <tbody>
@@ -172,10 +172,10 @@
                 <td>{{ account.group_name }}</td>
                 <td>
                   <p v-if="account.return_flag === '0'">
-                    尚未收到還款
+                    尚未還款
                   </p>
                   <p v-else>
-                    已收到還款
+                    已還款
                   </p>
                 </td>
               </tr>
@@ -238,7 +238,7 @@
                   <td>{{ group_member.group_name }}</td>
                   <td>{{ group_member.group_code }}</td>
                   <td>
-                    <button class="delete" @click="joingroup(group_member.group_id)">加成員</button>
+                    <button class="delete" @click="joingroup(group_member.group_id)">成員資訊</button>
                     <button class="delete" @click="newgroupcategory(group_member.group_id)">新增類別</button>
                   </td>
                 </tr>
@@ -402,7 +402,11 @@ export default {
           title: "選擇帳本",
           input: "select",
           inputOptions: this.inputOptions,
+          showCancelButton:true,
+          confirmButtonText: "送出",
           inputPlaceholder: "選擇一個帳本",
+          allowOutsideClick: false,
+          cancelButtonText:'取消',
           inputValidator: (value) => {
             if (!value) {
               return "請選擇帳本";
@@ -417,8 +421,11 @@ export default {
               title: "群組帳目記帳",
               inputLabel:"輸入記帳資訊ex:項目地點金額",
               input: "text",
+              showCancelButton:true,
               confirmButtonText: "送出",
               inputPlaceholder: "請輸入",
+              cancelButtonText:'取消',
+              allowOutsideClick: false,
               inputValidator: (value2) => {
                 if (!value2) {
                   return "請輸入資訊!";
@@ -449,6 +456,7 @@ export default {
                       confirmButtonText: "送出",
                       allowOutsideClick: false,
                       inputPlaceholder: "請輸入",
+                      allowOutsideClick: false,
                       preConfirm: () => {
                         if(data2 === ''){
                           data2 = Swal.getInput().value;
@@ -503,8 +511,11 @@ export default {
       Swal.fire({
         title: "個人記帳",
         input: "text",
+        showCancelButton:true,
         confirmButtonText: "送出",
         inputPlaceholder: "請輸入",
+        cancelButtonText:'取消',
+        allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
             return "請輸入資訊!";
@@ -544,8 +555,11 @@ export default {
       const { value: groupcode } = Swal.fire({
         title: "輸入群組代碼",
         input: "text",
+        showCancelButton:true,
         confirmButtonText: "加入",
         inputPlaceholder: "請輸入",
+        cancelButtonText:'取消',
+        allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
             return "請輸入群組代碼!";
@@ -584,7 +598,10 @@ export default {
         title: "輸入群組名稱",
         input: "text",
         confirmButtonText: '創建',
+        showCancelButton:true,
         inputPlaceholder: "請輸入",
+        cancelButtonText:'取消',
+        allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
             return "請輸入群組名稱!";
@@ -690,6 +707,7 @@ export default {
         icon:'warning',
         showCancelButton:true,
         confirmButtonText:'確定',
+        allowOutsideClick: false,
         cancelButtonText:'取消'
       }).then((result) => {
         if(result.isConfirmed){
@@ -758,6 +776,9 @@ export default {
             html: membersTable,
             showCancelButton:true,
             confirmButtonText:'新增',
+            allowOutsideClick: false,
+            showDenyButton: true,
+            denyButtonText: '退出群組',
             cancelButtonText:'取消'
           }).then((result) => {
             if(result.isConfirmed){
@@ -766,6 +787,7 @@ export default {
                 input:'text',
                 showCancelButton:true,
                 confirmButtonText: '新增',
+                allowOutsideClick: false,
                 cancelButtonText:'取消',
                 inputPlaceholder: "請輸入",
                 inputValidator: (value) => {
@@ -799,6 +821,38 @@ export default {
                   }).catch(error => {
                       console.error(error);
                     });
+                }
+              })
+            }
+            else if(result.isDenied){
+              Swal.fire({
+                title: "確認退出？",
+                icon: "warning",
+                confirmButtonText: '確認',
+                showCancelButton:true,
+                cancelButtonText:'取消',
+              }).then((result) => {
+                if (result.isConfirmed){
+                  const apiUrl = `${this.$apiUrl}/api/exit_group/`;
+                  const requestdata={personal_id:this.$root.$personal_id,groupID:group_id}
+                  this.$axios.post(apiUrl,requestdata)
+                  .then(response => {
+                    if (response.data==='Yes'){
+                      Swal.fire({
+                        title: "刪除成功",
+                        icon: "success",
+                        confirmButtonText: '確認',
+                      })
+                      this.fetchGroup()
+                    }else if(response.data === 'No'){
+                      Swal.fire({
+                        title: "刪除失敗",
+                        inputLabel:"當前群組中尚有成員未還清款項給您，或是您有尚未還錢給其他人，因此無法執行退出操作",
+                        icon: "warning",
+                        confirmButtonText: '確認',
+                      })
+                    }
+                  })
                 }
               })
             }
@@ -920,10 +974,12 @@ export default {
 
     deletegroupAccount(account,group) {
       Swal.fire({
-        title:'確認刪除',
+        title:'刪除',
         icon:'warning',
+        text: "刪除後分帳與還錢資訊也連動刪除?",
         showCancelButton:true,
         confirmButtonText:'確定',
+        allowOutsideClick: false,
         cancelButtonText:'取消'
       }).then((result) => {
         if(result.isConfirmed){
@@ -1088,6 +1144,12 @@ body {
   padding: 6px 10px;
   background-color: #ffc107; 
   color: black;
+  border-radius: 6px;
+}
+.delete_group{
+  padding: 6px 10px;
+  background-color: red; 
+  color: white;
   border-radius: 6px;
 }
 .loading {
