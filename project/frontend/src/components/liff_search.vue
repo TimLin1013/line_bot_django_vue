@@ -847,7 +847,7 @@ export default {
                     }else if(response.data === 'No'){
                       Swal.fire({
                         title: "刪除失敗",
-                        inputLabel:"當前群組中尚有成員未還清款項給您，或是您有尚未還錢給其他人，因此無法執行退出操作",
+                        text:"群組中尚有成員未還清給您，或是您有尚未還錢給其他人，因此無法執行退出操作",
                         icon: "warning",
                         confirmButtonText: '確認',
                       })

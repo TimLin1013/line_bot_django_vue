@@ -942,7 +942,7 @@ def exit_group(request):
             data = json.loads(request.body.decode('utf-8'))
             group_id = data.get('groupID')
             personal_id = data.get('personal_id')
-            count =  0
+            count = 0
             response_data =''
             persoanl_instance = PersonalTable.objects.get(personal_id = personal_id)
             user_name = persoanl_instance.user_name
@@ -956,9 +956,10 @@ def exit_group(request):
                     split_id = m.split_id
                     return_instances = ReturnTable.objects.filter(split=split_id)
                     for return_instance in return_instances:
-                        if return_instance.payer == personal_total or return_instance.receiver == personal_total:
-                            if return_instance.return_flag == 0:
-                                count += 1
+                        if return_instance.payer == personal_total and return_instance.return_flag =='0':
+                            count = count+1
+                        if return_instance.receiver == personal_total and return_instance.return_flag=='0':
+                            count = count+1
             if count>0:
                 response_data = "No"
             if count==0:
