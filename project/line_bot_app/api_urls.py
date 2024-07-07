@@ -6,6 +6,7 @@ urlpatterns = [
     path('delete_group/', views.delete_group, name='delete_group_api'),
     path('join_group/', views.join_group, name='join_group_api'),
     path('show_member/', views.show_member, name='show_member_api'),
+    path('exit_group/', views.exit_group, name='exit_group_api'),
     path('show_group_category/', views.show_group_category, name='show_group_category_api'),
     path('add_group_category/', views.add_group_category, name='add_group_category_api'),
     path('get_personal_account/', views.get_user_account, name='get_user_account_api'),

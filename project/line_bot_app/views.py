@@ -929,3 +929,53 @@ def add_group_category(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+#退出群組
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def exit_group(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('groupID')
+            personal_id = data.get('personal_id')
+            count =  0
+            response_data =''
+            persoanl_instance = PersonalTable.objects.get(personal_id = personal_id)
+            user_name = persoanl_instance.user_name
+            personal_total  = user_name+" "+personal_id
+            group_instance =  GroupTable.objects.get(group_id = group_id)
+            group_account_instance = GroupAccountTable.objects.filter(group = group_instance)
+            for k in group_account_instance:
+                group_account = k.group_account_id
+                split_instance = SplitTable.objects.filter(group_account = group_account)
+                for m in split_instance:
+                    split_id = m.split_id
+                    return_instances = ReturnTable.objects.filter(split=split_id)
+                    for return_instance in return_instances:
+                        if return_instance.payer == personal_total or return_instance.receiver == personal_total:
+                            if return_instance.return_flag == 0:
+                                count += 1
+            if count>0:
+                response_data = "No"
+            if count==0:
+                group = PersonalGroupLinkingTable.objects.get(personal = personal_id , group = group_id)
+                group.delete() 
+                for a in group_account_instance:
+                    group_account = a.group_account_id   
+                    split_instance = SplitTable.objects.filter(group_account = group_account)
+                    for m in split_instance:
+                        split_id = m.split_id
+                        return_instances = ReturnTable.objects.filter(split=split_id)
+                        for return_instance in return_instances:
+                            if return_instance.payer == personal_total or return_instance.receiver == personal_total:
+                                return_instance.delete()
+                response_data="Yes"
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

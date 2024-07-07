@@ -156,7 +156,7 @@ export default {
       // 剩餘未修改的人數
       const remainingPeopleCount = this.shares.length - this.indexList.length;
       // 計算其他人的分帳金額
-      const newShareAmount = remainingPeopleCount > 0 ? remainingAmount / remainingPeopleCount : 0;
+      const newShareAmount = remainingPeopleCount > 0 ? Number((remainingAmount / remainingPeopleCount).toFixed(1)) : 0;
 
       for (let i = 0; i < this.shares.length; i++) {
         if (!this.indexList.includes(i)) {

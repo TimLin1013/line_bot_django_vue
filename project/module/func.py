@@ -292,7 +292,7 @@ def sqlagent(text,personal_id):
     output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
     result = output.summary
     if result[:5] == 'ERROR':
-        return "這問題與資料庫無關，請重新詢問！"
+        return "這問題與您的資訊無關，請重新詢問！"
     else:
         return result
 #群組暫存
