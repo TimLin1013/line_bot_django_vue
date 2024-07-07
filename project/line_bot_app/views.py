@@ -67,7 +67,7 @@ def get_personal_expense_data(request):
             data = json.loads(request.body)
             account_date = data.get('account_date')
             personal_id = data.get('personal_id')
-
+            
             # 拆分 account_date 以獲取年份和月份
             year, month = account_date.split('-')
 
@@ -875,6 +875,54 @@ def show_member(request):
                 }
                 personal_name_list.append(data)
             return HttpResponse(json.dumps(personal_name_list), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def show_group_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('groupId')
+            group_instance = GroupTable.objects.get(group_id=group_id)
+            group_category = GroupCategoryTable.objects.filter(group = group_instance)
+            group_category_list=[]
+            for member in group_category:
+                transaction_type = member.transaction_type
+                category_name = member.category_name
+                data={
+                    'transaction_type':transaction_type,
+                    'category_name':category_name
+                }
+                group_category_list.append(data)
+            return HttpResponse(json.dumps(group_category_list), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def add_group_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_id = data.get('groupID')
+            transaction_type = data.get('transactionType')
+            category_name = data.get('categoryName')
+            response = func.new_group_category(group_id,transaction_type,category_name)
+            return HttpResponse(json.dumps(response), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:

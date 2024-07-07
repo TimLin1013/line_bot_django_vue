@@ -35,6 +35,7 @@ export default {
           this.profile = profile;
           this.$root.$userId = profile.userId;
           this.$root.$userName = profile.displayName;//6/2
+          this.$root.$userPictureUrl = profile.pictureUrl;
           const apiUrl = `${this.$apiUrl}/api/get_personal_account/`;
             console.log(apiUrl);
             console.log(this.$root.$userId);
