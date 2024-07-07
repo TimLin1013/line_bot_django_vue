@@ -103,7 +103,7 @@ def classification(text):
     assistant = autogen.AssistantAgent(
         "assistant",
 
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆資訊就TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
 
         llm_config={"config_list": config_list},
     )
@@ -354,22 +354,28 @@ def address_group_sure(group_id,item,payment,location,category,time,payer_id,sha
             advance = 0
         else :
             advance = int(advance)
-        unit_instance = PersonalTable(personal_id = person)
+        unit_instance = PersonalTable.objects.get(personal_id = person)
         unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit3,personal = unit_instance)
         unit4.save()
         #分帳
         should = unit4.payment
         pre  = unit4.advance_payment
+        #分帳人的id和name
         spliter = unit4.personal.personal_id
+        spliter_name = unit4.personal.user_name
+        #總付款人的id和name
         total_payer = unit3.personal.personal_id
+        total_payer_name = unit3.personal.user_name
+        payer = spliter_name+" "+spliter
+        receiver = total_payer_name+" "+total_payer
         if person != total_payer:
             if (should - pre)>0:
                 pay = should - pre
-                unit_return = ReturnTable(return_payment = pay,payer = spliter,receiver =total_payer,return_flag = 0,split = unit4)
+                unit_return = ReturnTable(return_payment = pay,payer = payer,receiver =receiver,return_flag = 0,split = unit4)
                 unit_return.save()
             elif (should - pre)<0:
                 pay = pre - should 
-                unit_return2= ReturnTable(return_payment = pay,payer = total_payer,receiver=spliter,return_flag = 0,split = unit4)
+                unit_return2= ReturnTable(return_payment = pay,payer = receiver,receiver=payer,return_flag = 0,split = unit4)
                 unit_return2.save()
 #拉人
 def join_group(input,group_id):
@@ -386,4 +392,15 @@ def join_group(input,group_id):
             else:
                 unit5 = PersonalGroupLinkingTable.objects.create(personal=user_instance,group=group_instance)
                 return '成功加入群組'
+
+def new_group_category(group_id,transaction_type,category_name):
+    #抓出哪個群組
+    group_instance = GroupTable.objects.get(group_id=group_id)
+    category = GroupCategoryTable.objects.filter(group = group_instance,transaction_type = transaction_type,category_name = category_name)
+    if not category:
+        unit = GroupCategoryTable(group = group_instance,transaction_type = transaction_type,category_name = category_name)
+        unit.save()
+        return "成功"
+    else:
+        return "已有該類別"
     

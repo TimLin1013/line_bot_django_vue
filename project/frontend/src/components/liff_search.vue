@@ -6,9 +6,9 @@
         <button type="button" id="sidebarCollapse" class="btn btn-link" @click="toggleSidebar">
           <i class="fas fa-bars"></i>
         </button>
-        <span class="navbar-brand mb-0 h1">記帳app</span>
         <div class="ml-auto">
-          <span class="personal-id">Personal_id: {{ personal_id }}</span>
+          <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
+          <span class="personal-id">個人資訊: {{ this.$root.$userName+" "+personal_id }}</span>
         </div>
       </div>
     </nav>
@@ -222,7 +222,7 @@
           <div class="button-text">創建群組</div>
         </div>
       </div>
-      <!-- 個人群組資訊 -->
+      <!-- 群組資訊 -->
       <div v-if="isPersonalInfo" class="personalInfo-container">
         <div class="fixed-container">
           <div class="scrollable-block">
@@ -238,8 +238,8 @@
                   <td>{{ group_member.group_name }}</td>
                   <td>{{ group_member.group_code }}</td>
                   <td>
-                    <button class="delete" @click="showmember(group_member.group_id)">顯示成員</button>
                     <button class="delete" @click="joingroup(group_member.group_id)">加成員</button>
+                    <button class="delete" @click="newgroupcategory(group_member.group_id)">新增類別</button>
                   </td>
                 </tr>
               </tbody>
@@ -276,6 +276,7 @@ export default {
       isPayBack: false,
       isPersonalInfo:false,
       member:[],
+      group_category:[],
       currentYearMonth: dayjs().format('YYYY-MM'),
       loading: true,
       personal_id: '',
@@ -440,7 +441,7 @@ export default {
                     let data2 = ''
                     Swal.fire({
                       title: "分帳人資訊",
-                      inputLabel:"全部人之外，可輸入除外誰以外都要分帳\n，若不用分帳直接按送出！",
+                      inputLabel:"1.按下全部人為全部人平均分攤金額\n2.可以輸入除外誰以外都要分帳\n3.若不用分帳直接按送出",
                       html: `
                           <button id="allPeopleButton" class="swal2-styled" style="background-color:#FFC299; ; color: black; padding: 10px 20px; font-size: 16px">全部人</button>
                           `,
@@ -709,74 +710,214 @@ export default {
     },
     //拉人
     joingroup(group_id){
-      Swal.fire({
-        title:'輸入欲加入群組者的id',
-        input: "text",
-        confirmButtonText: '加入',
-        inputPlaceholder: "請輸入",
-        inputValidator: (value) => {
-          if (!value) {
-            return "請輸入id!";
-          } else if (value.length > 6) {
-            return "不能超過6位數!";
-          }
-        }
-      }).then((result) => {
-        if(result.isConfirmed){
-          const temp = result.value
-          const apiUrl = `${this.$apiUrl}/api/join_group/`;
-          const requestdata={input:temp,groupID:group_id}
-          this.$axios.post(apiUrl,requestdata)
-          .then(response => {
-            if (response.data ==='成功加入群組'){
-              Swal.fire({
-                  title: "加入成功!",
-                  icon: "success"
-              })
-            }else if(response.data === '此使用者已加入該群組'){
-              Swal.fire({
-                  title: "此使用者已加入該群組!",
-                  icon: "warning"
-              })
-            }else if(response.data ==='查無此使用者，請重新輸入'){
-              Swal.fire({
-                  title: "查無此使用者，請重新輸入!",
-                  icon: "warning"
-              })
-            }
-          }).catch(error => {
-              console.error(error);
-            });
-        }
-      })
-    },
-    showmember(group_id){
       const apiUrl = `${this.$apiUrl}/api/show_member/`;
       this.$axios.post(apiUrl, {groupId:group_id })
         .then(response => {
           this.member = response.data;
           const membersTable = `
-          <table class="table members-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>名字</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.member.map(member => `
+          <style>
+            .table-wrapper {
+              max-height: 400px; /* 調整這個高度以適應你的需求 */
+              -webkit-overflow-scrolling: touch; /* 為移動設備啟用慣性滾動 */
+            }
+            .members-table {
+              overflow-y: scroll;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .members-table th, .members-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+            }
+            .members-table th {
+              background-color: #f2f2f2;
+              position: sticky;
+              top: 0; /* 保持標題行固定在頂部 */
+            }
+          </style>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <div class="table-wrapper">
+            <table class="table members-table">
+              <thead>
                 <tr>
-                  <td>${member.personal_id}</td>
-                  <td>${member.personal_name}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>`;
+                  <th>ID</th>
+                  <th>名字</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.member.map(member => `
+                  <tr>
+                    <td>${member.personal_id}</td>
+                    <td>${member.personal_name}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
           Swal.fire({
             title: '成員列表',
             html: membersTable,
-          });
+            showCancelButton:true,
+            confirmButtonText:'新增',
+            cancelButtonText:'取消'
+          }).then((result) => {
+            if(result.isConfirmed){
+              Swal.fire({
+                title:'輸入加入群組者的id',
+                input:'text',
+                showCancelButton:true,
+                confirmButtonText: '新增',
+                cancelButtonText:'取消',
+                inputPlaceholder: "請輸入",
+                inputValidator: (value) => {
+                  if (!value) {
+                    return "請輸入!";
+                  }
+                }
+              }).then(result => {
+                if(result.value){
+                  const temp =  result.value
+                  const apiUrl = `${this.$apiUrl}/api/join_group/`;
+                  const requestdata={input:temp,groupID:group_id}
+                  this.$axios.post(apiUrl,requestdata)
+                  .then(response => {
+                    if (response.data ==='成功加入群組'){
+                      Swal.fire({
+                          title: "加入成功!",
+                          icon: "success"
+                      })
+                    }else if(response.data === '此使用者已加入該群組'){
+                      Swal.fire({
+                          title: "此使用者已加入該群組!",
+                          icon: "warning"
+                      })
+                    }else if(response.data ==='查無此使用者，請重新輸入'){
+                      Swal.fire({
+                          title: "查無此使用者，請重新輸入!",
+                          icon: "warning"
+                      })
+                    }
+                  }).catch(error => {
+                      console.error(error);
+                    });
+                }
+              })
+            }
+         });
         })
     },
+    //新增類別
+    newgroupcategory(group_id) {
+      const apiUrl = `${this.$apiUrl}/api/show_group_category/`;
+      this.$axios.post(apiUrl, { groupId: group_id })
+        .then(response => {
+          this.group_category = response.data;
+          const categoryTable = `
+          <style>
+            .table-wrapper {
+              max-height: 400px; /* 調整這個高度以適應你的需求 */
+              -webkit-overflow-scrolling: touch; /* 為移動設備啟用慣性滾動 */
+            }
+            .members-table {
+              overflow-y: scroll;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .members-table th, .members-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+            }
+            .members-table th {
+              background-color: #f2f2f2;
+              position: sticky;
+              top: 0; /* 保持標題行固定在頂部 */
+            }
+          </style>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <div class="table-wrapper">
+            <table class="table members-table">
+              <thead>
+                <tr>
+                  <th>交易類型</th>
+                  <th>類別名稱</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.group_category.map(category => `
+                  <tr>
+                    <td>${category.transaction_type}</td>
+                    <td>${category.category_name}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+          Swal.fire({
+            title: '類別列表',
+            html: categoryTable,
+            showCancelButton:true,
+            confirmButtonText:'新增',
+            cancelButtonText:'取消'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              Swal.fire({
+                title: "<small>新增類別</small>",
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <label for="transactionType" style="display: block; margin-bottom: 5px; font-size:16px; font-weight:bold">交易類型</label>
+                        <select name="transactionType" id="transactionType" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
+                          <option value="">選擇交易類型</option>
+                          <option value="收入">收入</option>
+                          <option value="支出">支出</option>
+                        </select>
+                        <label for="categoryName" style="display: block; margin-bottom: 5px; font-size:16px; font-weight:bold">類別名稱</label>
+                        <input type="text" name="categoryName" id="categoryName" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
+                    </div>
+                `,
+                showCancelButton:true,
+                confirmButtonText:'確定',
+                cancelButtonText:'取消',
+                preConfirm: () => {
+                  const transactionType = Swal.getPopup().querySelector('#transactionType').value;
+                  const categoryName = Swal.getPopup().querySelector('#categoryName').value;
+                  if (!transactionType || !categoryName) {
+                      Swal.showValidationMessage('請填寫交易類型和類別名稱');
+                      return false; 
+                  }
+                  return { transactionType: transactionType, categoryName: categoryName };
+                }
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  const apiUrl = `${this.$apiUrl}/api/add_group_category/`;
+                  const requestData = {
+                    transactionType: result.value.transactionType,
+                    categoryName: result.value.categoryName,
+                    groupID: group_id
+                  };
+                  this.$axios.post(apiUrl, requestData)
+                    .then(response => {
+                      if(response.data === "成功"){
+                        Swal.fire({
+                          title: "新增成功!",
+                          icon: "success"
+                        })
+                      }else if(response.data==='已有該類別'){
+                        Swal.fire({
+                          title: "已有該類別!",
+                          icon: "warning"
+                        })
+                      }
+                    })
+                    .catch(error => {
+                      console.error(error);
+                    });
+                }
+              });
+            }
+          });
+        }).catch(error => {
+          console.error(error);
+        });
+    },
+
     deletegroupAccount(account,group) {
       Swal.fire({
         title:'確認刪除',
@@ -1050,7 +1191,11 @@ body {
   background: #FFA07A;
   color: white;
 }
-
+.profile-picture {
+  width: 40px; /* Adjust the width as needed */
+  height: 40px; /* Adjust the height as needed */
+  border-radius: 50%; /* Make it a circle */
+}
 .button-text {
   font-size: 12px;
   margin-top: 5px;
