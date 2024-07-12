@@ -404,3 +404,27 @@ def new_group_category(group_id,transaction_type,category_name):
     else:
         return "已有該類別"
     
+def change_group_cate(id,name):
+    category_instance = GroupCategoryTable.objects.get(group_category_id=id)    
+    # 更新 category_name
+    category_instance.category_name = name
+    # 保存更改
+    category_instance.save()
+    return "ok"
+    
+def new_personal_category(personal,transaction_type,category_name):
+    personal_instance = PersonalTable.objects.get(personal_id = personal)
+    category = PersonalCategoryTable.objects.filter(personal = personal_instance,transaction_type = transaction_type,category_name = category_name)
+    if not category:
+        unit = PersonalCategoryTable(personal = personal_instance,transaction_type = transaction_type,category_name = category_name)
+        unit.save()
+        return "成功"
+    else:
+        return "已有該類別"
+def change_personal_cate(id,name):
+    category_instance = PersonalCategoryTable.objects.get(personal_category_id=id)    
+    # 更新 category_name
+    category_instance.category_name = name
+    # 保存更改
+    category_instance.save()
+    return "ok"

@@ -900,6 +900,7 @@ def show_group_category(request):
                 transaction_type = member.transaction_type
                 category_name = member.category_name
                 data={
+                    'category_id':member.group_category_id,
                     'transaction_type':transaction_type,
                     'category_name':category_name
                 }
@@ -976,6 +977,92 @@ def exit_group(request):
                                 return_instance.delete()
                 response_data="Yes"
             return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#修改群組類別
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def change_group_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            category_id = data.get('category')
+            category_name = data.get('name')
+            response = func.change_group_cate(category_id,category_name)
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def show_personal_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal = data.get("personal")
+            personal_instance = PersonalTable.objects.get(personal_id = personal)
+            personal_category = PersonalCategoryTable.objects.filter(personal = personal_instance)
+            group_category_list=[]
+            for member in personal_category:
+                transaction_type = member.transaction_type
+                category_name = member.category_name
+                data={
+                    'category_id':member.personal_category_id,
+                    'transaction_type':transaction_type,
+                    'category_name':category_name
+                }
+                group_category_list.append(data)
+            return HttpResponse(json.dumps(group_category_list), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def add_personal_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            personal = data.get('personal')
+            transaction_type = data.get('transactionType')
+            category_name = data.get('categoryName')
+            response = func.new_personal_category(personal,transaction_type,category_name)
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def change_personal_category(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            category_id = data.get('category')
+            category_name = data.get('name')
+            response = func.change_personal_cate(category_id,category_name)
+            return HttpResponse(json.dumps(response), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:

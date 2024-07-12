@@ -209,17 +209,17 @@
           </button>
           <div class="button-text">個人記帳</div>
         </div>
-        <div class="button-container" @click="joinGroupAccount">
+        <div class="button-container" @click="GroupSystem">
           <button class="btn btn-outline-info group-account-button">
-            <img :src="joingroupimg" class="joingroup" width="30" height="30">
+            <img :src="GroupSystemimg" class="groupsystem" width="30" height="30">
           </button>
-          <div class="button-text">加入群組</div>
+          <div class="button-text">群組管理</div>
         </div>
-        <div class="button-container" @click="createGroupAccount">
+        <div class="button-container" @click="personalCategory">
           <button class="btn btn-outline-info group-account-button">
-            <img :src="creategroupimg" class="creategroup" width="30" height="30">
+            <img :src="categoryimg" class="category" width="30" height="30">
           </button>
-          <div class="button-text">創建群組</div>
+          <div class="button-text">類別管理</div>
         </div>
       </div>
       <!-- 群組資訊 -->
@@ -239,7 +239,7 @@
                   <td>{{ group_member.group_code }}</td>
                   <td>
                     <button class="delete" @click="joingroup(group_member.group_id)">成員資訊</button>
-                    <button class="delete" @click="newgroupcategory(group_member.group_id)">新增類別</button>
+                    <button class="delete" @click="newgroupcategory(group_member.group_id)">類別</button>
                   </td>
                 </tr>
               </tbody>
@@ -266,8 +266,7 @@ export default {
       analysisimg: require('@/assets/analysis.png'),
       fromimg: require("@/assets/form.png"),
       plusimg: require("@/assets/plus.png"),
-      creategroupimg: require("@/assets/creategroup.png"),
-      joingroupimg: require("@/assets/joingroup.png"),
+      GroupSystemimg: require("@/assets/creategroup.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: true,
@@ -551,6 +550,24 @@ export default {
         }
       });
     },
+    GroupSystem(){
+      Swal.fire({
+        title: '創建或加入',
+        showCancelButton:true,
+        confirmButtonText:'創建群組',
+        allowOutsideClick: false,
+        showDenyButton: true,
+        denyButtonText: '加入群組',
+        cancelButtonText:'取消'
+      }).then((result) => {
+        if (result.isConfirmed){
+          this.createGroupAccount()
+        }
+        else if (result.isDenied){
+          this.joinGroupAccount()
+        }
+      })
+    },
     joinGroupAccount() {
       const { value: groupcode } = Swal.fire({
         title: "輸入群組代碼",
@@ -775,7 +792,7 @@ export default {
             title: '成員列表',
             html: membersTable,
             showCancelButton:true,
-            confirmButtonText:'新增',
+            confirmButtonText:'新增成員',
             allowOutsideClick: false,
             showDenyButton: true,
             denyButtonText: '退出群組',
@@ -830,6 +847,7 @@ export default {
                 icon: "warning",
                 confirmButtonText: '確認',
                 showCancelButton:true,
+                allowOutsideClick: false,
                 cancelButtonText:'取消',
               }).then((result) => {
                 if (result.isConfirmed){
@@ -893,6 +911,7 @@ export default {
                 <tr>
                   <th>交易類型</th>
                   <th>類別名稱</th>
+                  <th>修改</th>
                 </tr>
               </thead>
               <tbody>
@@ -900,6 +919,9 @@ export default {
                   <tr>
                     <td>${category.transaction_type}</td>
                     <td>${category.category_name}</td>
+                    <td>
+                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px; background-color: #ffc107; color: black;; border-radius: 6px;">修改</button>
+                    </td>
                   </tr>`).join('')}
               </tbody>
             </table>
@@ -908,8 +930,18 @@ export default {
             title: '類別列表',
             html: categoryTable,
             showCancelButton:true,
+            allowOutsideClick: false,
             confirmButtonText:'新增',
-            cancelButtonText:'取消'
+            cancelButtonText:'取消',
+            didOpen: () => {
+              document.querySelectorAll('.change-group').forEach(button => {
+              button.addEventListener('click', (event) => {
+                const categoryId = event.target.getAttribute('data-id');
+                const categoryName = event.target.getAttribute('data-name');
+                this.change_group_category(categoryId, categoryName);
+              });
+              });
+          }
           }).then((result) => {
             if (result.isConfirmed) {
               Swal.fire({
@@ -928,6 +960,7 @@ export default {
                 `,
                 showCancelButton:true,
                 confirmButtonText:'確定',
+                allowOutsideClick: false,
                 cancelButtonText:'取消',
                 preConfirm: () => {
                   const transactionType = Swal.getPopup().querySelector('#transactionType').value;
@@ -996,6 +1029,205 @@ export default {
           }).catch(error => {
               console.error(error);
             });
+        }
+      })
+    },
+    change_group_category(category_id,category_name){
+      Swal.fire({
+        title:'修改名稱',
+        input:"text",
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        allowOutsideClick: false,
+        cancelButtonText:'取消',
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入!";
+          } 
+        }
+      }).then((result) => {
+        if(result.isConfirmed){
+          if(result.value === category_name){
+            Swal.fire({
+              title:"類別名稱與原本相同",
+              icon:"info"
+            })
+          }
+          else{
+            const apiUrl = `${this.$apiUrl}/api/change_group_category/`;
+            this.$axios.post(apiUrl, { category:category_id,name:result.value })
+              .then(response => {
+                if(response.data === 'ok'){
+                  Swal.fire({
+                    title:"修改成功",
+                    icon:"success"
+                  })
+                }
+              })
+          }
+        }
+      })
+    },
+    //個人類別
+    personalCategory(){
+      const apiUrl = `${this.$apiUrl}/api/show_personal_category/`;
+      this.$axios.post(apiUrl, { personal:this.$root.$personal_id })
+        .then(response => {
+          this.personal_category = response.data;
+          const categoryTable = `
+          <style>
+            .table-wrapper {
+              max-height: 400px; /* 調整這個高度以適應你的需求 */
+              -webkit-overflow-scrolling: touch; /* 為移動設備啟用慣性滾動 */
+            }
+            .members-table {
+              overflow-y: scroll;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .members-table th, .members-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+            }
+            .members-table th {
+              background-color: #f2f2f2;
+              position: sticky;
+              top: 0; /* 保持標題行固定在頂部 */
+            }
+          </style>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <div class="table-wrapper">
+            <table class="table members-table">
+              <thead>
+                <tr>
+                  <th>交易類型</th>
+                  <th>類別名稱</th>
+                  <th>修改</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.personal_category.map(category => `
+                  <tr>
+                    <td>${category.transaction_type}</td>
+                    <td>${category.category_name}</td>
+                    <td>
+                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px; background-color: #ffc107; color: black;; border-radius: 6px;">修改</button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+          Swal.fire({
+            title: '類別列表',
+            html: categoryTable,
+            showCancelButton:true,
+            allowOutsideClick: false,
+            confirmButtonText:'新增',
+            cancelButtonText:'取消',
+            didOpen: () => {
+              document.querySelectorAll('.change-group').forEach(button => {
+              button.addEventListener('click', (event) => {
+                const categoryId = event.target.getAttribute('data-id');
+                const categoryName = event.target.getAttribute('data-name');
+                this.change_personal_category(categoryId, categoryName);
+              });
+              });
+          }
+          }).then((result) => {
+            if (result.isConfirmed) {
+              Swal.fire({
+                title: "<small>新增類別</small>",
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <label for="transactionType" style="display: block; margin-bottom: 5px; font-size:16px; font-weight:bold">交易類型</label>
+                        <select name="transactionType" id="transactionType" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
+                          <option value="">選擇交易類型</option>
+                          <option value="收入">收入</option>
+                          <option value="支出">支出</option>
+                        </select>
+                        <label for="categoryName" style="display: block; margin-bottom: 5px; font-size:16px; font-weight:bold">類別名稱</label>
+                        <input type="text" name="categoryName" id="categoryName" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
+                    </div>
+                `,
+                showCancelButton:true,
+                confirmButtonText:'確定',
+                allowOutsideClick: false,
+                cancelButtonText:'取消',
+                preConfirm: () => {
+                  const transactionType = Swal.getPopup().querySelector('#transactionType').value;
+                  const categoryName = Swal.getPopup().querySelector('#categoryName').value;
+                  if (!transactionType || !categoryName) {
+                      Swal.showValidationMessage('請填寫交易類型和類別名稱');
+                      return false; 
+                  }
+                  return { transactionType: transactionType, categoryName: categoryName };
+                }
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  const apiUrl = `${this.$apiUrl}/api/add_personal_category/`;
+                  const requestData = {
+                    transactionType: result.value.transactionType,
+                    categoryName: result.value.categoryName,
+                    personal:this.$root.$personal_id
+                  };
+                  this.$axios.post(apiUrl, requestData)
+                    .then(response => {
+                      if(response.data === "成功"){
+                        Swal.fire({
+                          title: "新增成功!",
+                          icon: "success"
+                        })
+                      }else if(response.data==='已有該類別'){
+                        Swal.fire({
+                          title: "已有該類別!",
+                          icon: "warning"
+                        })
+                      }
+                    })
+                    .catch(error => {
+                      console.error(error);
+                    });
+                }
+              });
+            }
+          });
+        }).catch(error => {
+          console.error(error);
+        });
+    },
+    change_personal_category(category_id,category_name){
+      Swal.fire({
+        title:'修改名稱',
+        input:"text",
+        showCancelButton:true,
+        confirmButtonText:'確定',
+        allowOutsideClick: false,
+        cancelButtonText:'取消',
+        inputValidator: (value) => {
+          if (!value) {
+            return "請輸入!";
+          } 
+        }
+      }).then((result) => {
+        if(result.isConfirmed){
+          if(result.value === category_name){
+            Swal.fire({
+              title:"類別名稱與原本相同",
+              icon:"info"
+            })
+          }
+          else{
+            const apiUrl = `${this.$apiUrl}/api/change_personal_category/`;
+            this.$axios.post(apiUrl, { category:category_id,name:result.value })
+              .then(response => {
+                if(response.data === 'ok'){
+                  Swal.fire({
+                    title:"修改成功",
+                    icon:"success"
+                  })
+                }
+              })
+          }
         }
       })
     },
