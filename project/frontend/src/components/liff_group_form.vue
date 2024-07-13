@@ -18,7 +18,7 @@
 
     <label>分帳人</label>
     <div v-for="(share, index) in shares" :key="index" class="form-group">
-      <select v-model="share.person" class="form-control">
+      <select v-model="share.person" class="form-control" @change="checkDuplicate(index)">
         <option value=""disabled>請選擇</option>
         <option v-for="personItem in persons2" :key="personItem.personal_id" :value="personItem.personal_id">
           {{ personItem.personal_name }}
@@ -67,7 +67,7 @@ export default {
       persons2: [],
       transaction:'',
       category_temp: '',
-      shares: []
+      shares: [],
     }
   },
   mounted() {
@@ -95,14 +95,11 @@ export default {
       const counter = this.formData2.length;
       const divide = this.formData.payment / counter;
       const names = this.formData2;
-      console.log(this.persons2)
-      console.log(names)
       names.forEach(name => {
         let person_member_id = null;
         this.persons2.forEach(personItem => {
           if (personItem.personal_name === name) {
             person_member_id = personItem.personal_id;
-            console.log(person_member_id);
           }
         });
         if (person_member_id !== null) {
@@ -178,12 +175,35 @@ export default {
       this.tmp_list = this.category_list.filter(category_list => category_list.transaction_type === "收入");
     },
     addShare() {
-      this.shares.push({ person:'', percentage: null,advance_percentage:null });
-      this.updateAllShares()
+      if(this.persons2.length <= this.shares.length){
+        Swal.fire({
+          title: '警告',
+          text: '超過群組人數',
+          icon: 'warning'
+        });
+        return;
+      }
+      else{
+        this.shares.push({ person:'', percentage: null,advance_percentage:null });
+        this.updateAllShares()
+      }
     },
     removeShare(index) {
       this.shares.splice(index, 1);
       this.updateAllShares()
+    },
+    checkDuplicate(index) {
+      const selectedPerson = this.shares[index].person;
+      const duplicate = this.shares.some((share, idx) => share.person === selectedPerson && idx !== index);
+
+      if (duplicate) {
+        Swal.fire({
+          title: '警告',
+          text: '已選擇相同的分帳人',
+          icon: 'warning'
+        });
+        this.shares[index].person = '';
+      }
     },
     temporary() {
       const apiUrl = `${this.$apiUrl}/api/get_group_keep_temporary/`;

@@ -103,7 +103,7 @@ def classification(text):
     assistant = autogen.AssistantAgent(
         "assistant",
 
-        system_message="你是一個帳目產生器，根據使用者的輸入來產生帳目，要抓取的參數有：金額(舉例：200,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入抓取帳目要的參數，要抓取的參數有：金額(舉例：200,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
 
         llm_config={"config_list": config_list},
     )
@@ -199,15 +199,13 @@ def address_sure(personal_id,item,payment,location,category,time):
 #一般查詢
 def sqlagent(text,personal_id):
     personal_info_list = []
-    group_info_list = []
     group_account_list = []
     split_return_list = []
+    group = []
     personal_info = PersonalTable.objects.get(personal_id=personal_id)
-    personal_category_info = PersonalCategoryTable.objects.filter(personal=personal_id)
-    personal_account_info = PersonalAccountTable.objects.filter(personal=personal_info, category__in=personal_category_info)
+    personal_account_info = PersonalAccountTable.objects.filter(personal=personal_info)
     #個人帳
     for i in personal_account_info:
-        personal_instance = i.personal
         category_instance = i.category
         data = {
             "個人帳目編號":i.personal_account_id,
@@ -216,44 +214,32 @@ def sqlagent(text,personal_id):
             '地點': i.location,
             '金額': i.payment,
             '資料完整flag(0為不完整、1為完整)': i.info_complete_flag,
-            '使用者姓名': personal_instance.user_name,
             '類別名稱': category_instance.category_name,
             '交易類型': category_instance.transaction_type,
         }
         personal_info_list.append(data)
-    linking_table = PersonalGroupLinkingTable.objects.filter(personal=personal_info)
-
-    #群組帳
-    for j in linking_table:
-        group_instance = j.group
-        data2 = {
-            '群組編號': group_instance.group_id,
-            '群組名稱': group_instance.group_name,
-        }
-        group_info_list.append(data2)
-        
-    for k in linking_table:
-        group_instance2 = k.group
-        group_category = GroupCategoryTable.objects.filter(group=group_instance2)
-        group_table = GroupAccountTable.objects.filter(category__in = group_category)
-        for group in group_table:
-            group_category = group.category
-            data3 = {
-                '群組帳目編號': group.group_account_id,
-                '花費項目': group.item,
-                "記帳日期": group.account_date.strftime('%Y-%m-%d') if group.account_date else None,
-                '地點': group.location,
-                '金額': group.payment,
-                '群組id':group.group.group_id,
-                '資料完整flag(0為不完整、1為完整)': group.info_complete_flag,
-                '付款人id':group.personal.personal_id,
-                '類別名稱': group_category.category_name,
-                '交易類型': group_category.transaction_type,
+    #群組帳    
+    split_instance  = SplitTable.objects.filter(personal = personal_info)
+    for k in split_instance:
+        account = k.group_account_id
+        group_table = GroupAccountTable.objects.filter(group_account_id = account)
+        for i in group_table:
+            group_name = i.group.group_name
+            data3={
+                '群組帳目編號': i.group_account_id,
+                '花費項目': i.item,
+                "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
+                '地點': i.location,
+                '金額': i.payment,
+                '群組名稱': group_name,
+                '資料完整flag(0為不完整、1為完整)': i.info_complete_flag,
+                '總付款人id':i.personal.personal_id,
+                '類別名稱': i.category.category_name,
+                '交易類型': i.category.transaction_type,
             }
             group_account_list.append(data3)
 
-    # 獲取拆帳信息
-    split_instance  = SplitTable.objects.filter(personal = personal_info)
+    # 分帳
     for m in split_instance:
         group_account = m.group_account
         split = SplitTable.objects.filter(group_account = group_account)
@@ -264,9 +250,15 @@ def sqlagent(text,personal_id):
                     '還錢金額':h.return_payment,
                     '欠款人':h.payer,
                     '收款人':h.receiver,
-                    '還錢flag':h.return_flag
+                    '還錢flag(0為未還錢、1為已經還錢)':h.return_flag,
                 }  
                 split_return_list.append(data4) 
+    group_link = PersonalGroupLinkingTable.objects.filter(personal = personal_info)
+    for a in group_link:
+        data5={
+            "群組名稱":a.group.group_name
+        }
+        group.append(data5)
     config_list = [
         {
             'model': 'gpt-4o',
@@ -285,10 +277,10 @@ def sqlagent(text,personal_id):
 
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問器，請全部看完給予的list，然後有邏輯且適當精簡去回答，並不要輸出list名稱與個人與帳目等等的id，還錢flag(0為未還錢、1為已經還錢)，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
+        system_message="你是一個帳目詢問助手，然後有邏輯且適當精簡去回答，並不要輸出有關於資料庫的column、list名稱與個人與帳目等等的id，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
         llm_config={"config_list": config_list},
     )
-    account = str(personal_info_list)+str(group_info_list)+str(group_account_list)+str(split_return_list)
+    account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
     output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
     result = output.summary
     if result[:5] == 'ERROR':

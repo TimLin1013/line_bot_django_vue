@@ -268,7 +268,7 @@ def get_user_account(request):
                     "personal_account_id": account.personal_account_id,
                     "item": account.item,
                     "account_date": account.account_date.strftime(
-                        '%Y-%m-%d') if account.account_date else None,
+                    '%Y-%m-%d') if account.account_date else None,
                     "location": account.location,
                     "payment": account.payment,
                     "flag": account.info_complete_flag,
@@ -570,11 +570,10 @@ def get_group_account(request):
             personal_id = data.get('personal_id')
             group_account_list= [] 
             user_instance = PersonalTable.objects.get(personal_id= personal_id)
-            group_instances = PersonalGroupLinkingTable.objects.filter(personal=user_instance)
-            group_account_list = []
-            for group_link in group_instances:
-                group_instance = group_link.group
-                group_account_instance= GroupAccountTable.objects.filter(group = group_instance)
+            split_instance  = SplitTable.objects.filter(personal = user_instance)
+            for l in split_instance:
+                account = l.group_account_id
+                group_account_instance= GroupAccountTable.objects.filter(group_account_id = account)
                 for group_account in group_account_instance:
                     group_account_data = {
                         "group_account_id": group_account.group_account_id,
@@ -583,14 +582,10 @@ def get_group_account(request):
                         "account_date": group_account.account_date.strftime(
                         '%Y-%m-%d') if group_account.account_date else None,
                         "payment":group_account.payment,
-                        "category_name":GroupCategoryTable.objects.get(group_category_id=group_account.category_id).category_name,
-                        "group_id":group_account.group_id
-                        
+                        "category_name":group_account.category.category_name,
+                        "group_id":group_account.group.group_id    
                     }
                     group_account_list.append(group_account_data)
-                
-                
-
             response_data = {
                 "message": "Data received successfully",
                 "group_account": group_account_list,
@@ -1062,6 +1057,50 @@ def change_personal_category(request):
             category_id = data.get('category')
             category_name = data.get('name')
             response = func.change_personal_cate(category_id,category_name)
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+#未完成帳目
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def unfinish_account(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            account_list=[]
+            account_list2=[]
+            personal_id = data.get('personal')
+            personal_instance = PersonalTable.objects.get(personal_id = personal_id)
+            personal_account_instance = PersonalAccountTable.objects.filter(info_complete_flag = 0,personal = personal_instance)
+            for k in personal_account_instance:
+                data = {
+                    "personal_account_id":k.personal_account_id,
+                    "account_date": k.account_date.strftime(
+                    '%m-%d') if k.account_date else None,
+                    "item":k.item,
+                }
+                account_list.append(data)
+            group_table = GroupAccountTable.objects.filter(personal = personal_instance,info_complete_flag = 0)
+            for i in group_table:  
+                data2={
+                    "group_account_id":i.group_account_id,
+                    "group_id":i.group.group_id,
+                    "group_name":i.group.group_name,
+                    "account_date": i.account_date.strftime(
+                    '%m-%d') if i.account_date else None,
+                    "item":i.item,
+                }
+                account_list2.append(data2)
+            response={
+                "personal_account":account_list,
+                "group_account":account_list2
+            }
             return HttpResponse(json.dumps(response), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
