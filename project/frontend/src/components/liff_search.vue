@@ -28,6 +28,9 @@
         <li>
           <a href="#" @click="isInfo()" :class="{ active: isPersonalInfo }">群組資訊</a>
         </li>
+        <li>
+          <a href="#" @click="NotFinish()" :class="{ active: isnotFinish }">未完成帳目</a>
+        </li>
       </ul>
     </nav>
 
@@ -40,6 +43,7 @@
           <span class="mx-3">{{ currentYearMonth }}</span>
           <button class="btn btn-outline-secondary" @click="nextMonth" :disabled="loading">→</button>
         </div>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <div class="fixed-container">
           <div class="scrollable-block">
             <table v-if="filteredAccounts.length > 0" class="table table-striped">
@@ -53,7 +57,7 @@
               </thead>
               <tbody>
                 <tr v-for="account in filteredAccounts" :key="account.id">
-                  <td>{{ account.account_date.slice(5, 10)}}</td>
+                  <td>{{ account.account_date.slice(8)}}</td>
                   <td>{{ account.item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
@@ -99,7 +103,7 @@
               </thead>
               <tbody>
                 <tr v-for="account in filteredAccounts" :key="account.id">
-                  <td>{{ account.account_date.slice(5, 10) }}</td>
+                  <td>{{ account.account_date.slice(8) }}</td>
                   <td>{{ account.group_account_item }}</td>
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
@@ -251,6 +255,64 @@
           </div>
         </div>
       </div>
+       <!-- 未完成帳目 -->
+       <div v-if="isnotFinish" class="personalInfo-container">
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="unfinish.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>項目</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="k in unfinish" :key="k.id">
+                  <td>{{ k.account_date }}</td>
+                  <td>{{ k.item }}</td>
+                  <td>
+                    <button class="delete" @click="">修改</button>
+                    <button class="delete_group" @click="deleteAccount(k.personal_account_id)">刪除</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <p>暫無資料</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fixed-container">
+          <div class="scrollable-block">
+            <table v-if="unfinish2.length > 0" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>群組</th>
+                  <th>日期</th>
+                  <th>項目</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="k in unfinish2" :key="k.id">
+                  <td>{{ k.group_name }}</td>
+                  <td>{{ k.account_date }}</td>
+                  <td>{{ k.item }}</td>
+                  <td>
+                    <button class="delete" @click="">修改</button>
+                    <button class="delete_group" @click="">刪除</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else-if="loading" class="loading">載入中...</div>
+            <div v-else class="account-area-placeholder">
+              <p>暫無資料</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -267,6 +329,7 @@ export default {
       fromimg: require("@/assets/form.png"),
       plusimg: require("@/assets/plus.png"),
       GroupSystemimg: require("@/assets/creategroup.png"),
+      categoryimg: require("@/assets/category.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: true,
@@ -274,6 +337,7 @@ export default {
       isAllExpense: false,
       isPayBack: false,
       isPersonalInfo:false,
+      isnotFinish:false,
       member:[],
       group_category:[],
       currentYearMonth: dayjs().format('YYYY-MM'),
@@ -287,6 +351,8 @@ export default {
       group_account: [],
       payBackAccounts: [],
       payBackAccounts2: [],
+      unfinish:[],
+      unfinish2:[],
       sidebarActive: false,
     };
   },
@@ -346,6 +412,7 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = false;
       this.isPersonalInfo = false;
+      this.isnotFinish = false;
       this.toggleSidebar();
     },
     showGroupExpense() {    
@@ -354,6 +421,7 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = false;
       this.isPersonalInfo = false;
+      this.isnotFinish = false;
       this.toggleSidebar();
     },
     showPayBack() {
@@ -362,6 +430,7 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = true;
       this.isPersonalInfo = false;
+      this.isnotFinish = false;
       this.fetchPayBack();
       this.toggleSidebar();
     },
@@ -371,7 +440,18 @@ export default {
       this.isAllExpense = false;
       this.isPayBack = false;
       this.isPersonalInfo = true;
+      this.isnotFinish = false;
       this.fetchGroup();
+      this.toggleSidebar()
+    },
+    NotFinish(){
+      this.isPersonalExpense = false;
+      this.isGroupExpense = false;
+      this.isAllExpense = false;
+      this.isPayBack = false;
+      this.isPersonalInfo = false;
+      this.isnotFinish = true;
+      this.unfinishaccount()
       this.toggleSidebar()
     },
     prevMonth() {
@@ -1231,6 +1311,15 @@ export default {
         }
       })
     },
+    //未完成資訊
+    unfinishaccount(){
+      const apiUrl = `${this.$apiUrl}/api/unfinish_account/`;
+      this.$axios.post(apiUrl, { personal:this.$root.$personal_id })
+        .then(response => {
+          this.unfinish = response.data.personal_account
+          this.unfinish2 = response.data.group_account
+        })
+    }
   },
   mounted() {
     this.checkUserId();
@@ -1347,13 +1436,19 @@ body {
   margin-top: 56px; 
 }
 
-.payback-container, .fixed-container {
+.payback-container {
   margin-top: 20px;
 }
-
+.fixed-container{
+  margin-top: 20px;
+  max-height: 500px; /* 設置固定高度或最大高度 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .scrollable-block {
   max-height: 100%;
   overflow-y: auto;
+  
 }
 
 .account-area {
