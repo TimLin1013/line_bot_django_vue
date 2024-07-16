@@ -13,6 +13,7 @@ urlpatterns = [
     path('add_personal_category/', views.add_personal_category, name='add_personal_category_api'),
     path('change_group_category/', views.change_group_category, name='change_group_category_api'),
     path('unfinish_account/', views.unfinish_account, name='unfinish_account_api'),
+    path('split_account/', views.split_account, name='split_account_api'),
     path('change_personal_category/', views.change_personal_category, name='change_personal_category_api'),
     path('get_personal_account/', views.get_user_account, name='get_user_account_api'),
     path('get_user_account_info/',views.get_user_account_info,name = 'get_user_account_info_api'),

@@ -1,5 +1,6 @@
 <template>
-  <div id="demo">
+  <div id="demo" @touchstart="handleTouchStart" @touchend="handleTouchEnd" class="p-4 p-md-5">
+    
     <!-- 頂部 -->
     <nav class="navbar navbar-light bg-light fixed-top">
       <div class="container-fluid">
@@ -8,7 +9,7 @@
         </button>
         <div class="ml-auto">
           <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
-          <span class="personal-id">個人資訊: {{ this.$root.$userName+" "+personal_id }}</span>
+          <span class="personal-id">{{ this.$root.$userName+" "+personal_id }}</span>
         </div>
       </div>
     </nav>
@@ -62,7 +63,7 @@
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                   <td>
-                    <button class="delete" @click="deleteAccount(account.personal_account_id)">刪除</button>
+                    <button class="delete_group" @click="deleteAccount(account.personal_account_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -102,7 +103,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="account in filteredAccounts" :key="account.id">
+                <tr v-for="account in filteredAccounts" :key="account.id" @click="showsplit(account)">
                   <td>{{ account.account_date.slice(8) }}</td>
                   <td>{{ account.group_account_item }}</td>
                   <td>{{ account.payment }}</td>
@@ -271,7 +272,6 @@
                   <td>{{ k.account_date }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete" @click="">修改</button>
                     <button class="delete_group" @click="deleteAccount(k.personal_account_id)">刪除</button>
                   </td>
                 </tr>
@@ -300,8 +300,7 @@
                   <td>{{ k.account_date }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete" @click="">修改</button>
-                    <button class="delete_group" @click="">刪除</button>
+                    <button class="delete_group" @click="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -353,10 +352,42 @@ export default {
       payBackAccounts2: [],
       unfinish:[],
       unfinish2:[],
+      split:[],
       sidebarActive: false,
+      touchStartY: 0,
+      touchEndY: 0,
+      isRefreshing: false,
+      rotationDegree: 0,
     };
   },
   methods: {
+
+    //刷新頁面
+    handleTouchStart(event) {
+      if (window.scrollY < 10) {
+        this.touchStartY = event.touches[0].clientY;//只有在頂部時進行刷新
+      }
+    },
+    handleTouchEnd(event) {
+      this.touchEndY = event.changedTouches[0].clientY;
+      this.handleSwipeGesture();
+    },
+    handleSwipeGesture() {
+      // 設定滑動距離的閾值
+      const threshold = 100;
+      if (this.touchEndY > this.touchStartY && (this.touchEndY - this.touchStartY) > threshold) {
+        // 如果結束位置比起始位置大，且滑動距離超過閾值，則執行刷新
+        this.refreshPage();
+      }
+    },
+    refreshPage() {
+      setTimeout(() => {
+          window.location.reload();
+          this.isRefreshing = false; // 刷新完成後隱藏動畫
+        }, 1000); // 延遲1.5秒來模擬刷新過程
+    },
+
+
     markAsPaid(index) {
       Swal.fire({
         title: '確認歸還?',
@@ -817,6 +848,7 @@ export default {
                 icon: "success"
             })
             this.fetchAccounts()
+            this.unfinishaccount()
           }).catch(error => {
               console.error(error);
             });
@@ -1105,6 +1137,7 @@ export default {
                 icon: "success"
             })
             this.fetchGroupAccount()
+            this.unfinishaccount()
             this.selectedGroupId = group
           }).catch(error => {
               console.error(error);
@@ -1319,6 +1352,60 @@ export default {
           this.unfinish = response.data.personal_account
           this.unfinish2 = response.data.group_account
         })
+    },
+    showsplit(account){
+      const apiUrl = `${this.$apiUrl}/api/split_account/`;
+      this.$axios.post(apiUrl, { account_id:account.group_account_id})
+        .then(response => {
+          this.split = response.data.list
+          const splitTable = `
+          <style>
+            .table-wrapper {
+              max-height: 400px; /* 調整這個高度以適應你的需求 */
+              -webkit-overflow-scrolling: touch; /* 為移動設備啟用慣性滾動 */
+            }
+            .members-table {
+              overflow-y: scroll;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .members-table th, .members-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+            }
+            .members-table th {
+              background-color: #f2f2f2;
+              position: sticky;
+              top: 0; /* 保持標題行固定在頂部 */
+            }
+          </style>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <div class="table-wrapper">
+            <table class="table members-table">
+              <thead>
+                <tr>
+                  <th>分帳人</th>
+                  <th>分帳金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.split.map(spliter => `
+                  <tr>
+                    <td>${spliter.personal}</td>
+                    <td>${spliter.should_pay}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+          Swal.fire({
+            title: '分帳資訊',
+            html: splitTable,
+            showCancelButton:true,
+            allowOutsideClick: false,
+            confirmButtonText:'確定',
+            cancelButtonText:'取消'
+        })
+      })
     }
   },
   mounted() {
@@ -1606,6 +1693,26 @@ body {
 
 .float-right {
   float: right;
+}
+
+.refresh-icon {
+  position: absolute;
+  top: 20px;
+  right: 50%;
+  font-size: 24px;
+  color: #007bff;
+  z-index: 1050;
+  transform-origin: center;
+  transition: transform 0.2s ease-out;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+  animation: spin 1s infinite linear;
 }
 
 </style>
