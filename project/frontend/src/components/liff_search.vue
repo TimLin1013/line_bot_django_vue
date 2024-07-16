@@ -1,5 +1,6 @@
 <template>
-  <div id="demo">
+  <div id="demo" @touchstart="handleTouchStart" @touchend="handleTouchEnd" class="p-4 p-md-5">
+    
     <!-- 頂部 -->
     <nav class="navbar navbar-light bg-light fixed-top">
       <div class="container-fluid">
@@ -8,7 +9,7 @@
         </button>
         <div class="ml-auto">
           <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
-          <span class="personal-id">個人資訊: {{ this.$root.$userName+" "+personal_id }}</span>
+          <span class="personal-id">{{ this.$root.$userName+" "+personal_id }}</span>
         </div>
       </div>
     </nav>
@@ -354,9 +355,40 @@ export default {
       unfinish:[],
       unfinish2:[],
       sidebarActive: false,
+      touchStartY: 0,
+      touchEndY: 0,
+      isRefreshing: false,
+      rotationDegree: 0,
     };
   },
   methods: {
+
+    //刷新頁面
+    handleTouchStart(event) {
+      if (window.scrollY < 10) {
+        this.touchStartY = event.touches[0].clientY;//只有在頂部時進行刷新
+      }
+    },
+    handleTouchEnd(event) {
+      this.touchEndY = event.changedTouches[0].clientY;
+      this.handleSwipeGesture();
+    },
+    handleSwipeGesture() {
+      // 設定滑動距離的閾值
+      const threshold = 100;
+      if (this.touchEndY > this.touchStartY && (this.touchEndY - this.touchStartY) > threshold) {
+        // 如果結束位置比起始位置大，且滑動距離超過閾值，則執行刷新
+        this.refreshPage();
+      }
+    },
+    refreshPage() {
+      setTimeout(() => {
+          window.location.reload();
+          this.isRefreshing = false; // 刷新完成後隱藏動畫
+        }, 1000); // 延遲1.5秒來模擬刷新過程
+    },
+
+
     markAsPaid(index) {
       Swal.fire({
         title: '確認歸還?',
@@ -1606,6 +1638,26 @@ body {
 
 .float-right {
   float: right;
+}
+
+.refresh-icon {
+  position: absolute;
+  top: 20px;
+  right: 50%;
+  font-size: 24px;
+  color: #007bff;
+  z-index: 1050;
+  transform-origin: center;
+  transition: transform 0.2s ease-out;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+  animation: spin 1s infinite linear;
 }
 
 </style>
