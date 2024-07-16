@@ -277,7 +277,7 @@ def sqlagent(text,personal_id):
 
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問助手，然後有邏輯且適當精簡去回答，並不要輸出有關於資料庫的column、list名稱與個人與帳目等等的id，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
+        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
         llm_config={"config_list": config_list},
     )
     account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)

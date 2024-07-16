@@ -1106,3 +1106,31 @@ def unfinish_account(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+     
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def split_account(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            account_id = data.get('account_id')
+            list=[]
+            split_unit = SplitTable.objects.filter(group_account = account_id)
+            for split in split_unit:
+                data = {
+                    'personal':split.personal.user_name,
+                    'should_pay':split.payment,
+                }
+                list.append(data)
+            response = {
+                "list":list
+            }
+            return HttpResponse(json.dumps(response), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
