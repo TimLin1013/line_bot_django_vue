@@ -15,6 +15,9 @@ from line_bot_app.models import *
 from module import func
 from line_bot_app import mail
 import json
+import requests
+import os
+import base64
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
 
@@ -196,6 +199,23 @@ def callback(request):
                     personal_id = personal.personal_id
                     if mtext == "查詢":
                         line_bot_api.reply_message(event.reply_token, TextMessage(text="請輸入想問的帳目問題"))
+                    elif mtext[:3] == "###":
+                        
+                        user_message = mtext[3:].strip()
+                        func.drawplot(user_message,personal_id)
+                        
+                        image_path = r"C:\Users\user\PycharmProjects\line_bot\project\account.png"
+                        try:
+                            image_url = upload_image_to_imgur(image_path)
+                            print(f'Image URL: {image_url}')
+                        except Exception as e:
+                            print(f'Error: {e}')
+                        image_message = ImageSendMessage(
+                            original_content_url=image_url,
+                            preview_image_url=image_url
+                        )
+                        line_bot_api.reply_message(event.reply_token, image_message)
+                        
                     else:
                         result = func.sqlagent(mtext,personal_id)
                         line_bot_api.reply_message(event.reply_token, TextMessage(text=result))
@@ -1106,3 +1126,36 @@ def unfinish_account(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+def upload_image_to_imgur(image_path):
+    IMGUR_CLIENTID="14c26ea43cdeb49"
+    IMGUR_CLIENT_SECRET="6f39b49fe1ce68833a49827b53947be81d23e7f7"
+    IMGUR_REFRESH_TOKEN="cec1e168ae254a3743bbc97d684e8830c95e95b2"
+    IMGUR_ALBUM_ID="plot-XLGkIhU"
+
+    # 讀取本地圖片並轉換為 Base64
+    with open(image_path, 'rb') as image_file:
+        image_base64 = base64.b64encode(image_file.read()).decode()
+
+    # 設置請求頭
+    headers = {
+        'Authorization': f'Client-ID {IMGUR_CLIENTID}',
+    }
+
+    # 設置請求數據
+    data = {
+        'image': image_base64,
+        'type': 'base64',
+        #'album': IMGUR_ALBUM_ID,  # 可選
+    }
+
+    # 發送請求到 Imgur API
+    response = requests.post('https://api.imgur.com/3/image', headers=headers, data=data)
+
+    # 解析返回的 JSON 數據
+    if response.status_code == 200:
+        image_url = response.json()['data']['link']
+        return image_url
+    else:
+        raise Exception(f'Failed to upload image: {response.status_code} {response.text}')
+
+

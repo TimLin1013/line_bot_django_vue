@@ -9,6 +9,9 @@ from linebot import LineBotApi
 from linebot.models import *
 import autogen
 import re
+from pathlib import Path
+import subprocess
+from autogen.coding import LocalCommandLineCodeExecutor
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -420,3 +423,92 @@ def change_personal_cate(id,name):
     # 保存更改
     category_instance.save()
     return "ok"
+
+#畫圖
+def drawplot(text,personal_id):
+    personal_info_list = []
+    personal_info = PersonalTable.objects.get(personal_id=personal_id)
+    personal_account_info = PersonalAccountTable.objects.filter(personal=personal_info, info_complete_flag=1)
+    #個人帳
+    
+    
+    for i in personal_account_info:
+        category_instance = i.category
+        
+        data = [i.item,i.account_date.strftime('%Y-%m-%d') if i.account_date else None,i.location,i.payment,category_instance.category_name,category_instance.transaction_type]
+        personal_info_list.append(data)
+    config_list = [
+        {
+            'model': 'ft:gpt-3.5-turbo-1106:personal::9igDzZkf',
+            'api_key': '',
+        },
+    ]
+
+    os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
+    coder = autogen.AssistantAgent(
+        name="coder",
+        llm_config={
+            "config_list": config_list,  # a list of OpenAI API configurations
+            "temperature": 0,  # temperature for sampling
+        },  # configuration for autogen's enhanced inference API which is compatible with OpenAI API
+
+        system_message="你將要執行的資料視覺化任務且圖表的呈現只能使用英文，根據資料內容及任務需求選擇最適當的圖表(折線圖,長條圖,圓餅圖,...),並使用python的matplotlib套件產生程式碼,將結果儲存在account.png,Reply TERMINATE if the task has been solved or the user_proxy reply nothing . Otherwise, reply CONTINUE, or the reason why the task is not solved yet. 資料如下( ['Item_name', 'Date', 'Location', 'Amount', 'Category', 'Type'] 項目請用 Item_name 分類,類別請用 Category 分類)："+str(personal_info_list) ,
+    )
+
+    # create a UserProxyAgent instance named "user_proxy"
+    user_proxy = autogen.UserProxyAgent(
+        name="user_proxy",
+        human_input_mode="NEVER",
+        max_consecutive_auto_reply=1,
+        is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+        code_execution_config={
+            
+            "executor": LocalCommandLineCodeExecutor(work_dir="coding",virtual_env_context=None),
+
+        },
+
+    )
+    # the assistant receives a message from the user_proxy, which contains the task description
+    chat_res = user_proxy.initiate_chat(
+        coder,
+        message=text,
+        summary_method="reflection_with_llm",
+    )
+
+    def find_and_rename_py_file(folder_path, new_filename):
+
+        folder_path = Path(folder_path)
+        
+
+        for file_path in folder_path.iterdir():
+            if file_path.is_file() and file_path.name.startswith('tmp'):
+                
+                current_filename = file_path.name
+                new_file_path = folder_path / new_filename
+                
+                
+                file_path.rename(new_file_path)
+                
+                print(f"File '{current_filename}' renamed to '{new_filename}'.")
+
+
+    folder_path = "coding"  
+    new_filename = "task.py" 
+    find_and_rename_py_file(folder_path, new_filename)
+    script_path = r'C:\Users\user\PycharmProjects\line_bot\project\coding\run.py'
+
+    try:
+        # 執行 run.py 腳本
+        result = subprocess.run(['python', script_path],
+                            capture_output=True, text=True, shell=True)
+        
+        # 檢查執行結果
+        if result.returncode == 0:
+            print("run.py executed successfully.")
+            print(result.stdout)
+        else:
+            print("run.py execution failed.")
+            print(result.stderr)
+            
+    except subprocess.CalledProcessError as e:
+        print(f"run.py execution failed: {e}")
