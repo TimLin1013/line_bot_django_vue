@@ -5,7 +5,12 @@
     <nav class="navbar navbar-light bg-light fixed-top">
       <div class="container-fluid">
         <button type="button" id="sidebarCollapse" class="btn btn-link" @click="toggleSidebar">
-          <i class="fas fa-bars"></i>
+          <!-- <span class="menu-text">MENU</span> -->
+          <div :class="{ 'menu-icon': true, 'active': sidebarActive }">
+            <span class="menu-bar top-bar"></span>
+            <span class="menu-bar middle-bar"></span>
+            <span class="menu-bar bottom-bar"></span>
+          </div>          
         </button>
         <div class="ml-auto">
           <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
@@ -16,6 +21,7 @@
 
     <!-- 側邊 -->
     <nav id="sidebar" ref="sidebar" :class="{ 'active': sidebarActive }" class="bg-light">
+      <button @click="toggleSidebar" class="close-sidebar" style="float: right; margin: 10px; font-size: 24px; background-color: #FAFAFA;">&times;</button>
       <ul class="list-unstyled components">
         <li>
           <a href="#" @click="showPersonalExpense()" :class="{ active: isPersonalExpense }">個人帳本</a>
@@ -431,9 +437,7 @@ export default {
       this.sidebarActive = !this.sidebarActive;
     },
     handleOutsideClick(e) {
-      const sidebar = this.$refs.sidebar;
-      const sidebarButton = document.getElementById('sidebarCollapse');
-      if (!sidebar.contains(e.target) && !sidebarButton.contains(e.target) && this.sidebarActive) {
+      if (this.sidebarActive && !this.$refs.sidebar.contains(e.target) && !e.target.closest('#sidebarCollapse')) {
         this.sidebarActive = false;
       }
     },
@@ -1452,6 +1456,40 @@ body {
   background-color: #fafafa;
   color: #333;
 }
+/* 添加的漢堡菜單到X的CSS */
+.menu-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 20px;
+  height: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding-left: 100px;
+  padding: 10;
+  box-sizing: border-box;
+}
+.menu-bar {
+  width: 30px;
+  height: 2px;
+  background-color: black;
+  border-radius: 10px;
+  transition: all 0.3s linear;
+  position: relative;
+  transform-origin: 1px;
+}
+.menu-icon.active .top-bar {
+  transform: rotate(45deg) translate(0px, -5px);
+}
+
+.menu-icon.active .middle-bar {
+  opacity: 0;
+}
+
+.menu-icon.active .bottom-bar {
+  transform: rotate(-45deg) translate(0px, 5px);
+}
 
 #demo {
   display: flex;
@@ -1465,22 +1503,23 @@ body {
   align-items: center;
   width: 100%;
   background: #FFEFDB;
-  padding: 10px;
+  /* padding-left: 0px;
+  padding-right:0px; */
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 1030; 
+  z-index: 1060; 
 }
 
 #sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 150px;
+  width: 100%;
   height: 100%;
   background: #FFEFDB;
-  transition: all 0.5s ease;
-  transform: translateX(-250px);
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(-100%);
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1020; 
+  z-index: 1050; 
 }
 
 #sidebar.active {
@@ -1525,6 +1564,10 @@ body {
 
 .payback-container {
   margin-top: 20px;
+}
+.container-fluid {
+  width: 100%;       /* 確保容器寬度為100% */
+  max-width: none;   /* 移除可能存在的最大寬度限制 */
 }
 .fixed-container{
   margin-top: 20px;
@@ -1695,24 +1738,15 @@ body {
   float: right;
 }
 
-.refresh-icon {
-  position: absolute;
-  top: 20px;
-  right: 50%;
-  font-size: 24px;
-  color: #007bff;
-  z-index: 1050;
-  transform-origin: center;
-  transition: transform 0.2s ease-out;
+#sidebarCollapse {
+  font-family: Arial, sans-serif; /* Arial 字體，並設置一個備選字體 */
+  right: 20px; /* 在圖示和文字之間添加一些間距 */
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.fa-spin {
-  animation: spin 1s infinite linear;
+.menu-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-right: 10px;
 }
 
 </style>
