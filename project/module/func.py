@@ -280,11 +280,11 @@ def sqlagent(text,personal_id):
 
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
+        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，欠款人(欠別人錢的)，收款人(收別人錢的)，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
         llm_config={"config_list": config_list},
     )
     account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
-    output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
+    output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+"personal_id:"+personal_id+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
     result = output.summary
     if result[:5] == 'ERROR':
         return "這問題與您的資訊無關，請重新詢問！"
@@ -440,10 +440,9 @@ def drawplot(text,personal_id):
     config_list = [
         {
             'model': 'ft:gpt-3.5-turbo-1106:personal::9igDzZkf',
-            'api_key': '',
+            'api_key': os.environ["OPENAI_API_KEY"],
         },
     ]
-
     os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
     coder = autogen.AssistantAgent(
         name="coder",
