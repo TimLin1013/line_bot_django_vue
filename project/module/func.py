@@ -184,7 +184,6 @@ def address_temporary(personal_id,item,payment,location,category,time):
             personal_id = "Unknown"
         if category is None:
             category = "Unknown"
-        print(personal_id + "  " + category)
         unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
         category_id = unit.personal_category_id
         
@@ -511,3 +510,28 @@ def drawplot(text,personal_id):
             
     except subprocess.CalledProcessError as e:
         print(f"run.py execution failed: {e}")
+
+def unfinish_address_temporary(account_id,item,payment,location,category,time,transaction_type,user_id):
+    payment = int(payment)
+    category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    account_instance = PersonalAccountTable.objects.get(personal_account_id = account_id)
+    account_instance.item = item
+    account_instance.payment=payment
+    account_instance.location = location
+    account_instance.category_id = category_instance.personal_category_id
+    account_instance.account_date = time
+    account_instance.save()
+    return "ok"
+
+def unfinish_address_sure(account_id,item,payment,location,category,time,transaction_type,user_id):
+    payment = int(payment)
+    category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    account_instance = PersonalAccountTable.objects.get(personal_account_id = account_id)
+    account_instance.item = item
+    account_instance.payment=payment
+    account_instance.location = location
+    account_instance.category_id = category_instance.personal_category_id
+    account_instance.account_date = time
+    account_instance.info_complete_flag = 1
+    account_instance.save()
+    return "ok"
