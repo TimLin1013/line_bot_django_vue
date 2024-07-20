@@ -18,8 +18,10 @@ import json
 import requests
 import os
 import base64
+import requests
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
+
 
 def get_line_id_by_name(name):
     try:
@@ -35,27 +37,16 @@ def get_line_id_by_name(name):
 def mark_as_paid(request):
     try:
         data = json.loads(request.body)
-        return_id = data['return_id']
+        return_id = data.get('return_id')
 
         account = ReturnTable.objects.get(return_id=return_id)
-        account.return_flag = '1'
+        account.return_flag = '2'
         account.save()
-
-        # 從名字獲取line_id
-        receiver_line_id = get_line_id_by_name(account.receiver)
-        if receiver_line_id:
-            receiver_message = f"{account.payer} 已歸還款項給你。"
-            mail(receiver_line_id, receiver_message)
-            print("Account marked as paid successfully.")
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'error': 'Receiver LINE ID not found'}, status=404)
+        return JsonResponse({"success":'OK'}, safe=False)
 
     except ReturnTable.DoesNotExist:
-        print("Account not found.")
         return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
     except Exception as e:
-        print(f"Error: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 #6/22
@@ -176,14 +167,11 @@ def get_payback(request):
 
 
 
-
-#6/2
 @csrf_exempt
 def callback(request):
     if request.method == 'POST':
         signature = request.META['HTTP_X_LINE_SIGNATURE']
         body = request.body.decode('utf-8')
-
         try:
             events = parser.parse(body, signature)
         except InvalidSignatureError:
@@ -1102,8 +1090,12 @@ def unfinish_account(request):
                 data = {
                     "personal_account_id":k.personal_account_id,
                     "account_date": k.account_date.strftime(
-                    '%m-%d') if k.account_date else None,
+                    '%Y-%m-%d') if k.account_date else None,
                     "item":k.item,
+                    "location":k.location,
+                    "transaction_type":k.category.transaction_type,
+                    "category_name":k.category.category_name,
+                    'payment':k.payment
                 }
                 account_list.append(data)
             group_table = GroupAccountTable.objects.filter(personal = personal_instance,info_complete_flag = 0)
@@ -1189,4 +1181,64 @@ def split_account(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+#未完成暫存
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_unfinish_temporary(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            user_id = data.get('userID')
+            account_id = data.get('account_id')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            if data.get('transaction_type') == '':
+                transaction_type='無'
+            else:
+                transaction_type = transaction_type = data.get('transaction_type')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = data.get('category')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            response_data = func.unfinish_address_temporary(account_id,item,payment,location,category,time,transaction_type,user_id)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
 
+#未完成確定
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def get_unfinish_sure(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            user_id = data.get('userID')
+            account_id = data.get('account_id')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            transaction_type = transaction_type = data.get('transaction_type')
+            category = data.get('category')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            response_data = func.unfinish_address_sure(account_id,item,payment,location,category,time,transaction_type,user_id)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)

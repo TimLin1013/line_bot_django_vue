@@ -5,6 +5,7 @@ import liff_keep from '@/components/liff_keep'
 import liff_personal from '@/components/liff_personal_form'
 import liff_account_overview from '@/components/liff_account_overview.vue'
 import liff_group_form from '@/components/liff_group_form.vue'
+import liff_personal_unfinish from '@/components/liff_personal_unfinish.vue'
 Vue.use(Router)
 
   export default new Router({
@@ -45,7 +46,12 @@ Vue.use(Router)
         component: liff_group_form,
         props: true
       },
-
+      {
+        path: '/personal_unfinish',
+        name: 'liff_personal_unfinish',
+        component: liff_personal_unfinish,
+        props: true
+      },
     ]
     
   })

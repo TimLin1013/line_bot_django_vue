@@ -109,7 +109,7 @@
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                   <td>
-                    <button class="delete_group" @click="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
+                    <button class="delete_group" @click.stop="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -243,8 +243,12 @@
                   <td>{{ group_member.group_name }}</td>
                   <td>{{ group_member.group_code }}</td>
                   <td>
-                    <button class="delete" @click="joingroup(group_member.group_id)">成員資訊</button>
-                    <button class="delete" @click="newgroupcategory(group_member.group_id)">類別</button>
+                    <button class="btn-outline-info" @click="joingroup(group_member.group_id)">
+                      <img :src="GroupSystemimg" class="groupsystem" width="30" height="30">
+                    </button>
+                    <button class="btn-outline-info" @click="newgroupcategory(group_member.group_id)">
+                      <img :src="categoryimg" class="category" width="30" height="30">
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -268,11 +272,11 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="k in unfinish" :key="k.id">
-                  <td>{{ k.account_date }}</td>
+                <tr v-for="k in unfinish" :key="k.id" @click="show_unfinish(k)">
+                  <td>{{ k.account_date.slice(8) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete_group" @click="deleteAccount(k.personal_account_id)">刪除</button>
+                    <button class="delete_group" @click.stop="deleteAccount(k.personal_account_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -297,7 +301,7 @@
               <tbody>
                 <tr v-for="k in unfinish2" :key="k.id">
                   <td>{{ k.group_name }}</td>
-                  <td>{{ k.account_date }}</td>
+                  <td>{{ k.account_date.slice(8) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
                     <button class="delete_group" @click="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
@@ -1406,6 +1410,13 @@ export default {
             cancelButtonText:'取消'
         })
       })
+    },
+    show_unfinish(account){
+      if(account.transaction_type==='無'){
+        account.transaction_type = '',
+        account.category_name=''
+      }
+      this.$router.push({ name: 'liff_personal_unfinish', params: { formData:account} });
     }
   },
   mounted() {
@@ -1519,7 +1530,7 @@ body {
 
 #content {
   flex-grow: 1;
-  padding: 20px;
+  padding: 0px;
   margin-top: 56px; 
 }
 
