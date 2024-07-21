@@ -38,5 +38,5 @@ urlpatterns = [
     path('get_personal_expense_data/', views.get_personal_expense_data, name='get_personal_expense_data'),
     path('get_group_expense_data/', views.get_group_expense_data, name='get_group_expense_data'),
     path('mark_as_paid/', views.mark_as_paid, name='mark_as_paid'),
-
+    path('mark_paid_sure/', views.mark_paid_sure, name='mark_paid_sure'),
 ]

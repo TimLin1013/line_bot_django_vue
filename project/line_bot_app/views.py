@@ -31,24 +31,77 @@ def get_line_id_by_name(name):
         print("Error retrieving user by name:", str(e))
         return None
 
-#6/25
 @csrf_exempt
 @require_http_methods(["POST"])
 def mark_as_paid(request):
-    try:
-        data = json.loads(request.body)
-        return_id = data.get('return_id')
+    data = json.loads(request.body)
+    return_id = data.get('return_id')
+    payer_id = data.get('payer_id')
+    receiver_id = data.get('receiver_id')
+    receiver_id = receiver_id[-6:]
+    return_payment = data.get('return_payment')
+    group_name = data.get('group_name')
+    account = ReturnTable.objects.get(return_id=return_id)
+    #設定為2
+    account.return_flag = '2'
+    account.save()
+    #收款者
+    receiver_personal = PersonalTable.objects.get(personal_id = receiver_id)
+    id = receiver_personal.line_id
+    #付款者
+    payer_personal = PersonalTable.objects.get(personal_id = payer_id)
+    payer_name = payer_personal.user_name
+    channel_access_token = settings.LINE_CHANNEL_ACCESS_TOKEN
+    user_id = id
+    #傳訊息給收款者
+    message = {
+        'to': user_id,
+        'messages': [{'type': 'text','text': payer_name+"在"+group_name+"中還"+return_payment+"元給您，再請到還錢通知按下確認！"}]
+    }
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {channel_access_token}'
+    }
+    response = requests.post('https://api.line.me/v2/bot/message/push', headers=headers, json=message)
+    if response.status_code == 200:
+        print('消息發送成功')
+    else:
+        print('消息發送失敗:', response.status_code, response.text)
+    return HttpResponse(status=200)  
 
-        account = ReturnTable.objects.get(return_id=return_id)
-        account.return_flag = '2'
-        account.save()
-        return JsonResponse({"success":'OK'}, safe=False)
-
-    except ReturnTable.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
+@csrf_exempt
+@require_http_methods(["POST"])
+def mark_paid_sure(request):
+    data = json.loads(request.body)
+    return_id = data.get('return_id')
+    payer_id = data.get('payer_id')
+    payer_id = payer_id[-6:]
+    receiver_id = data.get('receiver_id')
+    account = ReturnTable.objects.get(return_id=return_id)
+    account.return_flag = '1'
+    account.save()
+    #收款者
+    receiver_personal = PersonalTable.objects.get(personal_id = receiver_id)
+    receiver_name = receiver_personal.user_name
+    #付款者
+    payer_personal = PersonalTable.objects.get(personal_id = payer_id)
+    id = payer_personal.line_id
+    channel_access_token = settings.LINE_CHANNEL_ACCESS_TOKEN
+    user_id = id
+    message = {
+        'to': user_id,
+        'messages': [{'type': 'text','text': receiver_name+"已確認您的還款!"}]
+    }
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {channel_access_token}'
+    }
+    response = requests.post('https://api.line.me/v2/bot/message/push', headers=headers, json=message)
+    if response.status_code == 200:
+        print('消息發送成功')
+    else:
+        print('消息發送失敗:', response.status_code, response.text)
+    return HttpResponse(status=200)  
 #6/22
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
@@ -133,7 +186,7 @@ def get_payback(request):
                     "payer": payback.payer,
                     "receiver": payback.receiver,
                     "return_flag": payback.return_flag,
-                    "group_name": group_name  # 加入群組名稱
+                    "group_name": group_name , # 加入群組名稱
                 }
                 payer_payback_list.append(payback_data)
 
@@ -142,6 +195,7 @@ def get_payback(request):
             for payback in payback_notifications2:
                 group_name = group_names.get(payback.split.group_account.group.group_id, "無群組")  # 從分帳表中找到群組名稱
                 payback_data = {
+                    "return_id": payback.return_id,
                     "return_payment": payback.return_payment,
                     "payer": payback.payer,
                     "receiver": payback.receiver,

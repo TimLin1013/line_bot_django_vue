@@ -143,9 +143,12 @@
                 <td>{{ account.receiver }}</td>
                 <td>{{ account.group_name }}</td>
                 <td>
-                  <button v-if="account.return_flag === '0'" @click="markAsPaid(index, 'payer')" class="btn btn-warning w-100">
+                  <button v-if="account.return_flag === '0'" @click="markAsPaid(account.return_id,account.receiver,account.return_payment,account.group_name,account.item,account.account_date)" class="btn btn-warning w-100">
                     尚未還款
                   </button>
+                  <span v-else-if="account.return_flag === '2'" >
+                    確認中
+                  </span>
                   <span v-else>
                     已還款
                   </span>
@@ -176,12 +179,15 @@
                 <td>{{ account.payer }}</td>
                 <td>{{ account.group_name }}</td>
                 <td>
-                  <p v-if="account.return_flag === '0'">
+                  <span v-if="account.return_flag === '0'">
                     尚未還款
-                  </p>
-                  <p v-else>
+                  </span>
+                  <button v-else-if="account.return_flag === '2'" @click="payback_sure(account.return_id,account.payer)" class="btn btn-warning w-100">
+                    確認
+                  </button>
+                  <span v-else>
                     已還款
-                  </p>
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -392,44 +398,53 @@ export default {
     },
 
 
-    markAsPaid(index) {
+    markAsPaid(returnID,index,payment,group_name) {
       Swal.fire({
-        title: '確認歸還?',
-        text: "您確定要將此條目標記為已歸還嗎?",
-        icon: 'warning',
+        title: '還款確認?',
+        text: "您確定寄送通知?",
+        icon: 'info',
         showCancelButton: true,
+        allowOutsideClick: false,
         confirmButtonText: '是的, 標記!',
         cancelButtonText: '取消'
       }).then((result) => {
         if (result.isConfirmed) {
           const apiUrl = `${this.$apiUrl}/api/mark_as_paid/`;
-          this.$axios.post(apiUrl, { return_id: this.payBackAccounts[index].return_id })
+          this.$axios.post(apiUrl, { return_id:returnID ,receiver_id:index,payer_id:this.$root.$personal_id ,return_payment:payment,group_name:group_name})
             .then(response => {
-              if (response.data.success) {
-                this.payBackAccounts[index].return_flag = 1; // 更新本地状态
-                Swal.fire(
-                  '已標記!',
-                  '該條目已標記為已歸還.',
-                  'success'
-                );
-              } else {
-                Swal.fire(
-                  '錯誤!',
-                  '標記過程中出錯，請稍後再試.',
-                  'error'
-                );
-              }
-            })
-            .catch(error => {
-              console.error('Error marking as paid:', error);
               Swal.fire(
-                '錯誤!',
-                '標記過程中出錯，請稍後再試.',
-                'error'
+                '已送出通知!',
+                '等待回覆.',
+                'success'
               );
-            });
+              this.fetchPayBack()
+            })
         }
       });
+    },
+    payback_sure(account_id,payer){
+      Swal.fire({
+        title: '確認?',
+        text: "您確定記為已歸還嗎?",
+        icon: 'info',
+        showCancelButton: true,
+        allowOutsideClick: false,
+        confirmButtonText: '是的, 標記!',
+        cancelButtonText: '取消'
+      }).then((result) => {
+        if (result.isConfirmed){
+          const apiUrl = `${this.$apiUrl}/api/mark_paid_sure/`;
+          this.$axios.post(apiUrl, { return_id:account_id,payer_id:payer,receiver_id:this.$root.$personal_id})
+            .then(response => {
+                Swal.fire(
+                  '確認成功!',
+                  '完成',
+                  'success'
+                );
+                this.fetchPayBack()
+              })
+        }
+      })
     },
     toggleSidebar() {
       this.sidebarActive = !this.sidebarActive;
@@ -776,7 +791,6 @@ export default {
         .then(response => {
           this.payBackAccounts = response.data.payer_payback_list;
           this.payBackAccounts2 = response.data.receiver_payback_list;
-          console.log(response.data)
         })
         .catch(error => {
           console.error(error);
@@ -800,7 +814,6 @@ export default {
       const apiUrl = `${this.$apiUrl}/api/get_group/`;
       this.$axios.post(apiUrl, { personal_id: this.$root.$personal_id })
         .then(response => {
-          console.log(response.data.groups);
           this.group = response.data.groups;
           this.group3 = response.data.groups;
         })

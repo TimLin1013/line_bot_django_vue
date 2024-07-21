@@ -232,7 +232,7 @@ def sqlagent(text,personal_id):
                 '花費項目': i.item,
                 "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
                 '地點': i.location,
-                '金額': i.payment,
+                '總付款金額': i.payment,
                 '群組名稱': group_name,
                 '資料完整flag(0為不完整、1為完整)': i.info_complete_flag,
                 '總付款人id':i.personal.personal_id,
@@ -249,6 +249,7 @@ def sqlagent(text,personal_id):
             return_account = ReturnTable.objects.filter(split = l)
             for h in return_account:
                 data4 = {
+                    '分帳':l.payment,
                     '還錢金額':h.return_payment,
                     '欠款人':h.payer,
                     '收款人':h.receiver,
@@ -279,7 +280,7 @@ def sqlagent(text,personal_id):
 
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，欠款人(欠別人錢的)，收款人(收別人錢的)，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
+        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，欠款人(欠別人錢的)，收款人(收別人錢的)，若有問到分帳金額，要看分帳，不是看總付款金額，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
         llm_config={"config_list": config_list},
     )
     account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
