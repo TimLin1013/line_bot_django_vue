@@ -285,7 +285,7 @@
               </thead>
               <tbody>
                 <tr v-for="k in unfinish" :key="k.id" @click="show_unfinish(k)">
-                  <td>{{ k.account_date.slice(8) }}</td>
+                  <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
                     <button class="delete_group" @click.stop="deleteAccount(k.personal_account_id)">刪除</button>
@@ -313,7 +313,7 @@
               <tbody>
                 <tr v-for="k in unfinish2" :key="k.id">
                   <td>{{ k.group_name }}</td>
-                  <td>{{ k.account_date.slice(8) }}</td>
+                  <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
                     <button class="delete_group" @click="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
