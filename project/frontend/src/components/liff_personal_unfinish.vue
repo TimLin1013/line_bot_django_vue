@@ -128,6 +128,12 @@ export default {
                     });
                     this.$router.push({ name: 'liff_search' });
                 }
+                if(response.data==='no'){
+                  Swal.fire({
+                        title: "請選擇類別!!",
+                        icon: "warning"
+                    });
+                }
             })
                 .catch(error => {
                     console.error(error);
@@ -159,6 +165,12 @@ export default {
                         icon: "success"
                     });
                     this.$router.push({ name: 'liff_search' });
+                }
+                if(response.data==='no'){
+                  Swal.fire({
+                        title: "請選擇類別!!",
+                        icon: "warning"
+                    });
                 }
             })
                 .catch(error => {

@@ -39,4 +39,7 @@ urlpatterns = [
     path('get_group_expense_data/', views.get_group_expense_data, name='get_group_expense_data'),
     path('mark_as_paid/', views.mark_as_paid, name='mark_as_paid'),
     path('mark_paid_sure/', views.mark_paid_sure, name='mark_paid_sure'),
+    path('show_group_unfinish/', views.show_group_unfinish, name='show_group_unfinish'),
+    path('get_group_unfinish_temporary/', views.get_group_unfinish_temporary, name='get_group_unfinish_temporary'),
+    path('get_group_unfinish_sure/', views.get_group_unfinish_sure, name='get_group_unfinish_sure'),
 ]

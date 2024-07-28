@@ -18,8 +18,8 @@
       <label>交易類型</label>
       <select v-model="transaction" class="form-control">
         <option value="" disabled>請選擇</option>
-        <option value="expenditure">支出</option>
-        <option value="income">收入</option>
+        <option value="支出">支出</option>
+        <option value="收入">收入</option>
       </select>
       <br>
       <label>類別</label>
@@ -57,10 +57,10 @@ export default {
   watch: {
     transaction(newValue) {
       console.log('Transaction type changed to:', newValue);
-      if (newValue === 'expenditure') {
+      if (newValue === '支出') {
         console.log("ok")
         this.handleExpenditure();
-      } else if (newValue === 'income') {
+      } else if (newValue === '收入') {
         this.handleIncome();
       }
     },
@@ -103,15 +103,23 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.formData.category,
+        transaction_type:this.transaction,
         time: this.currentTime
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "暫存成功!!",
-          icon: "success"
+        if(response.data==='no'){
+            Swal.fire({
+                title: "請選擇類別!!",
+                icon: "warning"
+            });
+        }
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "暫存成功!!",
+            icon: "success"
         });
         this.$router.push({ name: 'liff_search' });
-      })
+      }
+        })
         .catch(error => {
           console.error(error);
         });
@@ -134,15 +142,24 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.formData.category,
+        transaction_type:this.transaction,
         time: this.currentTime
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "完成記帳!!",
-          icon: "success"
-        });
-        this.$router.push({ name: 'liff_search' });
-      })
+        if(response.data==='no'){
+            Swal.fire({
+                title: "請選擇類別!!",
+                icon: "warning"
+            });
+          return
+        }
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "完成記帳!!",
+            icon: "success"
+          });
+          this.$router.push({ name: 'liff_search' });
+        }
+        })
         .catch(error => {
           console.error(error);
         });

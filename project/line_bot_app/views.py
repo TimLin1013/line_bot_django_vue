@@ -438,6 +438,10 @@ def get_keep_temporary(request):
             item = data.get('item')
             payment = data.get('payment')
             location = data.get('location')
+            if data.get('transaction_type') == '':
+                transaction_type='無'
+            else:
+                transaction_type = data.get('transaction_type')
             if data.get('category') == '':
                 category='無'
             else:
@@ -445,8 +449,7 @@ def get_keep_temporary(request):
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
-            func.address_temporary(personal_id,item,payment,location,category,time)
-            response_data ='成功接收數據'
+            response_data=func.address_temporary(personal_id,item,payment,location,category,time,transaction_type)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -471,8 +474,7 @@ def get_keep_sure(request):
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
-            func.address_sure(personal_id,item,payment,location,category,time)
-            response_data ='成功接收數據'
+            response_data= func.address_sure(personal_id,item,payment,location,category,time)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -804,6 +806,10 @@ def get_group_keep_temporary(request):
             payment = data.get('payment')
             location = data.get('location')
             category = data.get('category')
+            if data.get('transaction_type') == '':
+                transaction_type='無'
+            else:
+                transaction_type = data.get('transaction_type')
             if data.get('category') == '':
                 category='無'
             else:
@@ -812,8 +818,7 @@ def get_group_keep_temporary(request):
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
             shares = data.get('shares')
-            func.address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares)
-            response_data ='成功接收數據'
+            response_data=func.address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares,transaction_type)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -836,6 +841,7 @@ def get_group_keep_sure(request):
             payment = data.get('payment')
             location = data.get('location')
             category = data.get('category')
+            transaction_type = data.get('transaction_type')
             if data.get('category') == '':
                 category='無'
             else:
@@ -844,8 +850,7 @@ def get_group_keep_sure(request):
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
             shares = data.get('shares')
-            func.address_group_sure(group_id,item,payment,location,category,time,payer_id,shares)
-            response_data ='成功接收數據'
+            response_data=func.address_group_sure(group_id,item,payment,location,category,time,payer_id,shares,transaction_type)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -1161,7 +1166,7 @@ def unfinish_account(request):
                     "group_id":i.group.group_id,
                     "group_name":i.group.group_name,
                     "account_date": i.account_date.strftime(
-                    '%m-%d') if i.account_date else None,
+                    '%Y-%m-%d') if i.account_date else None,
                     "item":i.item,
                 }
                 account_list2.append(data2)
@@ -1256,7 +1261,7 @@ def get_unfinish_temporary(request):
             if data.get('transaction_type') == '':
                 transaction_type='無'
             else:
-                transaction_type = transaction_type = data.get('transaction_type')
+                transaction_type = data.get('transaction_type')
             if data.get('category') == '':
                 category='無'
             else:
@@ -1293,6 +1298,121 @@ def get_unfinish_sure(request):
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
             response_data = func.unfinish_address_sure(account_id,item,payment,location,category,time,transaction_type,user_id)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def show_group_unfinish(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_account_id = data.get('group_account_id')
+            group_account = GroupAccountTable.objects.get(group_account_id = group_account_id)
+            split_account = SplitTable.objects.filter(group_account = group_account_id)
+            account_list=[]
+            split_list=[]
+            data={
+                'group_account_id':group_account_id,
+                'item':group_account.item,
+                'account_date':group_account.account_date.strftime(
+                '%Y-%m-%d') if group_account.account_date else None,
+                'location':group_account.location,
+                'payment':group_account.payment,
+                'group_id':group_account.group_id,
+                'transaction_type':group_account.category.transaction_type,
+                'category_name':group_account.category.category_name,
+                'personal_id':group_account.personal.personal_id,
+            }
+            account_list.append(data)
+            for i in split_account:
+                data2={
+                    'personal_id':i.personal.personal_id,
+                    'personal_name':i.personal.user_name,
+                    'payment':i.payment,
+                    'advance_payment':i.advance_payment
+                }    
+                split_list.append(data2)
+            response_data={
+                'account_list':account_list,
+                'split_list':split_list
+            }
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+@csrf_exempt     
+def get_group_unfinish_temporary(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_account_id = data.get('group_account_id')
+            group_id = data.get('group_id')
+            payer = data.get('payer')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            shares = data.get('shares')
+            if data.get('transaction_type') == '':
+                transaction_type='無'
+            else:
+                transaction_type = data.get('transaction_type')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = data.get('category')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            response_data = func.group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
+    
+@csrf_exempt     
+def get_group_unfinish_sure(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_account_id = data.get('group_account_id')
+            group_id = data.get('group_id')
+            payer = data.get('payer')
+            item = data.get('item')
+            payment = data.get('payment')
+            location = data.get('location')
+            transaction_type = data.get('transaction_type')
+            category = data.get('category')
+            shares = data.get('shares')
+            if data.get('transaction_type') == '':
+                transaction_type='無'
+            else:
+                transaction_type = data.get('transaction_type')
+            if data.get('category') == '':
+                category='無'
+            else:
+                category = data.get('category')
+            time = data.get('time')
+            time = datetime.fromisoformat(time)
+            time += timedelta(hours=8)
+            response_data = func.group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
