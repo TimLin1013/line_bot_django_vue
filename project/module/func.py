@@ -106,7 +106,7 @@ def classification(text):
     assistant = autogen.AssistantAgent(
         "assistant",
 
-        system_message="你是一個帳目產生器，根據使用者的輸入抓取帳目要的參數，要抓取的參數有：金額(舉例：200,100元等等，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
+        system_message="你是一個帳目產生器，根據使用者的輸入抓取帳目要的參數，要抓取的參數有：金額(舉例：200，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，只抓到一或兩個參數也要輸出，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
 
         llm_config={"config_list": config_list},
     )
@@ -172,29 +172,25 @@ def group_account_spliter(group_id,text):
         split = [name.strip() for name in names]
         return split
 #暫存
-def address_temporary(personal_id,item,payment,location,category,time):
-    if category == "無" or '':
-        unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name='無')
-        category_id = unit.personal_category_id
-        payment = int(payment)
-        unit3 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
-        unit3.save() 
-    else:
-        if personal_id is None:
-            personal_id = "Unknown"
-        if category is None:
-            category = "Unknown"
-        unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
-        category_id = unit.personal_category_id
+def address_temporary(personal_id,item,payment,location,category,time,transaction_type):
+    try:
+        unit = PersonalCategoryTable.objects.get(personal=personal_id,transaction_type = transaction_type,category_name=category)
+    except Exception as e:
+        return 'no'
+    category_id = unit.personal_category_id
         
-        #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
-        payment = int(payment)
-        unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
-        unit2.save()    
+    #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
+    payment = int(payment)
+    unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,personal_id=personal_id,category_id=category_id)
+    unit2.save()    
+    return 'ok'
 
 #完成確認
 def address_sure(personal_id,item,payment,location,category,time):
-    unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
+    try:
+        unit = PersonalCategoryTable.objects.get(personal=personal_id,category_name=category)
+    except Exception as e:
+        return 'no'
     category_id = unit.personal_category_id
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
@@ -291,50 +287,38 @@ def sqlagent(text,personal_id):
     else:
         return result
 #群組暫存
-def address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares):
+def address_group_temporary(group_id,item,payment,location,category,time,payer_id,shares,transaction_type):
     group_instance = GroupTable.objects.get(group_id=group_id)
-    if category == "無" or '':
-        unit = GroupCategoryTable.objects.get(group=group_instance,category_name='無')
-        category_id = unit.group_category_id
-        payment = int(payment)
-        unit3 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
-        unit3.save() 
-        unit5 = GroupAccountTable.objects.get(group_account_id = unit3.group_account_id)
-        for share in shares:
-            person = share['person']
-            percentage = share['percentage']
-            advance = share['advance_percentage']
-            if advance == None:
-                advance = 0
-            else:
-                advance = int(advance)
+    try:
+        unit = GroupCategoryTable.objects.get(group=group_instance,transaction_type = transaction_type,category_name=category)
+    except Exception as e:
+        return 'no'
+    category_id = unit.group_category_id
+    #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
+    payment = int(payment)
+    unit2 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
+    unit2.save() 
+    unit5 = GroupAccountTable(group_account_id = unit2.group_account_id)
+    for share in shares:
+        person = share['person']
+        percentage = share['percentage']
+        advance = share['advance_percentage']
+        if advance == None:
+            advance = 0
+        else:
+            advance = int(advance)
             unit_instance = PersonalTable(personal_id = person)
             unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
             unit4.save()
-    else:
-        unit = GroupCategoryTable.objects.get(group=group_instance,category_name=category)
-        category_id = unit.group_category_id
-        #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
-        payment = int(payment)
-        unit2 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
-        unit2.save() 
-        unit5 = GroupAccountTable(group_account_id = unit2.group_account_id)
-        for share in shares:
-            person = share['person']
-            percentage = share['percentage']
-            advance = share['advance_percentage']
-            if advance == None:
-                advance = 0
-            else:
-                advance = int(advance)
-            unit_instance = PersonalTable(personal_id = person)
-            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
-            unit4.save()
+    return 'ok'
         
 #群組完成
-def address_group_sure(group_id,item,payment,location,category,time,payer_id,shares):
+def address_group_sure(group_id,item,payment,location,category,time,payer_id,shares,transaction_type):
     group_instance = GroupTable.objects.get(group_id=group_id)
-    unit = GroupCategoryTable.objects.get(group=group_instance,category_name=category)
+    try:
+        unit = GroupCategoryTable.objects.get(group=group_instance,transaction_type = transaction_type,category_name=category)
+    except Exception as e:
+        return 'no'
     category_id = unit.group_category_id
     #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
     payment = int(payment)
@@ -372,6 +356,7 @@ def address_group_sure(group_id,item,payment,location,category,time,payer_id,sha
                 pay = pre - should 
                 unit_return2= ReturnTable(return_payment = pay,payer = receiver,receiver=payer,return_flag = 0,split = unit4)
                 unit_return2.save()
+    return 'ok'
 #拉人
 def join_group(input,group_id):
     #判斷使用者輸入有無此群組
@@ -514,7 +499,10 @@ def drawplot(text,personal_id):
 
 def unfinish_address_temporary(account_id,item,payment,location,category,time,transaction_type,user_id):
     payment = int(payment)
-    category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    try:
+        category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    except Exception as e:
+        return 'no'
     account_instance = PersonalAccountTable.objects.get(personal_account_id = account_id)
     account_instance.item = item
     account_instance.payment=payment
@@ -526,7 +514,10 @@ def unfinish_address_temporary(account_id,item,payment,location,category,time,tr
 
 def unfinish_address_sure(account_id,item,payment,location,category,time,transaction_type,user_id):
     payment = int(payment)
-    category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    try:
+        category_instance = PersonalCategoryTable.objects.get(personal = user_id ,transaction_type=transaction_type,category_name = category)
+    except Exception as e:
+        return 'no'
     account_instance = PersonalAccountTable.objects.get(personal_account_id = account_id)
     account_instance.item = item
     account_instance.payment=payment
@@ -536,3 +527,52 @@ def unfinish_address_sure(account_id,item,payment,location,category,time,transac
     account_instance.info_complete_flag = 1
     account_instance.save()
     return "ok"
+
+def group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares):
+    payment = int(payment)
+    try:
+        category_instance = GroupCategoryTable.objects.get(group = group_id,transaction_type=transaction_type,category_name = category)
+    except Exception as e:
+        return 'no'
+    account_instance = GroupAccountTable.objects.get(group_account_id = group_account_id)
+    account_instance.item = item
+    account_instance.payment = payment
+    account_instance.location = location
+    account_instance.category_id = category_instance.group_category_id
+    account_instance.account_date = time
+    account_instance.perosnal_id = payer
+    account_instance.save()
+    unit3 = GroupAccountTable.objects.get(group_account_id = group_account_id)
+    for share in shares:
+        person = share['person']
+        percentage = share['percentage']
+        advance = share['advance_percentage']
+        if advance == None:
+            advance = 0
+        else:
+            advance = int(advance)
+        unit_instance = PersonalTable.objects.get(personal_id = person)
+        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit3,personal = unit_instance)
+        unit4.save()
+        #分帳
+        should = unit4.payment
+        pre  = unit4.advance_payment
+        #分帳人的id和name
+        spliter = unit4.personal.personal_id
+        spliter_name = unit4.personal.user_name
+        #總付款人的id和name
+        total_payer = unit3.personal.personal_id
+        total_payer_name = unit3.personal.user_name
+        payer = spliter_name+" "+spliter
+        receiver = total_payer_name+" "+total_payer
+        if person != total_payer:
+            if (should - pre)>0:
+                pay = should - pre
+                unit_return = ReturnTable(return_payment = pay,payer = payer,receiver =receiver,return_flag = 0,split = unit4)
+                unit_return.save()
+            elif (should - pre)<0:
+                pay = pre - should 
+                unit_return2= ReturnTable(return_payment = pay,payer = receiver,receiver=payer,return_flag = 0,split = unit4)
+                unit_return2.save()
+    return 'ok'
+    

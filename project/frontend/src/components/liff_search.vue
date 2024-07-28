@@ -12,6 +12,9 @@
             <span class="menu-bar bottom-bar"></span>
           </div>          
         </button>
+        <button type="button" @click="homepage" class="btn-outline-info">
+          <img :src="homeimg" class="home" width="30" height="30">
+        </button>
         <div class="ml-auto">
           <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
           <span class="personal-id">{{ this.$root.$userName+" "+personal_id }}</span>
@@ -279,12 +282,14 @@
             <table v-if="unfinish.length > 0" class="table table-striped">
               <thead>
                 <tr>
+                  <th>帳本</th>
                   <th>日期</th>
                   <th>項目</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="k in unfinish" :key="k.id" @click="show_unfinish(k)">
+                  <td>個人</td>
                   <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
@@ -305,18 +310,18 @@
             <table v-if="unfinish2.length > 0" class="table table-striped">
               <thead>
                 <tr>
-                  <th>群組</th>
+                  <th>帳本</th>
                   <th>日期</th>
                   <th>項目</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="k in unfinish2" :key="k.id">
+                <tr v-for="k in unfinish2" :key="k.id" @click="show_group_unfinish(k.group_account_id)">
                   <td>{{ k.group_name }}</td>
                   <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete_group" @click="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
+                    <button class="delete_group" @click.stop="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
                   </td>
                 </tr>
               </tbody>
@@ -345,6 +350,7 @@ export default {
       plusimg: require("@/assets/plus.png"),
       GroupSystemimg: require("@/assets/creategroup.png"),
       categoryimg: require("@/assets/category.png"),
+      homeimg: require("@/assets/homepage.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: true,
@@ -374,6 +380,8 @@ export default {
       touchEndY: 0,
       isRefreshing: false,
       rotationDegree: 0,
+      account_group:[],
+      split_account:[]
     };
   },
   methods: {
@@ -1434,6 +1442,20 @@ export default {
         account.category_name=''
       }
       this.$router.push({ name: 'liff_personal_unfinish', params: { formData:account} });
+    },
+    show_group_unfinish(account_id){
+      const apiUrl = `${this.$apiUrl}/api/show_group_unfinish/`;
+      this.$axios.post(apiUrl, {group_account_id:account_id})
+      .then(response => {
+        if(response.data.account_list[0].transaction_type==='無'){
+          response.data.account_list[0].transaction_type = '',
+          response.data.account_list[0].category_name=''
+        }
+        this.$router.push({ name: 'liff_group_unfinish', params: { formData:response.data.account_list[0],formData2:response.data.split_list} });
+      })
+    },
+    homepage(){
+      this.showPersonalExpense()
     }
   },
   mounted() {
