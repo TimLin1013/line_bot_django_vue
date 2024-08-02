@@ -1,5 +1,10 @@
 <template>
     <div class="row" style="margin: 10px">
+      <div>
+        <button type="button" @click="homepage" class="btn-outline-info home-button">
+          <img :src="homeimg" class="home" width="30" height="30">
+        </button>
+      </div>
       <label>付款人</label>
       <select v-model="formData.personal_id" class="form-control">
         <option value="" disabled>請選擇</option>
@@ -64,7 +69,8 @@
         persons: [],
         persons2: [],
         shares: [],
-        transaction:this.formData.transaction_type
+        transaction:this.formData.transaction_type,
+        homeimg: require("@/assets/homepage.png"),
       }
     },
     watch: {
@@ -85,6 +91,9 @@
       this.catchperson();
     },
     methods: {
+      homepage(){
+        this.$router.push({ name: 'liff_search' });
+      },
       formatCurrentTime() {
         const now = new Date();
         const year = now.getFullYear();
@@ -352,6 +361,11 @@
 .btn-danger:hover {
     background-color: #c82333;
     border-color: #bd2130;
+}
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }
 </style>
   

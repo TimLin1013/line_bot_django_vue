@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import liff_search from '@/components/liff_search'
-import liff_keep from '@/components/liff_keep'
 import liff_personal from '@/components/liff_personal_form'
 import liff_account_overview from '@/components/liff_account_overview.vue'
 import liff_group_form from '@/components/liff_group_form.vue'
@@ -22,12 +21,6 @@ Vue.use(Router)
         name: 'liff_search',
         component: liff_search,
         props: true 
-      },
-      {
-        path: '/keep',
-        name: 'liff_keep',
-        component: liff_keep,
-        props: true
       },
       {
         path: '/personal_form',
