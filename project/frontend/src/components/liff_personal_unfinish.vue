@@ -1,5 +1,10 @@
 <template>
     <div class="row" style="margin: 10px">
+        <div>
+            <button type="button" @click="homepage" class="btn-outline-info home-button">
+                <img :src="homeimg" class="home" width="30" height="30">
+            </button>
+        </div>
         <label>個人ID</label>
         <input v-model="personal_id" readonly type="text" class="form-control" />
         <br>
@@ -50,6 +55,7 @@ export default {
             currentTime: this.formData.account_date || this.formatCurrentTime(),
             tmp_list: [],
             date: '',
+            homeimg: require("@/assets/homepage.png"),
         };
     },
     watch: {
@@ -69,6 +75,9 @@ export default {
         this.catchcategory();
     },
     methods: {
+        homepage(){
+            this.$router.push({ name: 'liff_search' });
+        },
         formatCurrentTime() {
             const now = new Date();
             const year = now.getFullYear();
@@ -216,5 +225,10 @@ export default {
     color: #0e0303;
     background-color: #e0a800;
     border-color: #d39e00;
+}
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }
 </style>

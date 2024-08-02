@@ -1,5 +1,10 @@
 <template>
   <div class="row" style="margin: 10px">
+    <div>
+        <button type="button" @click="homepage" class="btn-outline-info home-button">
+          <img :src="homeimg" class="home" width="30" height="30">
+        </button>
+    </div>
     <label>付款人</label>
     <select v-model="personal" class="form-control">
       <option value="" disabled>請選擇</option>
@@ -68,6 +73,7 @@ export default {
       transaction:'',
       category_temp: '',
       shares: [],
+      homeimg: require("@/assets/homepage.png"),
     }
   },
   mounted() {
@@ -84,6 +90,9 @@ export default {
     }
   },
   methods: {
+    homepage(){
+      this.$router.push({ name: 'liff_search' });
+    },
     formatCurrentTime() {
       const now = new Date();
       const year = now.getFullYear();
@@ -334,5 +343,10 @@ export default {
 .btn-danger:hover {
   background-color: #c82333;
   border-color: #bd2130;
+}
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }
 </style>
