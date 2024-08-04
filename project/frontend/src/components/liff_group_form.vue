@@ -1,5 +1,10 @@
 <template>
   <div class="row" style="margin: 10px">
+    <div>
+        <button type="button" @click="homepage" class="btn-outline-info home-button">
+          <img :src="homeimg" class="home" width="30" height="30">
+        </button>
+    </div>
     <label>付款人</label>
     <select v-model="personal" class="form-control">
       <option value="" disabled>請選擇</option>
@@ -33,8 +38,8 @@
     <label>交易類型</label>
     <select v-model="transaction" class="form-control">
       <option value="" disabled>請選擇</option>
-      <option value="expenditure">支出</option>
-      <option value="income">收入</option>
+      <option value="支出">支出</option>
+      <option value="收入">收入</option>
     </select>
     <label>類別</label>
     <select v-model="category_temp" class="form-control">
@@ -68,6 +73,7 @@ export default {
       transaction:'',
       category_temp: '',
       shares: [],
+      homeimg: require("@/assets/homepage.png"),
     }
   },
   mounted() {
@@ -76,14 +82,17 @@ export default {
   },
   watch: {
     transaction(newValue) {
-      if (newValue === 'expenditure') {
+      if (newValue === '支出') {
         this.handleExpenditure();
-      } else if (newValue === 'income') {
+      } else if (newValue === '收入') {
         this.handleIncome();
       }
     }
   },
   methods: {
+    homepage(){
+      this.$router.push({ name: 'liff_search' });
+    },
     formatCurrentTime() {
       const now = new Date();
       const year = now.getFullYear();
@@ -214,15 +223,23 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.category_temp,
+        transaction_type:this.transaction,
         time: this.currentTime,
         shares: this.shares
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "暫存成功!!",
-          icon: "success"
-        });
-        this.$router.push({ name: 'liff_search' });
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "暫存成功!!",
+            icon: "success"
+          });
+          this.$router.push({ name: 'liff_search' });
+        }
+        if(response.data==='no'){
+          Swal.fire({
+            title: "請選擇類別!!",
+            icon: "warning"
+          });
+        }
       })
         .catch(error => {
           console.error(error);
@@ -245,15 +262,23 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.category_temp,
+        transaction_type:this.transaction,
         time: this.currentTime,
         shares: this.shares
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "完成記帳!!",
-          icon: "success"
-        });
-        this.$router.push({ name: 'liff_search' });
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "完成記帳!!",
+            icon: "success"
+          });
+          this.$router.push({ name: 'liff_search' });
+        }
+        if(response.data==='no'){
+          Swal.fire({
+            title: "請選擇類別!!",
+            icon: "warning"
+          });
+        }
       })
         .catch(error => {
           console.error(error);
@@ -318,5 +343,10 @@ export default {
 .btn-danger:hover {
   background-color: #c82333;
   border-color: #bd2130;
+}
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }
 </style>

@@ -1,5 +1,10 @@
 <template>
   <div class="row" style="margin: 10px">
+      <div>
+        <button type="button" @click="homepage" class="btn-outline-info home-button">
+          <img :src="homeimg" class="home" width="30" height="30">
+        </button>
+      </div>
       <label>個人ID</label>
       <input v-model="personal_id" readonly type="text" class="form-control" />
       <br>
@@ -18,8 +23,8 @@
       <label>交易類型</label>
       <select v-model="transaction" class="form-control">
         <option value="" disabled>請選擇</option>
-        <option value="expenditure">支出</option>
-        <option value="income">收入</option>
+        <option value="支出">支出</option>
+        <option value="收入">收入</option>
       </select>
       <br>
       <label>類別</label>
@@ -51,16 +56,17 @@ export default {
       tmp_list: [],
       date: '',
       transaction: this.formData.transaction_type,
-      selectedCategory: ''
+      selectedCategory: '',
+      homeimg: require("@/assets/homepage.png"),
     };
   },
   watch: {
     transaction(newValue) {
       console.log('Transaction type changed to:', newValue);
-      if (newValue === 'expenditure') {
+      if (newValue === '支出') {
         console.log("ok")
         this.handleExpenditure();
-      } else if (newValue === 'income') {
+      } else if (newValue === '收入') {
         this.handleIncome();
       }
     },
@@ -72,6 +78,9 @@ export default {
     this.catchcategory()
   },
   methods: {
+    homepage(){
+      this.$router.push({ name: 'liff_search' });
+    },
     formatCurrentTime() {
         const now = new Date();
         const year = now.getFullYear();
@@ -103,15 +112,23 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.formData.category,
+        transaction_type:this.transaction,
         time: this.currentTime
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "暫存成功!!",
-          icon: "success"
+        if(response.data==='no'){
+            Swal.fire({
+                title: "請選擇類別!!",
+                icon: "warning"
+            });
+        }
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "暫存成功!!",
+            icon: "success"
         });
         this.$router.push({ name: 'liff_search' });
-      })
+      }
+        })
         .catch(error => {
           console.error(error);
         });
@@ -134,15 +151,24 @@ export default {
         payment: this.formData.payment,
         location: this.formData.location,
         category: this.formData.category,
+        transaction_type:this.transaction,
         time: this.currentTime
       }).then(response => {
-        console.log(response);
-        Swal.fire({
-          title: "完成記帳!!",
-          icon: "success"
-        });
-        this.$router.push({ name: 'liff_search' });
-      })
+        if(response.data==='no'){
+            Swal.fire({
+                title: "請選擇類別!!",
+                icon: "warning"
+            });
+          return
+        }
+        if(response.data==='ok'){
+          Swal.fire({
+            title: "完成記帳!!",
+            icon: "success"
+          });
+          this.$router.push({ name: 'liff_search' });
+        }
+        })
         .catch(error => {
           console.error(error);
         });
@@ -186,5 +212,10 @@ export default {
   color: #0e0303;
   background-color: #e0a800;
   border-color: #d39e00;
+}
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }
 </style>
