@@ -570,7 +570,7 @@ data = {personal_info_list_str}
     print(f"{file_path}")
 
 
-def group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares):
+def group_unfinish_sure(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares):
     payment = int(payment)
     try:
         category_instance = GroupCategoryTable.objects.get(group = group_id,transaction_type=transaction_type,category_name = category)
@@ -617,4 +617,33 @@ def group_unfinish_temporary(group_account_id,payer,item,payment,location,transa
                 unit_return2= ReturnTable(return_payment = pay,payer = receiver,receiver=payer,return_flag = 0,split = unit4)
                 unit_return2.save()
     return 'ok'
-    
+
+def group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares):
+    payment = int(payment)
+    group_instance = GroupTable.objects.get(group_id=group_id)
+    try:
+        unit = GroupCategoryTable.objects.get(group=group_instance,transaction_type = transaction_type,category_name=category)
+    except Exception as e:
+        return 'no'
+    #從vue來是字串，但是資料庫為int所以這邊要轉型別，location和item就不用判斷因為資料庫存varchar
+    account_instance = GroupAccountTable.objects.get(group_account_id = group_account_id)
+    account_instance.item = item
+    account_instance.payment = payment
+    account_instance.location = location
+    account_instance.category_id = unit.group_category_id
+    account_instance.account_date = time
+    account_instance.perosnal_id = payer
+    account_instance.save()
+    unit5 = GroupAccountTable(group_account_id = group_account_id)
+    for share in shares:
+        person = share['person']
+        percentage = share['percentage']
+        advance = share['advance_percentage']
+        if advance == None:
+            advance = 0
+        else:
+            advance = int(advance)
+            unit_instance = PersonalTable(personal_id = person)
+            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
+            unit4.save()
+    return 'ok'
