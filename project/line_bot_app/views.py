@@ -1412,7 +1412,7 @@ def get_group_unfinish_sure(request):
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
-            response_data = func.group_unfinish_temporary(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares)
+            response_data = func.group_unfinish_sure(group_account_id,payer,item,payment,location,transaction_type,category,group_id,time,shares)
             return HttpResponse(json.dumps(response_data), content_type="application/json")
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
