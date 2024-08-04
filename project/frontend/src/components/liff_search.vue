@@ -16,8 +16,10 @@
           <img :src="homeimg" class="home" width="30" height="30">
         </button>
         <div class="ml-auto">
-          <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
-          <span class="personal-id">{{ this.$root.$userName+" "+personal_id }}</span>
+          <button class="image" @click="showpersonal">
+            <img v-if="$root.$userPictureUrl" :src="$root.$userPictureUrl" alt="Profile Picture" class="profile-picture"/>
+          </button>
+          <!-- <span class="personal-id">{{ this.$root.$userName+" "+personal_id }}</span> -->
         </div>
       </div>
     </nav>
@@ -417,6 +419,7 @@ export default {
         title: '還款確認?',
         text: "您確定寄送通知?",
         icon: 'info',
+        showCloseButton: true,
         showCancelButton: true,
         allowOutsideClick: false,
         confirmButtonText: '是的, 標記!',
@@ -441,6 +444,7 @@ export default {
         title: '確認?',
         text: "您確定記為已歸還嗎?",
         icon: 'info',
+        showCloseButton: true,
         showCancelButton: true,
         allowOutsideClick: false,
         confirmButtonText: '是的, 標記!',
@@ -543,11 +547,10 @@ export default {
           title: "選擇帳本",
           input: "select",
           inputOptions: this.inputOptions,
-          showCancelButton:true,
           confirmButtonText: "送出",
           inputPlaceholder: "選擇一個帳本",
           allowOutsideClick: false,
-          cancelButtonText:'取消',
+          showCloseButton: true,
           inputValidator: (value) => {
             if (!value) {
               return "請選擇帳本";
@@ -652,10 +655,9 @@ export default {
       Swal.fire({
         title: "個人記帳",
         input: "text",
-        showCancelButton:true,
         confirmButtonText: "送出",
         inputPlaceholder: "請輸入",
-        cancelButtonText:'取消',
+        showCloseButton: true,
         allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
@@ -695,12 +697,11 @@ export default {
     GroupSystem(){
       Swal.fire({
         title: '創建或加入',
-        showCancelButton:true,
         confirmButtonText:'創建群組',
         allowOutsideClick: false,
         showDenyButton: true,
         denyButtonText: '加入群組',
-        cancelButtonText:'取消'
+        showCloseButton: true,
       }).then((result) => {
         if (result.isConfirmed){
           this.createGroupAccount()
@@ -714,10 +715,9 @@ export default {
       const { value: groupcode } = Swal.fire({
         title: "輸入群組代碼",
         input: "text",
-        showCancelButton:true,
+        showCloseButton: true,
         confirmButtonText: "加入",
         inputPlaceholder: "請輸入",
-        cancelButtonText:'取消',
         allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
@@ -757,9 +757,8 @@ export default {
         title: "輸入群組名稱",
         input: "text",
         confirmButtonText: '創建',
-        showCancelButton:true,
+        showCloseButton: true,
         inputPlaceholder: "請輸入",
-        cancelButtonText:'取消',
         allowOutsideClick: false,
         inputValidator: (value) => {
           if (!value) {
@@ -862,10 +861,9 @@ export default {
       Swal.fire({
         title:'確認刪除',
         icon:'warning',
-        showCancelButton:true,
         confirmButtonText:'確定',
         allowOutsideClick: false,
-        cancelButtonText:'取消'
+        showCloseButton: true,
       }).then((result) => {
         if(result.isConfirmed){
           const apiUrl = `${this.$apiUrl}/api/delete_personal/`;
@@ -932,12 +930,11 @@ export default {
           Swal.fire({
             title: '成員列表',
             html: membersTable,
-            showCancelButton:true,
+            showCloseButton: true,
             confirmButtonText:'新增成員',
             allowOutsideClick: false,
             showDenyButton: true,
             denyButtonText: '退出群組',
-            cancelButtonText:'取消'
           }).then((result) => {
             if(result.isConfirmed){
               Swal.fire({
@@ -1070,10 +1067,9 @@ export default {
           Swal.fire({
             title: '類別列表',
             html: categoryTable,
-            showCancelButton:true,
+            showCloseButton: true,
             allowOutsideClick: false,
             confirmButtonText:'新增',
-            cancelButtonText:'取消',
             didOpen: () => {
               document.querySelectorAll('.change-group').forEach(button => {
               button.addEventListener('click', (event) => {
@@ -1099,10 +1095,9 @@ export default {
                         <input type="text" name="categoryName" id="categoryName" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
                     </div>
                 `,
-                showCancelButton:true,
+                showCloseButton: true,
                 confirmButtonText:'確定',
                 allowOutsideClick: false,
-                cancelButtonText:'取消',
                 preConfirm: () => {
                   const transactionType = Swal.getPopup().querySelector('#transactionType').value;
                   const categoryName = Swal.getPopup().querySelector('#categoryName').value;
@@ -1151,10 +1146,9 @@ export default {
         title:'刪除',
         icon:'warning',
         text: "刪除後分帳與還錢資訊也連動刪除?",
-        showCancelButton:true,
+        showCloseButton: true,
         confirmButtonText:'確定',
         allowOutsideClick: false,
-        cancelButtonText:'取消'
       }).then((result) => {
         if(result.isConfirmed){
           const apiUrl = `${this.$apiUrl}/api/delete_group/`;
@@ -1178,10 +1172,9 @@ export default {
       Swal.fire({
         title:'修改名稱',
         input:"text",
-        showCancelButton:true,
+        showCloseButton: true,
         confirmButtonText:'確定',
         allowOutsideClick: false,
-        cancelButtonText:'取消',
         inputValidator: (value) => {
           if (!value) {
             return "請輸入!";
@@ -1262,10 +1255,9 @@ export default {
           Swal.fire({
             title: '類別列表',
             html: categoryTable,
-            showCancelButton:true,
+            showCloseButton: true,
             allowOutsideClick: false,
             confirmButtonText:'新增',
-            cancelButtonText:'取消',
             didOpen: () => {
               document.querySelectorAll('.change-group').forEach(button => {
               button.addEventListener('click', (event) => {
@@ -1291,10 +1283,9 @@ export default {
                         <input type="text" name="categoryName" id="categoryName" style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
                     </div>
                 `,
-                showCancelButton:true,
+                showCloseButton: true,
                 confirmButtonText:'確定',
                 allowOutsideClick: false,
-                cancelButtonText:'取消',
                 preConfirm: () => {
                   const transactionType = Swal.getPopup().querySelector('#transactionType').value;
                   const categoryName = Swal.getPopup().querySelector('#categoryName').value;
@@ -1341,10 +1332,9 @@ export default {
       Swal.fire({
         title:'修改名稱',
         input:"text",
-        showCancelButton:true,
+        showCloseButton: true,
         confirmButtonText:'確定',
         allowOutsideClick: false,
-        cancelButtonText:'取消',
         inputValidator: (value) => {
           if (!value) {
             return "請輸入!";
@@ -1429,10 +1419,9 @@ export default {
           Swal.fire({
             title: '分帳資訊',
             html: splitTable,
-            showCancelButton:true,
+            showCloseButton: true,
             allowOutsideClick: false,
             confirmButtonText:'確定',
-            cancelButtonText:'取消'
         })
       })
     },
@@ -1456,6 +1445,23 @@ export default {
     },
     homepage(){
       this.showPersonalExpense()
+    },
+    showpersonal() {
+      Swal.fire({
+        title: '個人資訊',
+        html: `
+          <div>
+            <p><strong>個人ID：</strong>${this.personal_id}</p>
+            <p><strong>姓名：</strong>${this.$root.$userName}</p>
+          </div>
+        `,
+        showCloseButton: true,
+        showConfirmButton: false,
+        position: 'top-end', // 調整位置
+        customClass: {
+          popup: 'custom-swal'
+        }
+      });
     }
   },
   mounted() {
@@ -1605,7 +1611,7 @@ body {
 #content {
   flex-grow: 1;
   padding: 0px;
-  margin-top: 56px; 
+  margin-top: 15px; 
 }
 
 .payback-container {
@@ -1616,7 +1622,7 @@ body {
   max-width: none;   /* 移除可能存在的最大寬度限制 */
 }
 .fixed-container{
-  margin-top: 20px;
+  margin-top: 5px;
   max-height: 500px; /* 設置固定高度或最大高度 */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1629,14 +1635,12 @@ body {
 
 .account-area {
   border: 2px solid #FFA07A;
-  padding: 1px;
   font-size: 15px;
   width: 100%;
 }
 
 .account-area-placeholder {
   border: 2px solid #FFA07A;
-  padding: 1px;
   opacity: 0.5;
 }
 
@@ -1761,6 +1765,13 @@ body {
   height: 40px; /* Adjust the height as needed */
   border-radius: 50%; /* Make it a circle */
 }
+.image {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
 .button-text {
   font-size: 12px;
   margin-top: 5px;
