@@ -437,9 +437,11 @@ def drawplot(text,personal_id):
         
         data = [i.item,i.account_date.strftime('%Y-%m-%d') if i.account_date else None,i.location,i.payment,category_instance.category_name,category_instance.transaction_type]
         personal_info_list.append(data)
+    save_personal_info_to_file(personal_id)
+
     config_list = [
         {
-            'model': 'ft:gpt-3.5-turbo-1106:personal::9igDzZkf',
+            'model': 'ft:gpt-3.5-turbo-0125:personal::9pzkFyXX',#ft:gpt-3.5-turbo-0613:personal::9pz0a2ep:ckpt-step-68
             'api_key': os.environ["OPENAI_API_KEY"],
         },
     ]
@@ -450,8 +452,12 @@ def drawplot(text,personal_id):
             "config_list": config_list,  # a list of OpenAI API configurations
             "temperature": 0,  # temperature for sampling
         },  # configuration for autogen's enhanced inference API which is compatible with OpenAI API
+        code_execution_config={
+            
+            "executor": LocalCommandLineCodeExecutor(work_dir="coding",virtual_env_context=None),
 
-        system_message="你將要執行的資料視覺化任務且圖表的呈現只能使用英文，根據資料內容及任務需求選擇最適當的圖表(折線圖,長條圖,圓餅圖,...),並使用python的matplotlib套件產生程式碼,將結果儲存在account.png,Reply TERMINATE if the task has been solved or the user_proxy reply nothing . Otherwise, reply CONTINUE, or the reason why the task is not solved yet. 資料如下( ['Item_name', 'Date', 'Location', 'Amount', 'Category', 'Type'] 項目請用 Item_name 分類,類別請用 Category 分類)："+str(personal_info_list) ,
+        },
+        system_message="你將要執行的資料視覺化任務，根據資料內容及任務需求選擇最適當的圖表(折線圖,長條圖,圓餅圖,...),並使用python的matplotlib套件產生程式碼,將結果儲存在account.png, 資料內容如下( ['項目名稱', '日期', '地點', '金額', '類別', '收入支出'] ) ,用 from data import data 取得資料並使用",
     )
 
     # create a UserProxyAgent instance named "user_proxy"
@@ -536,3 +542,37 @@ def unfinish_address_sure(account_id,item,payment,location,category,time,transac
     account_instance.info_complete_flag = 1
     account_instance.save()
     return "ok"
+def save_personal_info_to_file(personal_id):
+    file_path=r"C:\Users\user\PycharmProjects\line_bot\project\coding\data.py"
+    personal_info_list = []
+    personal_info = PersonalTable.objects.get(personal_id=personal_id)
+    personal_account_info = PersonalAccountTable.objects.filter(personal=personal_info, info_complete_flag=1)
+    
+    print(personal_id)
+    
+    for i in personal_account_info:
+        category_instance = i.category
+        data = [
+            i.item,
+            i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
+            i.location,
+            i.payment,
+            category_instance.category_name,
+            category_instance.transaction_type
+        ]
+        personal_info_list.append(data)
+    
+    
+    personal_info_list_str = repr(personal_info_list)
+    
+
+    file_content = f"""
+data = {personal_info_list_str}
+    """
+    
+   
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(file_content)
+
+    print(f"{file_path}")
+
