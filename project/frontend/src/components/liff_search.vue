@@ -1450,10 +1450,13 @@ export default {
       Swal.fire({
         title: '個人資訊',
         html: `
+        <div style="display: flex; align-items: center;">
+          <img src="${this.$root.$userPictureUrl}" alt="User Picture" style="width: 100px; height: 100px; border-radius: 50%; margin-right: 20px;"/>
           <div>
-            <p><strong>個人ID：</strong>${this.personal_id}</p>
             <p><strong>姓名：</strong>${this.$root.$userName}</p>
+            <p><strong>個人ID：</strong>${this.personal_id}</p>
           </div>
+        </div>
         `,
         showCloseButton: true,
         showConfirmButton: false,
