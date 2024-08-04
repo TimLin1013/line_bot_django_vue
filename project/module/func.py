@@ -194,6 +194,7 @@ def address_sure(personal_id,item,payment,location,category,time):
     category_id = unit.personal_category_id
     unit2 = PersonalAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=1,personal_id=personal_id,category_id=category_id)
     unit2.save()    
+    return 'ok'
 #一般查詢
 def sqlagent(text,personal_id):
     personal_info_list = []
