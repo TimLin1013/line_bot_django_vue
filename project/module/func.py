@@ -299,7 +299,6 @@ def address_group_temporary(group_id,item,payment,location,category,time,payer_i
     payment = int(payment)
     unit2 = GroupAccountTable(item=item,account_date=time,location=location,payment=payment,info_complete_flag=0,group = group_instance,category_id=category_id,personal_id=payer_id)
     unit2.save() 
-    unit5 = GroupAccountTable(group_account_id = unit2.group_account_id)
     for share in shares:
         person = share['person']
         percentage = share['percentage']
@@ -308,9 +307,9 @@ def address_group_temporary(group_id,item,payment,location,category,time,payer_i
             advance = 0
         else:
             advance = int(advance)
-            unit_instance = PersonalTable(personal_id = person)
-            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
-            unit4.save()
+        unit_instance = PersonalTable(personal_id = person)
+        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit2,personal = unit_instance)
+        unit4.save()
     return 'ok'
         
 #群組完成
@@ -583,6 +582,7 @@ def group_unfinish_sure(group_account_id,payer,item,payment,location,transaction
     account_instance.category_id = category_instance.group_category_id
     account_instance.account_date = time
     account_instance.perosnal_id = payer
+    account_instance.info_complete_flag=1
     account_instance.save()
     unit3 = GroupAccountTable.objects.get(group_account_id = group_account_id)
     for share in shares:
@@ -643,7 +643,7 @@ def group_unfinish_temporary(group_account_id,payer,item,payment,location,transa
             advance = 0
         else:
             advance = int(advance)
-            unit_instance = PersonalTable(personal_id = person)
-            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
-            unit4.save()
+        unit_instance = PersonalTable(personal_id = person)
+        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
+        unit4.save()
     return 'ok'
