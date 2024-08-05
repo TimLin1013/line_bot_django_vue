@@ -1,5 +1,5 @@
 <template>
-  <div id="demo" @touchstart="handleTouchStart" @touchend="handleTouchEnd" class="p-4 p-md-5">
+  <div id="demo"class="p-4 p-md-5">
     
     <!-- 頂部 -->
     <nav class="navbar navbar-light bg-light fixed-top">
@@ -388,30 +388,30 @@ export default {
   },
   methods: {
 
-    //刷新頁面
-    handleTouchStart(event) {
-      if (window.scrollY < 10) {
-        this.touchStartY = event.touches[0].clientY;//只有在頂部時進行刷新
-      }
-    },
-    handleTouchEnd(event) {
-      this.touchEndY = event.changedTouches[0].clientY;
-      this.handleSwipeGesture();
-    },
-    handleSwipeGesture() {
-      // 設定滑動距離的閾值
-      const threshold = 100;
-      if (this.touchEndY > this.touchStartY && (this.touchEndY - this.touchStartY) > threshold) {
-        // 如果結束位置比起始位置大，且滑動距離超過閾值，則執行刷新
-        this.refreshPage();
-      }
-    },
-    refreshPage() {
-      setTimeout(() => {
-          window.location.reload();
-          this.isRefreshing = false; // 刷新完成後隱藏動畫
-        }, 1000); // 延遲1.5秒來模擬刷新過程
-    },
+    // //刷新頁面
+    // handleTouchStart(event) {
+    //   if (window.scrollY < 10) {
+    //     this.touchStartY = event.touches[0].clientY;//只有在頂部時進行刷新
+    //   }
+    // },
+    // handleTouchEnd(event) {
+    //   this.touchEndY = event.changedTouches[0].clientY;
+    //   this.handleSwipeGesture();
+    // },
+    // handleSwipeGesture() {
+    //   // 設定滑動距離的閾值
+    //   const threshold = 100;
+    //   if (this.touchEndY > this.touchStartY && (this.touchEndY - this.touchStartY) > threshold) {
+    //     // 如果結束位置比起始位置大，且滑動距離超過閾值，則執行刷新
+    //     this.refreshPage();
+    //   }
+    // },
+    // refreshPage() {
+    //   setTimeout(() => {
+    //       window.location.reload();
+    //       this.isRefreshing = false; // 刷新完成後隱藏動畫
+    //     }, 1000); // 延遲1.5秒來模擬刷新過程
+    // },
 
 
     markAsPaid(returnID,index,payment,group_name) {
