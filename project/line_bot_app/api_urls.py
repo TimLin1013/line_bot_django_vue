@@ -42,4 +42,5 @@ urlpatterns = [
     path('show_group_unfinish/', views.show_group_unfinish, name='show_group_unfinish'),
     path('get_group_unfinish_temporary/', views.get_group_unfinish_temporary, name='get_group_unfinish_temporary'),
     path('get_group_unfinish_sure/', views.get_group_unfinish_sure, name='get_group_unfinish_sure'),
+    path('remove_spliter/', views.remove_spliter, name='remove_spliter'),
 ]

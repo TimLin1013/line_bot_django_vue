@@ -151,6 +151,7 @@ export default {
         });
     },
     updateShares(index) {
+      let total =0 
       if (!this.indexList.includes(index)) {
         this.indexList.push(index);
       }
@@ -169,6 +170,17 @@ export default {
           this.shares[i].percentage = newShareAmount;
         }
       }
+      for (let i = 0; i < this.shares.length; i++) {
+            total = total + Number(this.shares[i].percentage)
+      }
+      if (total>this.formData.payment || total<this.formData.payment){
+          Swal.fire({
+            title: '警告',
+            text: '分帳金額總和與總金額不符合',
+            icon: 'warning'
+          });
+          return;
+        }
     },
     updateAllShares() {
       const totalShares = this.shares.length;
@@ -215,6 +227,18 @@ export default {
       }
     },
     temporary() {
+      let total=0
+      for (let i = 0; i < this.shares.length; i++) {
+        total = total + Number(this.shares[i].percentage)
+      }
+      if (total>this.formData.payment|| total<this.formData.payment){
+          Swal.fire({
+            title: '警告',
+            text: '分帳金額總和與總金額不符合',
+            icon: 'warning'
+          });
+          return;
+      }
       const apiUrl = `${this.$apiUrl}/api/get_group_keep_temporary/`;
       this.$axios.post(apiUrl, {
         group_id: this.formData.group_id,
@@ -252,6 +276,18 @@ export default {
           icon: "warning"
         });
         return;
+      }
+      let total=0
+      for (let i = 0; i < this.shares.length; i++) {
+        total = total + Number(this.shares[i].percentage)
+      }
+      if (total>this.formData.payment|| total<this.formData.payment){
+          Swal.fire({
+            title: '警告',
+            text: '分帳金額總和與總金額不符合',
+            icon: 'warning'
+          });
+          return;
       }
       const apiUrl = `${this.$apiUrl}/api/get_group_keep_sure/`;
       console.log(apiUrl);

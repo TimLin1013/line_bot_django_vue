@@ -31,7 +31,7 @@
         </select>
         <input v-model="share.percentage" type="number" class="form-control" placeholder="分帳比例" @input="updateShares(index)" />
         <input v-model="share.advance_percentage" type="number" class="form-control" placeholder="預先給錢" />
-        <button @click="removeShare(index)" class="btn btn-danger btn-block">移除</button>
+        <button @click="removeShare(index,share)" class="btn btn-danger btn-block">移除</button>
       </div>
       <button @click="addShare" class="btn btn-primary btn-block">添加分帳人</button>
   
@@ -157,6 +157,7 @@
           });
       },
       updateShares(index) {
+        let total=0
         if (!this.indexList.includes(index)) {
           this.indexList.push(index);
         }
@@ -174,6 +175,17 @@
           if (!this.indexList.includes(i)) {
             this.shares[i].percentage = newShareAmount;
           }
+        }
+        for (let i = 0; i < this.shares.length; i++) {
+            total = total + Number(this.shares[i].percentage)
+        }
+        if (total>this.formData.payment || total<this.formData.payment){
+              Swal.fire({
+                title: '警告',
+                text: '分帳金額總和與總金額不符合',
+                icon: 'warning'
+              });
+              return;
         }
       },
       updateAllShares() {
@@ -197,9 +209,14 @@
           this.updateAllShares()
         }
       },
-      removeShare(index) {
+      removeShare(index,share) {
         this.shares.splice(index, 1);
         this.updateAllShares()
+        const apiUrl = `${this.$apiUrl}/api/remove_spliter/`;
+        this.$axios.post(apiUrl, {
+          group_account_id:this.formData.group_account_id,
+          share_person: share.person
+        })
       },
       checkDuplicate(index) {
         const selectedPerson = this.shares[index].person;
@@ -224,6 +241,18 @@
                     });
                     return;
                 }
+            }
+            let total=0
+            for (let i = 0; i < this.shares.length; i++) {
+              total = total + Number(this.shares[i].percentage)
+            }
+            if (total>this.formData.payment|| total<this.formData.payment){
+                  Swal.fire({
+                    title: '警告',
+                    text: '分帳金額總和與總金額不符合',
+                    icon: 'warning'
+                  });
+                  return;
             }
             const apiUrl = `${this.$apiUrl}/api/get_group_unfinish_temporary/`;
             this.$axios.post(apiUrl, {
@@ -264,6 +293,18 @@
                 icon: "warning"
             });
             return;
+        }
+        let total=0
+        for (let i = 0; i < this.shares.length; i++) {
+            total = total + Number(this.shares[i].percentage)
+        }
+        if (total>this.formData.payment|| total<this.formData.payment){
+              Swal.fire({
+                title: '警告',
+                text: '分帳金額總和與總金額不符合',
+                icon: 'warning'
+              });
+              return;
         }
         const apiUrl = `${this.$apiUrl}/api/get_group_unfinish_sure/`;
         this.$axios.post(apiUrl, {
