@@ -157,7 +157,6 @@
           });
       },
       updateShares(index) {
-        let total=0
         if (!this.indexList.includes(index)) {
           this.indexList.push(index);
         }
@@ -175,17 +174,6 @@
           if (!this.indexList.includes(i)) {
             this.shares[i].percentage = newShareAmount;
           }
-        }
-        for (let i = 0; i < this.shares.length; i++) {
-            total = total + Number(this.shares[i].percentage)
-        }
-        if (total>this.formData.payment || total<this.formData.payment){
-              Swal.fire({
-                title: '警告',
-                text: '分帳金額總和與總金額不符合',
-                icon: 'warning'
-              });
-              return;
         }
       },
       updateAllShares() {
@@ -244,6 +232,14 @@
             }
             let total=0
             for (let i = 0; i < this.shares.length; i++) {
+              if (this.shares[i].percentage < 0) {
+                Swal.fire({
+                    title: '警告',
+                    text: '分帳金額不能為負值',
+                    icon: 'warning'
+                });
+                return;
+              }
               total = total + Number(this.shares[i].percentage)
             }
             if (total>this.formData.payment|| total<this.formData.payment){
@@ -296,7 +292,15 @@
         }
         let total=0
         for (let i = 0; i < this.shares.length; i++) {
-            total = total + Number(this.shares[i].percentage)
+          if (this.shares[i].percentage < 0) {
+            Swal.fire({
+                title: '警告',
+                text: '分帳金額不能為負值',
+                icon: 'warning'
+            });
+            return;
+          }
+          total = total + Number(this.shares[i].percentage)
         }
         if (total>this.formData.payment|| total<this.formData.payment){
               Swal.fire({
