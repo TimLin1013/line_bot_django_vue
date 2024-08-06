@@ -338,6 +338,7 @@ def address_group_sure(group_id,item,payment,location,category,time,payer_id,sha
         unit4.save()
         #分帳
         should = unit4.payment
+        should = int(should)
         pre  = unit4.advance_payment
         #分帳人的id和name
         spliter = unit4.personal.personal_id
@@ -594,10 +595,14 @@ def group_unfinish_sure(group_account_id,payer,item,payment,location,transaction
         else:
             advance = int(advance)
         unit_instance = PersonalTable.objects.get(personal_id = person)
-        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit3,personal = unit_instance)
-        unit4.save()
+        check = SplitTable.objects.filter(group_account = group_account_id,personal = unit_instance.personal_id)
+        if not check:
+            unit_instance = PersonalTable.objects.get(personal_id = person)
+            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit3,personal = unit_instance)
+            unit4.save()
         #分帳
         should = unit4.payment
+        should = int(should)
         pre  = unit4.advance_payment
         #分帳人的id和name
         spliter = unit4.personal.personal_id
@@ -634,7 +639,7 @@ def group_unfinish_temporary(group_account_id,payer,item,payment,location,transa
     account_instance.account_date = time
     account_instance.perosnal_id = payer
     account_instance.save()
-    unit5 = GroupAccountTable(group_account_id = group_account_id)
+    unit5 = GroupAccountTable.objects.get(group_account_id = group_account_id)
     for share in shares:
         person = share['person']
         percentage = share['percentage']
@@ -643,7 +648,15 @@ def group_unfinish_temporary(group_account_id,payer,item,payment,location,transa
             advance = 0
         else:
             advance = int(advance)
-        unit_instance = PersonalTable(personal_id = person)
-        unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
-        unit4.save()
+        unit_instance2 = PersonalTable.objects.get(personal_id = person)
+        check = SplitTable.objects.filter(group_account = unit5.group_account_id,personal = unit_instance2.personal_id)
+        if not check:
+            unit_instance = PersonalTable.objects.get(personal_id = person)
+            unit4 = SplitTable(payment = percentage,advance_payment = advance,group_account = unit5,personal = unit_instance)
+            unit4.save()
     return 'ok'
+
+def address_remove_spliter(group_account_id,shares):
+    check = SplitTable.objects.get(group_account=group_account_id,personal = shares)
+    check.delete()
+        

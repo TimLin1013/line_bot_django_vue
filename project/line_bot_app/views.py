@@ -1417,3 +1417,23 @@ def get_group_unfinish_sure(request):
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
     else:
          return JsonResponse({'error': '支持POST請求'}, status=405)
+
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def remove_spliter(request):
+    if request.method == "OPTIONS":
+        response = HttpResponse()
+        response['Allow'] = 'POST, OPTIONS'
+        return response
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            group_account_id = data.get('group_account_id')
+            shares = data.get('share_person')
+            response_data = func.address_remove_spliter(group_account_id,shares)
+            return HttpResponse(json.dumps(response_data), content_type="application/json")
+        except json.JSONDecodeError:
+            return JsonResponse({'error': '無效的JSON數據'}, status=400)
+    else:
+         return JsonResponse({'error': '支持POST請求'}, status=405)
