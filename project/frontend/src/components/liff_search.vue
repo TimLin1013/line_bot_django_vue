@@ -12,7 +12,7 @@
             <span class="menu-bar bottom-bar"></span>
           </div>          
         </button>
-        <button type="button" @click="homepage" class="btn-outline-info">
+        <button type="button" @click="homepage" class="butt">
           <img :src="homeimg" class="home" width="30" height="30">
         </button>
         <div class="ml-auto">
@@ -74,7 +74,9 @@
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                   <td>
-                    <button class="delete_group" @click="deleteAccount(account.personal_account_id)">刪除</button>
+                    <button class="delete" @click="deleteAccount(account.personal_account_id)">
+                      <img :src="deleteimg" class="deletesis" width="25" height="25">
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -120,7 +122,9 @@
                   <td>{{ account.payment }}</td>
                   <td>{{ account.category_name }}</td>
                   <td>
-                    <button class="delete_group" @click.stop="deletegroupAccount(account.group_account_id,account.group_id)">刪除</button>
+                    <button class="delete" @click.stop="deletegroupAccount(account.group_account_id,account.group_id)">
+                      <img :src="deleteimg" class="deletesis" width="25" height="25">
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -139,7 +143,7 @@
         <!-- 應付帳款（我是欠款人） -->
         <div class="payback-section">
           <h3>應付帳款</h3>
-          <table v-if="payBackAccounts.length > 0" class="table table-striped account-area">
+          <table v-if="payBackAccounts.length > 0" class="table table-striped ">
             <thead>
               <tr>
                 <th>金額</th>
@@ -175,7 +179,7 @@
         <!-- 應收帳款（我是收款人） -->
         <div class="payback-section">
           <h3>應收帳款</h3>
-          <table v-if="payBackAccounts2.length > 0" class="table table-striped account-area">
+          <table v-if="payBackAccounts2.length > 0" class="table table-striped ">
             <thead>
               <tr>
                 <th>金額</th>
@@ -295,7 +299,9 @@
                   <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete_group" @click.stop="deleteAccount(k.personal_account_id)">刪除</button>
+                    <button class="delete" @click.stop="deleteAccount(k.personal_account_id)">
+                      <img :src="deleteimg" class="deletesis" width="25" height="25">
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -323,7 +329,9 @@
                   <td>{{ k.account_date.slice(5) }}</td>
                   <td>{{ k.item }}</td>
                   <td>
-                    <button class="delete_group" @click.stop="deletegroupAccount(k.group_account_id,k.group_id)">刪除</button>
+                    <button class="delete" @click.stop="deletegroupAccount(k.group_account_id,k.group_id)">
+                      <img :src="deleteimg" class="deletesis" width="25" height="25">
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -353,6 +361,8 @@ export default {
       GroupSystemimg: require("@/assets/creategroup.png"),
       categoryimg: require("@/assets/category.png"),
       homeimg: require("@/assets/homepage.png"),
+      deleteimg: require("@/assets/delete.png"),
+      pencilimg: require("@/assets/pencil.png"),
       selectedDate: '',
       accounts: [],
       isPersonalExpense: true,
@@ -1058,7 +1068,9 @@ export default {
                     <td>${category.transaction_type}</td>
                     <td>${category.category_name}</td>
                     <td>
-                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px; background-color: #ffc107; color: black;; border-radius: 6px;">修改</button>
+                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px; background:none;border:none; color: black;; border-radius: 6px;">
+                        <img :src="pencilimg" class="pencilsis" width="30" height="30">
+                      </button>
                     </td>
                   </tr>`).join('')}
               </tbody>
@@ -1072,11 +1084,14 @@ export default {
             confirmButtonText:'新增',
             didOpen: () => {
               document.querySelectorAll('.change-group').forEach(button => {
-              button.addEventListener('click', (event) => {
-                const categoryId = event.target.getAttribute('data-id');
-                const categoryName = event.target.getAttribute('data-name');
-                this.change_group_category(categoryId, categoryName);
-              });
+                const imgElement = button.querySelector('.pencilsis')
+                imgElement.src = this.pencilimg;
+                button.addEventListener('click', (event) => {
+                  const buttonElement = event.currentTarget
+                  const categoryId = buttonElement.getAttribute('data-id');
+                  const categoryName = buttonElement.getAttribute('data-name');
+                  this.change_group_category(categoryId, categoryName);
+                });
               });
           }
           }).then((result) => {
@@ -1169,6 +1184,8 @@ export default {
       })
     },
     change_group_category(category_id,category_name){
+      console.log(category_id)
+      console.log(category_name)
       Swal.fire({
         title:'修改名稱',
         input:"text",
@@ -1246,7 +1263,9 @@ export default {
                     <td>${category.transaction_type}</td>
                     <td>${category.category_name}</td>
                     <td>
-                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px; background-color: #ffc107; color: black;; border-radius: 6px;">修改</button>
+                      <button class="change-group" data-id="${category.category_id}" data-name="${category.category_name}" style="padding: 6px 10px;  background:none;border:none;color: black; border-radius: 6px;">
+                        <img :src="pencilimg" class="pencilsis" width="30" height="30">
+                      </button>
                     </td>
                   </tr>`).join('')}
               </tbody>
@@ -1260,10 +1279,13 @@ export default {
             confirmButtonText:'新增',
             didOpen: () => {
               document.querySelectorAll('.change-group').forEach(button => {
-              button.addEventListener('click', (event) => {
-                const categoryId = event.target.getAttribute('data-id');
-                const categoryName = event.target.getAttribute('data-name');
-                this.change_personal_category(categoryId, categoryName);
+                const imgElement = button.querySelector('.pencilsis')
+                imgElement.src = this.pencilimg;  
+                button.addEventListener('click', (event) => {
+                  const buttonElement = event.currentTarget
+                  const categoryId = buttonElement.getAttribute('data-id');
+                  const categoryName = buttonElement.getAttribute('data-name');
+                  this.change_personal_category(categoryId, categoryName);
               });
               });
           }
@@ -1614,7 +1636,7 @@ body {
 #content {
   flex-grow: 1;
   padding: 0px;
-  margin-top: 15px; 
+  margin-top: 10px; 
 }
 
 .payback-container {
@@ -1652,8 +1674,9 @@ body {
 }
 .delete{
   padding: 6px 10px;
-  background-color: #ffc107; 
   color: black;
+  background: none;
+  border: none;
   border-radius: 6px;
 }
 .delete_group{
@@ -1682,7 +1705,10 @@ body {
   white-space: nowrap;
   background-color: #FFEFDB;
 }
-
+.butt{
+  border:none;
+  background:none
+}
 .group-buttons {
   display: flex;
   gap: 10px;
