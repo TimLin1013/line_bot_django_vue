@@ -14,9 +14,9 @@ import subprocess
 from autogen.coding import LocalCommandLineCodeExecutor
 line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
 os.environ["OPENAI_API_KEY"] = settings.OPENAI_API_KEY
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-GPT_MODEL = "gpt-3.5-turbo-0613"
-client = OpenAI()#new
+# llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+# GPT_MODEL = "gpt-3.5-turbo-0613"
+# client = OpenAI()#new
 #6/3
 #創建群組
 def CreateGroup(groupname,user_id):
@@ -103,12 +103,19 @@ def classification(text):
     )
     format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}"
     # Create an assistant agent
+    system_prompt ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數
+                    參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)
+                    ，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE
+                   '''
+    examples = '''
+              1.使用者輸入：薪水2000元。輸出：項目名稱：薪水、金額：2000、地點：無。
+              2.使用者輸入：水果店買四個蘋果一個125元。輸出：項目名稱：蘋果、金額：500元、地點：水果店。
+              '''
     assistant = autogen.AssistantAgent(
         "assistant",
-
-        system_message="你是一個帳目產生器，根據使用者的輸入抓取帳目要的參數，要抓取的參數有：金額(舉例：200，若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0),地點(舉例：中央大學、電影院、餐廳等等，若沒有抓取到地點請輸出無)，項目名稱(舉例：漢堡、房租、薪水等等就是抓花費的項目或是收入的項目，若沒有抓取到項目名稱請輸出無)，只抓到一或兩個參數也要輸出，輸出格式是"+format+"，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE",
-
+        # model
         llm_config={"config_list": config_list},
+        system_message=system_prompt+"輸出格式："+format+"例子："+examples,
     )
     user_input=text
     agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
@@ -155,11 +162,16 @@ def group_account_spliter(group_id,text):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format = '\"人名\",......(輸出的分帳人名字要和給予的名單一模一樣)'
+    format = '{\"人名\",......(輸出的分帳人名字要和給予的名單一模一樣)}'
+    system_prompt = '給予群組的成員名單，從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表不用進行分帳，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE'
+    examples = '''假若群組內有小明、小美、小白 
+            1.使用者輸入：小明、小美除外都要分帳。輸出：小白。
+            2.使用者輸入：全部人均分。輸出：小明,小美,小白。
+            '''
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="會給予群組的成員名單，然後從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表不用進行分帳，輸出格式"+format+"，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE",
+        system_message=system_prompt+"輸出格式："+format+"例子:"+examples,
         llm_config={"config_list": config_list},
     )
     agent = user.initiate_chat(assistant, message="成員名單:"+str(personal_name_list)+"使用者輸入:"+text+"",summary_method="last_msg")
@@ -212,7 +224,7 @@ def sqlagent(text,personal_id):
             "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
             '地點': i.location,
             '金額': i.payment,
-            '資料完整flag(0為不完整、1為完整)': i.info_complete_flag,
+            '資料完整flag': i.info_complete_flag,
             '類別名稱': category_instance.category_name,
             '交易類型': category_instance.transaction_type,
         }
@@ -231,7 +243,7 @@ def sqlagent(text,personal_id):
                 '地點': i.location,
                 '總付款金額': i.payment,
                 '群組名稱': group_name,
-                '資料完整flag(0為不完整、1為完整)': i.info_complete_flag,
+                '資料完整flag': i.info_complete_flag,
                 '總付款人id':i.personal.personal_id,
                 '類別名稱': i.category.category_name,
                 '交易類型': i.category.transaction_type,
@@ -246,11 +258,12 @@ def sqlagent(text,personal_id):
             return_account = ReturnTable.objects.filter(split = l)
             for h in return_account:
                 data4 = {
+                    '群組帳目編號':l.group_account,
                     '分帳':l.payment,
                     '還錢金額':h.return_payment,
                     '欠款人':h.payer,
                     '收款人':h.receiver,
-                    '還錢flag(0為未還錢、1為已經還錢)':h.return_flag,
+                    '還錢flag':h.return_flag,
                 }  
                 split_return_list.append(data4) 
     group_link = PersonalGroupLinkingTable.objects.filter(personal = personal_info)
@@ -274,10 +287,19 @@ def sqlagent(text,personal_id):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={"use_docker": False}
     )
-
+    system_prompt = '''你是一個帳目詢問助手，根據使用者的問題回答，根據給予你使用者的personal_id查詢他相關資料，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE
+                    ，帳目資訊中的「個人帳目」：為個人的帳目資料，當中有一個欄位為資料完整flag(0為不完整，1為完整)，帳目資訊中的「群組帳目」、「群組」可以放在一起看：為群組帳目的資訊，當中有一個欄位為資料完整flag(0為不完整，1為完整)，帳目資訊中的「分帳資訊」：為群組分帳的金額，還錢flag(0為為還錢、1為還錢、2為收款人沒有確認也不算還錢)欠款人(欠別人錢的)，收款人(收別人錢的)
+                    '''
+    examples='''
+        1.問題："我想查詢我2024年8月有幾筆未完整個人帳"：要加總個人帳目中的資料完整flag為0且日期為2024-08的帳目。
+        2.問題："我想查詢2024年7月的收入減支出":抓取個人帳目中的資料完整flag為1且交易類型為支出且日期為2024-07進行加總與資料完整為1且交易類型為收入日期為2024-07進行加總，然後再支出減收入。
+        3.問題："我想查詢我group1有幾筆未完整帳目"：抓取群組帳目，加總群組名稱為group1的資料完整flag為0的帳目筆數。
+        4.問題："我在2024-05-27的group1中在中央大學付了多少錢"：總付款人id為該使用者，加總群組名稱為group1並且日期為2024-05-27且地點為中央大學且資料完整flag=1的金額)。
+        5.問題："誰在group1有欠我錢"：抓取分帳帳目的群組帳目編號是多少去對到群組帳目裡面就可以知道群組名稱，所以群組名稱為group1，然後再看收款者是你，欠款者是其他人的，然後就可以分別呈現出來)
+            '''
     assistant = autogen.AssistantAgent(
         "assistant",
-        system_message="你是一個帳目詢問助手，然後依照使用者的問題，直接回答，並不要輸出list名稱與個人與帳目等等的id，欠款人(欠別人錢的)，收款人(收別人錢的)，若有問到分帳金額，要看分帳，不是看總付款金額，若從給予的資料當中找到無關資訊請輸出ERROR，並且結尾就TERMINATE，有產生回答就直接TERMINATE",
+        system_message=system_prompt+"例子："+examples,
         llm_config={"config_list": config_list},
     )
     account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
