@@ -306,7 +306,7 @@ def get_user_account(request):
                 unit12 = PersonalCategoryTable(category_name = "付房租",transaction_type ='收入',personal =unit2 )
                 unit13 = PersonalCategoryTable(category_name = "房租",transaction_type ='支出',personal =unit2 )
                 unit14 = PersonalCategoryTable(category_name = "購物",transaction_type ='支出',personal =unit2)
-                unit15 = PersonalCategoryTable(category_name = "無",transaction_type ='無',personal =unit2)
+                unit15 = PersonalCategoryTable(category_name = "薪水",transaction_type ='支出',personal =unit2)
                 unit3.save()
                 unit4.save()
                 unit5.save()
@@ -369,8 +369,9 @@ def get_user_account_info(request):
         try:
             data = json.loads(request.body.decode('utf-8'))
             input_text = data.get('user_input')
+            personal_id = data.get('personal_id')
             response_data = {'message': '成功接收數據','input': input_text}
-            temp = func.classification(input_text)
+            temp = func.classification(input_text,personal_id)
             return JsonResponse({**response_data,'temp':temp})
         except json.JSONDecodeError:
             return JsonResponse({'error': '無效的JSON數據'}, status=400)
@@ -412,9 +413,8 @@ def get_group_account_info_classificaiton(request):
             data = json.loads(request.body.decode('utf-8'))
             input_text = data.get('user_input')
             group_id = data.get('group_id')
-            print(group_id)
             response_data = {'message': '成功接收數據'}
-            temp = func.classification(input_text)
+            temp = func.group_classification(input_text,group_id)
             if temp != '錯誤':
                 temp['group_id'] = group_id
             return JsonResponse({**response_data,'temp':temp})

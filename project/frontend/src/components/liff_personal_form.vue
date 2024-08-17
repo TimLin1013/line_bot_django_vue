@@ -101,6 +101,11 @@ export default {
         .then(response => {
           console.log(response);
           this.category_list = response.data.category.map(category => ({ category_name: category.category_name, transaction_type: category.transaction_type }));
+          if (this.transaction === '支出') {
+              this.handleExpenditure();
+            } else if (this.transaction === '收入') {
+              this.handleIncome();
+          }
         })
         .catch(error => {
           console.error(error);
