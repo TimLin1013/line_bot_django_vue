@@ -50,7 +50,7 @@ def CreateGroup(groupname,user_id):
             unit10 = GroupCategoryTable(category_name = "醫療",transaction_type ='支出',group =unit )
             unit11 = GroupCategoryTable(category_name = "薪水",transaction_type ='收入',group =unit)
             unit14 = GroupCategoryTable(category_name = "購物",transaction_type ='支出',group =unit)
-            unit15 = GroupCategoryTable(category_name = "無",transaction_type ='無',group =unit)
+            unit15 = GroupCategoryTable(category_name = "飲料",transaction_type ='支出',group =unit)
             unit16.save()
             unit4.save()
             unit5.save()
@@ -90,7 +90,7 @@ def JoinGroup(personal_id,group_code):
                 return '加入群組時發生錯誤，請稍後再試'
 
 
-def classification(text):
+def classification(text,personal_id):
     config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
     os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
     # Create a user agent
@@ -101,21 +101,42 @@ def classification(text):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format="[{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)},{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}..."
+    category_list = []
+    category = PersonalCategoryTable.objects.filter(personal_id = personal_id)
+    for j in category:
+        data2 = {
+            "類別":j.category_name,
+            "交易類型":j.transaction_type
+        }
+        category_list.append(data2)
+    account_record = []
+    account = PersonalAccountTable.objects.filter(personal_id = personal_id)
+    for i in account:
+        data3 = {
+            "項目名稱":i.item,
+            "類別":i.category.category_name,
+            "交易類型":i.category.transaction_type
+        }
+        account_record.append(data3)
+    format="[{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)},{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)}...]"
     # Create an assistant agent
-    system_prompt ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數
-                    參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)
-                    ，若不符合格式就輸出ERROR，輸出結果有可能一個以上，請務必按照輸出格式輸出
+    role ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
+                    參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
                    '''
+    category_info = '''若抓取的項目名稱為第一次抓取，請先看"個人類別資料"，並且輸出最好的結果。
+                    若項目名稱不是第一次抓取，你抓取的項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱(例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
+                    若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE。
+                '''
     examples = '''
-              1.使用者輸入：薪水2000元。輸出：項目名稱：薪水、金額：2000、地點：無。
-              2.使用者輸入：水果店買四個蘋果一個125元。輸出：項目名稱：蘋果、金額：500元、地點：水果店。
+              1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
+              2.使用者輸入:水果店買四個蘋果一個125元。輸出:項目名稱:蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出。
+              3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
               '''
     assistant = autogen.AssistantAgent(
         "assistant",
         # model
         llm_config={"config_list": config_list},
-        system_message=system_prompt+"輸出格式："+format+"例子："+examples,
+        system_message=role+category_info+"輸出格式："+format+"例子："+examples+"個人類別資料："+str(category_list)+"帳目類別資料："+str(account_record)
     )
     user_input=text
     agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
@@ -126,21 +147,84 @@ def classification(text):
         result2 = agent.summary
         data_list = json.loads(result2)
         return_data_list = []
-    
     for data in data_list:
         return_data = {
             "item": data["項目名稱"],
             "payment": data["金額"],
             "location": data["地點"],
-            "category": '',
-            "transaction_type": ''
+            "category": data['類別'],
+            "transaction_type": data['交易類型']
         }
         # Print each processed result
-        print(return_data)
         
         return_data_list.append(return_data)
-    
     return return_data_list
+#群組
+def group_classification(text,group_id):
+    config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
+    os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
+    # Create a user agent
+    user = autogen.UserProxyAgent(
+        name="user_proxy",
+        human_input_mode="NEVER",
+        max_consecutive_auto_reply=1,
+        is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+        code_execution_config={'use_docker':False}
+    )
+    category_list = []
+    category = GroupCategoryTable.objects.filter(group = group_id)
+    for j in category:
+        data2 = {
+            "類別":j.category_name,
+            "交易類型":j.transaction_type
+        }
+        category_list.append(data2)
+    account_record = []
+    account = GroupAccountTable.objects.filter(group = group_id)
+    for i in account:
+        data3 = {
+            "項目名稱":i.item,
+            "類別":i.category.category_name,
+            "交易類型":i.category.transaction_type
+        }
+        account_record.append(data3)
+    format="{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、交易類型、類別)}"
+    # Create an assistant agent
+    role ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
+                    參數：金額(若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
+                   '''
+    category_info = '''
+                    若抓取的項目名稱為第一次抓取，請先看"群組類別資料"，並且輸出最好的結果。
+                    若項目名稱不是第一次抓取，你抓取的項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱(例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
+                    若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE。
+                    '''
+    examples = '''
+              1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
+              2.使用者輸入:水果店買四個蘋果一個125元。輸出:項目名稱;蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出。
+              3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
+              '''
+    assistant = autogen.AssistantAgent(
+        "assistant",
+        # model
+        llm_config={"config_list": config_list},
+        system_message=role+category_info+"輸出格式："+format+"例子："+examples+"群組類別資料："+str(category_list)+"帳目類別資料："+str(account_record),
+    )
+    user_input=text
+    agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
+    result = agent.summary
+    if result[:5] == 'ERROR':
+        return "錯誤"
+    else:
+        result2 = agent.summary
+        data = json.loads(result2)
+        return_data={
+            "item":data["項目名稱"],
+            "payment":data["金額"],
+            "location":data["地點"],
+            "category":data['類別'],
+            "transaction_type":data['交易類型']
+        }
+        return return_data
     
 def group_account_spliter(group_id,text):
     group_instance = GroupTable.objects.get(group_id=group_id)

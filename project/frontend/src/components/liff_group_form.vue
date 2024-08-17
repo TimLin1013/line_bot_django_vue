@@ -42,9 +42,9 @@
       <option value="收入">收入</option>
     </select>
     <label>類別</label>
-    <select v-model="category_temp" class="form-control">
+    <select v-model="formData.category" class="form-control">
       <option value="" disabled>請選擇</option>
-      <option v-for="category in tmp_list" :key="category" :value="category">
+      <option v-for="category in tmp_list" :key="category" :value="category.category_name">
         {{ category.category_name }}
       </option>
     </select>
@@ -70,8 +70,7 @@ export default {
       person2: '',
       persons: [],
       persons2: [],
-      transaction:'',
-      category_temp: '',
+      transaction:this.formData.transaction_type,
       shares: [],
       homeimg: require("@/assets/homepage.png"),
     }
@@ -125,6 +124,11 @@ export default {
             category_name: category.category_name,
             transaction_type: category.transaction_type
           }));
+          if (this.transaction === '支出') {
+              this.handleExpenditure();
+            } else if (this.transaction === '收入') {
+              this.handleIncome();
+          }
         })
         .catch(error => {
           console.error(error);
@@ -243,7 +247,7 @@ export default {
         item: this.formData.item,
         payment: this.formData.payment,
         location: this.formData.location,
-        category: this.category_temp,
+        category: this.formData.category,
         transaction_type:this.transaction,
         time: this.currentTime,
         shares: this.shares
@@ -302,7 +306,7 @@ export default {
         item: this.formData.item,
         payment: this.formData.payment,
         location: this.formData.location,
-        category: this.category_temp,
+        category: this.formData.category,
         transaction_type:this.transaction,
         time: this.currentTime,
         shares: this.shares
