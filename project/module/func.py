@@ -97,15 +97,15 @@ def classification(text):
     user = autogen.UserProxyAgent(
         name="user_proxy",
         human_input_mode="NEVER",
-        max_consecutive_auto_reply=1,
+        max_consecutive_auto_reply=0,
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format="{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}"
+    format="[{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)},{\"項目名稱\":\"\"....(只能包含項目名稱,金額,地點)}..."
     # Create an assistant agent
     system_prompt ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數
                     參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)
-                    ，若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE
+                    ，若不符合格式就輸出ERROR，輸出結果有可能一個以上，請務必按照輸出格式輸出
                    '''
     examples = '''
               1.使用者輸入：薪水2000元。輸出：項目名稱：薪水、金額：2000、地點：無。
@@ -124,15 +124,23 @@ def classification(text):
         return "錯誤"
     else:
         result2 = agent.summary
-        data = json.loads(result2)
-        return_data={
-            "item":data["項目名稱"],
-            "payment":data["金額"],
-            "location":data["地點"],
-            "category":'',
-            "transaction_type":''
+        data_list = json.loads(result2)
+        return_data_list = []
+    
+    for data in data_list:
+        return_data = {
+            "item": data["項目名稱"],
+            "payment": data["金額"],
+            "location": data["地點"],
+            "category": '',
+            "transaction_type": ''
         }
-        return return_data
+        # Print each processed result
+        print(return_data)
+        
+        return_data_list.append(return_data)
+    
+    return return_data_list
     
 def group_account_spliter(group_id,text):
     group_instance = GroupTable.objects.get(group_id=group_id)

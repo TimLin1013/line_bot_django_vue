@@ -1,5 +1,5 @@
 <template>
-  <div id="demo"class="p-4 p-md-5">
+  <div id="demo" class="p-4 p-md-5">
     
     <!-- 頂部 -->
     <nav class="navbar navbar-light bg-light fixed-top">
