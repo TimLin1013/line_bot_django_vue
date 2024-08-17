@@ -242,12 +242,12 @@ def callback(request):
                     if mtext == "查詢":
                         func.save_personal_info_to_file(personal_id)
                         
-                    elif mtext[:3] == "###":
+                    elif mtext[:1] == "#":
                         
-                        user_message = mtext[3:].strip()
+                        user_message = mtext[1:].strip()
                         func.drawplot(user_message,personal_id)
                         
-                        image_path = r"C:\Users\user\PycharmProjects\line_bot\project\account.png"
+                        image_path = r"C:\bookkeeping\line_bot_django_vue\project\account.png"
                         try:
                             image_url = upload_image_to_imgur(image_path)
                             print(f'Image URL: {image_url}')
