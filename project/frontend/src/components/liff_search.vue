@@ -575,11 +575,10 @@ export default {
               title: "群組帳目記帳",
               inputLabel:"輸入記帳資訊ex:項目地點金額",
               input: "text",
-              showCancelButton:true,
               confirmButtonText: "送出",
               inputPlaceholder: "請輸入",
-              cancelButtonText:'取消',
               allowOutsideClick: false,
+              showCloseButton: true,
               inputValidator: (value2) => {
                 if (!value2) {
                   return "請輸入資訊!";
@@ -610,7 +609,7 @@ export default {
                       confirmButtonText: "送出",
                       allowOutsideClick: false,
                       inputPlaceholder: "請輸入",
-                      allowOutsideClick: false,
+                      showCloseButton: true,
                       preConfirm: () => {
                         if(data2 === ''){
                           data2 = Swal.getInput().value;
