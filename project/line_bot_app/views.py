@@ -805,14 +805,14 @@ def get_group_keep_temporary(request):
             payment = data.get('payment')
             location = data.get('location')
             category = data.get('category')
-            if data.get('transaction_type') == '':
-                transaction_type='無'
-            else:
-                transaction_type = data.get('transaction_type')
-            if data.get('category') == '':
-                category='無'
-            else:
-                category = category.get('category_name')
+            # if data.get('transaction_type') == '':
+            #     transaction_type='無'
+            # else:
+            #     transaction_type = data.get('transaction_type')
+            # if data.get('category') == '':
+            #     category='無'
+            # else:
+            #     category = category.get('category_name')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)
@@ -841,10 +841,6 @@ def get_group_keep_sure(request):
             location = data.get('location')
             category = data.get('category')
             transaction_type = data.get('transaction_type')
-            if data.get('category') == '':
-                category='無'
-            else:
-                category = category.get('category_name')
             time = data.get('time')
             time = datetime.fromisoformat(time)
             time += timedelta(hours=8)

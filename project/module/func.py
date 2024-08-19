@@ -169,7 +169,7 @@ def group_classification(text,group_id):
     user = autogen.UserProxyAgent(
         name="user_proxy",
         human_input_mode="NEVER",
-        max_consecutive_auto_reply=1,
+        max_consecutive_auto_reply=0,
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
@@ -198,7 +198,7 @@ def group_classification(text,group_id):
     category_info = '''
                     若抓取的項目名稱為第一次抓取，請先看"群組類別資料"，並且輸出最好的結果。
                     若項目名稱不是第一次抓取，你抓取的項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱(例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
-                    若不符合格式就輸出ERROR，並且結尾就TERMINATE，產生一筆結果就輸出TERMINATE且TERMINATE。
+                    若不符合格式就輸出ERROR，只會產生一筆結果，請務必按照格式輸出。
                     '''
     examples = '''
               1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
@@ -214,11 +214,15 @@ def group_classification(text,group_id):
     user_input=text
     agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
     result = agent.summary
+    
     if result[:5] == 'ERROR':
         return "錯誤"
     else:
         result2 = agent.summary
-        data = json.loads(result2)
+        start_index = result2.find('{')
+        end_index = result2.rfind('}') + 1
+        extracted_content = result2[start_index:end_index]
+        data = json.loads(extracted_content)
         return_data={
             "item":data["項目名稱"],
             "payment":data["金額"],
@@ -252,16 +256,16 @@ def group_account_spliter(group_id,text):
     user = autogen.UserProxyAgent(
         name="user_proxy",
         human_input_mode="NEVER",
-        max_consecutive_auto_reply=1,
+        max_consecutive_auto_reply=0,
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format = '{\"人名\",......(輸出的分帳人名字要和給予的名單一模一樣)}'
-    system_prompt = '給予群組的成員名單，從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表不用進行分帳，若與抓分帳人無關的資訊請輸出ERROR，產生一筆結果就輸出TERMINATE且TERMINATE'
+    format = '\"人名\",......(輸出的分帳人名字要和給予的名單一模一樣)'
+    system_prompt = '給予群組的成員名單，從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表不用進行分帳，若與抓分帳人無關的資訊請輸出ERROR，只會產生一筆結果，請務必按照格式輸出'
     examples = '''假若群組內有小明、小美、小白 
-            1.使用者輸入：小明、小美除外都要分帳。輸出：小白。
-            2.使用者輸入：全部人均分。輸出：小明,小美,小白。
-            3.使用者輸入：除了小明外。輸出：小美、小白。
+            1.使用者輸入：小明、小美除外都要分帳。小白。
+            2.使用者輸入：全部人均分。小明,小美,小白。
+            3.使用者輸入：除了小明外。小美、小白。
             '''
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
