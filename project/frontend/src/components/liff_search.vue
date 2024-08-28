@@ -551,118 +551,66 @@ export default {
         .then(response => {
           this.group2 = response.data.groups;
           this.group2.forEach(group => {
-          this.inputOptions[group.group_id] = group.group_name;
-        });
-        Swal.fire({
-          title: "選擇帳本",
-          input: "select",
-          inputOptions: this.inputOptions,
-          confirmButtonText: "送出",
-          inputPlaceholder: "選擇一個帳本",
-          allowOutsideClick: false,
-          showCloseButton: true,
-          inputValidator: (value) => {
-            if (!value) {
-              return "請選擇帳本";
-            }
-          }
-        }).then((result) => {
-          if (result.value === null) {
-            return;
-          }
-          if (result.isConfirmed) {
-            Swal.fire({
-              title: "群組帳目記帳",
-              inputLabel:"輸入記帳資訊ex:項目地點金額",
-              input: "text",
-              confirmButtonText: "送出",
-              inputPlaceholder: "請輸入",
-              allowOutsideClick: false,
-              showCloseButton: true,
-              inputValidator: (value2) => {
-                if (!value2) {
-                  return "請輸入資訊!";
-                }
-              }
-            }).then((result2) => {
-              if (result2.value) {
-                const data = result2.value;
-                const apiUrl = `${this.$apiUrl}/api/get_group_account_info_classification/`;
-                this.$axios.post(apiUrl, {user_input:data,group_id : result.value})
-                .then(response => {
-                  const classdata = response.data.temp;
-                  if (response.data.temp === '錯誤'){
-                    Swal.fire({
-                        text: "請檢查輸入的記帳內容!",
-                        icon: "warning"
-                    });
-                  }
-                  else{
-                    let data2 = ''
-                    Swal.fire({
-                      title: "分帳人資訊",
-                      inputLabel:"1.按下全部人為全部人平均分攤金額\n2.可以輸入除外誰以外都要分帳\n3.若不用分帳直接按送出",
-                      html: `
-                          <button id="allPeopleButton" class="swal2-styled" style="background-color:#FFC299; ; color: black; padding: 10px 20px; font-size: 16px">全部人</button>
-                          `,
-                      input: "text",
-                      confirmButtonText: "送出",
-                      allowOutsideClick: false,
-                      inputPlaceholder: "請輸入",
-                      showCloseButton: true,
-                      preConfirm: () => {
-                        if(data2 === ''){
-                          data2 = Swal.getInput().value;
-                        }
-                        return data2;
-                      }
-                    }).then((result3) => {
-                      data2 = result3.value
-                      Swal.fire({
-                        title: '請稍候...',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                          Swal.showLoading();
-                        }
-                      });
-                      const apiUrl = `${this.$apiUrl}/api/get_group_account_info/`;
-                      this.$axios.post(apiUrl, {user_input2:data2,group_id : result.value})
-                        .then(response => {
-                          Swal.close();
-                          if(response.data.temp2 ==='錯誤'){
-                           Swal.fire({
-                              text: "請檢查輸入的記帳內容!",
-                              icon: "warning"
-                           });
-                          }
-                          else {
-                            this.$router.push({ name: 'liff_group_form', params: { formData: classdata,formData2:response.data.temp2 } });
-                          }
-                        })
-                        .catch(error => {
-                          Swal.close();
-                          console.error('Error:', error);
-                        })
-                  })
-                  document.getElementById('allPeopleButton').addEventListener('click', () => {
-                    data2 = '全部人';
-                    Swal.getInput().value = '全部人';
-                  })
-                }
-                });
-              } 
+            this.inputOptions[group.group_id] = group.group_name;
           });
-        }
-      });
-    })
-        .catch(error => {
-          console.error('Error:', error);
+          Swal.fire({
+            title: "選擇帳本",
+            input: "select",
+            inputOptions: this.inputOptions,
+            confirmButtonText: "送出",
+            inputPlaceholder: "選擇一個帳本",
+            allowOutsideClick: false,
+            showCloseButton: true,
+            inputValidator: (value) => {
+              if (!value) {
+                return "請選擇帳本";
+              }
+            }
+          }).then((result) => {
+            if (result.value === null) {
+              return;
+            }
+            if (result.isConfirmed) {
+              Swal.fire({
+                title: "群組帳目記帳",
+                inputLabel: "輸入記帳資訊ex:項目地點金額",
+                input: "text",
+                confirmButtonText: "送出",
+                inputPlaceholder: "請輸入",
+                allowOutsideClick: false,
+                showCloseButton: true,
+                inputValidator: (value2) => {
+                  if (!value2) {
+                    return "請輸入資訊!";
+                  }
+                }
+              }).then((result2) => {
+                if (result2.value) {
+                  const data = result2.value;
+                  const apiUrl = `${this.$apiUrl}/api/get_group_account_info_classification/`;
+                  this.$axios.post(apiUrl, { user_input: data, group_id: result.value })
+                    .then(response => {
+                      const classdata = response.data.temp;
+                      if (response.data.temp === '錯誤') {
+                        Swal.fire({
+                          text: "請檢查輸入的記帳內容!",
+                          icon: "warning"
+                        });
+                      } else {
+                        this.$router.push({ name: 'liff_group_form', params: { formData: classdata, formData2: classdata.member} });
+                      }
+                    });
+                }
+              });
+            }
+          });
         });
     },
 
+
     voiceTextAccounting() {
       Swal.fire({
-        title: "個人記帳",
+        title: "智能簡化記帳",
         input: "text",
         confirmButtonText: "送出",
         inputPlaceholder: "請輸入",
