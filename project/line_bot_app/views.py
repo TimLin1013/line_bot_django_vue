@@ -175,7 +175,7 @@ def get_payback(request):
 
             # 使用 ReturnTable 模型來檢索還錢通知數據
             p = user_name + " "+ personal_id
-
+            
             payback_notifications = ReturnTable.objects.filter(payer=p)
             payer_payback_list = []
             for payback in payback_notifications:
@@ -203,7 +203,7 @@ def get_payback(request):
                     "group_name": group_name  # 加入群組名稱
                 }
                 receiver_payback_list.append(payback_data)
-
+            
             response_data = {
                 "message": "Data received successfully",
                 "payer_payback_list": payer_payback_list,
@@ -239,12 +239,32 @@ def callback(request):
                     user_id = event.source.user_id
                     personal = PersonalTable.objects.get(line_id = user_id)
                     personal_id = personal.personal_id
-                    if mtext == "查詢":
-                        func.save_personal_info_to_file(personal_id)
+                    
+
+                    if mtext=="切換至查詢模式...":
+                        personal.input_status = '0'
+                        personal.save()
+                        messages = [
+                            TextMessage(text="查詢模式")
+                        ]
+                        line_bot_api.reply_message(event.reply_token, messages)
+                    elif mtext=="切換至圖表模式...":
+                        personal.input_status='1'
+                        personal.save()
+                        messages = [
+                            TextMessage(text="圖表模式")
+                        ]
+                        line_bot_api.reply_message(event.reply_token, messages)
+                    elif personal.input_status=='0':
+                        result = func.sqlagent(mtext,personal_id)
+                        messages = [
+                            TextMessage(text=result),
+                            TextMessage(text="查詢模式")
+                        ]
+                        line_bot_api.reply_message(event.reply_token, messages)
                         
-                    elif mtext[:1] == "#":
-                        
-                        user_message = mtext[1:].strip()
+                    else:
+                        user_message = mtext
                         func.drawplot(user_message,personal_id)
                         
                         image_path = r"C:\Users\user\PycharmProjects\line_bot\project\account.png"
@@ -257,11 +277,11 @@ def callback(request):
                             original_content_url=image_url,
                             preview_image_url=image_url
                         )
-                        line_bot_api.reply_message(event.reply_token, image_message)
-                        
-                    else:
-                        result = func.sqlagent(mtext,personal_id)
-                        line_bot_api.reply_message(event.reply_token, TextMessage(text=result))
+                        messages = [
+                            image_message,
+                            TextMessage(text="畫圖模式")
+                        ]
+                        line_bot_api.reply_message(event.reply_token, messages)
         return HttpResponse()
     else:
         return HttpResponseBadRequest()

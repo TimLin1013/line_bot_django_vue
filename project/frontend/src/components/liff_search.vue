@@ -572,7 +572,7 @@ export default {
             }
             if (result.isConfirmed) {
               Swal.fire({
-                title: "群組帳目記帳",
+                title: "智能分帳",
                 inputLabel: "輸入記帳資訊ex:項目地點金額",
                 input: "text",
                 confirmButtonText: "送出",
@@ -1438,6 +1438,7 @@ export default {
   },
   mounted() {
     this.checkUserId();
+    this.fetchPayBack();
     document.addEventListener('click', this.handleOutsideClick);
   },
   beforeDestroy() {
