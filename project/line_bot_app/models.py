@@ -92,6 +92,7 @@ class PersonalTable(models.Model):
     personal_id = models.CharField(primary_key=True, max_length=200)
     user_name = models.CharField(max_length=200)
     line_id = models.CharField(unique=True, max_length=45)
+    input_status = models.CharField(max_length=45)
 
     class Meta:
         managed = False
