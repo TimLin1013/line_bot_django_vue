@@ -599,7 +599,7 @@ export default {
                           icon: "warning"
                         });
                       } else {
-                        this.$router.push({ name: 'liff_group_form', params: { formData: classdata, formData2: classdata.member} });
+                        this.$router.push({ name: 'liff_group_form', params: { formData: classdata} });
                       }
                     });
                 }

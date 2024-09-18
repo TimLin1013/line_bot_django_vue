@@ -58,7 +58,6 @@ import Swal from 'sweetalert2';
 export default {
   props: {
     formData: Object,
-    formData2 :Array
   },
   data() {
     return {
@@ -100,18 +99,17 @@ export default {
       return `${year}-${month}-${day}`;
     },
     initializeShares() {
-      const counter = this.formData2.length;
-      const divide = this.formData.payment / counter;
-      const names = this.formData2;
+      const memberString = this.formData.member.replace(/'/g, '"');
+      const names = JSON.parse(memberString);
       names.forEach(name => {
         let person_member_id = null;
         this.persons2.forEach(personItem => {
-          if (personItem.personal_name === name) {
+          if (personItem.personal_name === name.成員名稱) {
             person_member_id = personItem.personal_id;
           }
         });
         if (person_member_id !== null) {
-          this.shares.push({ person: person_member_id, percentage: divide ,advance_percentage:null});
+          this.shares.push({ person: person_member_id, percentage: name.分帳金額 ,advance_percentage:null});
         }
       });
     },
@@ -159,21 +157,21 @@ export default {
       if (!this.indexList.includes(index)) {
         this.indexList.push(index);
       }
-      const totalAmount = this.formData.payment;
-      // 計算已修改的總金額
-      const totalModifiedAmount = this.indexList.reduce((sum, idx) => sum + Number(this.shares[idx].percentage), 0);
-      // 剩餘金額
-      const remainingAmount = totalAmount - totalModifiedAmount;
-      // 剩餘未修改的人數
-      const remainingPeopleCount = this.shares.length - this.indexList.length;
-      // 計算其他人的分帳金額
-      const newShareAmount = remainingPeopleCount > 0 ? Number((remainingAmount / remainingPeopleCount).toFixed(1)) : 0;
+      // const totalAmount = this.formData.payment;
+      // // 計算已修改的總金額
+      // const totalModifiedAmount = this.indexList.reduce((sum, idx) => sum + Number(this.shares[idx].percentage), 0);
+      // // 剩餘金額
+      // const remainingAmount = totalAmount - totalModifiedAmount;
+      // // 剩餘未修改的人數
+      // const remainingPeopleCount = this.shares.length - this.indexList.length;
+      // // 計算其他人的分帳金額
+      // const newShareAmount = remainingPeopleCount > 0 ? Number((remainingAmount / remainingPeopleCount).toFixed(1)) : 0;
 
-      for (let i = 0; i < this.shares.length; i++) {
-        if (!this.indexList.includes(i)) {
-          this.shares[i].percentage = newShareAmount;
-        }
-      }
+      // for (let i = 0; i < this.shares.length; i++) {
+      //   if (!this.indexList.includes(i)) {
+      //     this.shares[i].percentage = newShareAmount;
+      //   }
+      // }
     },
     updateAllShares() {
       const totalShares = this.shares.length;
