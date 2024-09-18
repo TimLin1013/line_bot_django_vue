@@ -432,7 +432,7 @@ export default {
         showCloseButton: true,
         showCancelButton: true,
         allowOutsideClick: false,
-        confirmButtonText: '是的, 標記!',
+        confirmButtonText: '確認',
         cancelButtonText: '取消'
       }).then((result) => {
         if (result.isConfirmed) {
@@ -457,7 +457,7 @@ export default {
         showCloseButton: true,
         showCancelButton: true,
         allowOutsideClick: false,
-        confirmButtonText: '是的, 標記!',
+        confirmButtonText: '確認',
         cancelButtonText: '取消'
       }).then((result) => {
         if (result.isConfirmed){
@@ -586,10 +586,12 @@ export default {
                 }
               }).then((result2) => {
                 if (result2.value) {
+                  
                   const data = result2.value;
                   const apiUrl = `${this.$apiUrl}/api/get_group_account_info_classification/`;
-                  this.$axios.post(apiUrl, { user_input: data, group_id: result.value })
+                  this.$axios.post(apiUrl, { user_input: data, group_id: result.value ,personal_id: this.$root.$personal_id})
                     .then(response => {
+                      console.log(response)
                       const classdata = response.data.temp;
                       if (response.data.temp === '錯誤') {
                         Swal.fire({

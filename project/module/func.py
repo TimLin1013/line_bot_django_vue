@@ -124,8 +124,8 @@ def classification(text,personal_id):
                     參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、
                     地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
                    '''
-    category_info = '''預測類別時，若抓取的項目名稱沒有出現在"帳目類別資料"，請先看"個人類別資料"，並且從中選擇最合適的一項。
-                    你抓取的項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
+    category_info = '''預測類別時，請先看"個人類別資料"，從使用者輸入內容中選擇最合適的一項"個人類別資料"的類別，如果無法從使用者的輸入判斷，
+                    則若抓取的你抓取的項目名稱沒有在"帳目類別資料"，請自行選擇，若項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
                     (例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
                     請務必按照格式輸出，預測的類別必定是"個人類別資料"的其中之一的類別，不能輸出"個人類別資料"的內容以外的類別，請勿自行產生類別。
                     (例子:"個人類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
@@ -148,7 +148,10 @@ def classification(text,personal_id):
         return "錯誤"
     else:
         result2 = agent.summary
-        data_list = json.loads(result2)
+        start_index = result2.find('[')
+        end_index = result2.rfind(']') + 1
+        extracted_content = result2[start_index:end_index]
+        data_list = json.loads(extracted_content)
         return_data_list = []
     for data in data_list:
         return_data = {
@@ -163,7 +166,7 @@ def classification(text,personal_id):
         return_data_list.append(return_data)
     return return_data_list
 #群組
-def group_classification(text,group_id):
+def group_classification(text,group_id,personalID):
     config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
     os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
     # Create a user agent
@@ -194,20 +197,20 @@ def group_classification(text,group_id):
     format="{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型、分帳人)}"
     # Create an assistant agent
     role ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
-                    參數：金額(若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、類別、交易類型、分帳人(若使用者輸入沒有說明則設定成 "所有人")，請務必按照格式輸出。
+                    參數：金額(若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、類別、交易類型、分帳人(包含分帳人和分帳金額，若使用者輸入沒有說明則設定成 "所有人")，請務必按照格式輸出。
                    '''
-    category_info = '''
-                    預測類別時，若抓取的項目名稱沒有出現在"帳目類別資料"，請先看"個人類別資料"，並且從中選擇最合適的一項。
-                    你抓取的項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
+    category_info = '''預測類別時，請先看"群組類別資料"，從使用者輸入內容中選擇最合適的一項"群組類別資料"的類別，如果無法從使用者的輸入判斷，
+                    則若抓取的你抓取的項目名稱沒有在"帳目類別資料"，請自行選擇，若項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
                     (例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
-                    請務必按照格式輸出，預測的類別必定是"個人類別資料"的其中之一的類別，不能輸出"個人類別資料"的內容以外的類別，請勿自行產生類別。
-                    (例子:"個人類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
-                    '''
+                    請務必按照格式輸出，預測的類別必定是"群組類別資料"的其中之一的類別，不能輸出"群組類別資料"的內容以外的類別，請勿自行產生類別。
+                    (例子:"群組類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
+                '''
     examples = '''
               1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出、分帳人：所有人，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出、分帳人：所有人。
               2.使用者輸入:水果店買四個蘋果一個125元，成員A除外。輸出:項目名稱;蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出、分帳人：成員A除外。
               3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
-              4.使用者輸入:飲料店買四杯飲料共400元，成員C和成員B除外。輸出:項目名稱;蘋果、金額:400、地點:飲料店、類別:飲料、交易類型:支出、分帳人：成員C和成員B除外。
+              4.使用者輸入:飲料店買四杯飲料共400元，成員C和成員B除外。輸出:項目名稱:蘋果、金額:400、地點:飲料店、類別:飲料、交易類型:支出、分帳人：成員C和成員B除外。
+              5.使用者輸入:聚餐$2000 我1000 楊雲杰500 王盛禾500。輸出:項目名稱:聚餐、金額:2000、地點:無、類別:娛樂、交易類型:支出、分帳人：我1000 楊雲杰500 王盛禾500。
               '''
     assistant = autogen.AssistantAgent(
         "assistant",
@@ -235,9 +238,9 @@ def group_classification(text,group_id):
             "transaction_type":data['交易類型'],
             "member":data['分帳人']
         }
-        return group_account_spliter(group_id,data['分帳人'],return_data)
+        return group_account_spliter(group_id,data['分帳人'],data["金額"],return_data,personalID)
     
-def group_account_spliter(group_id,text,account_data):
+def group_account_spliter(group_id,text,amount,account_data,personalID):
     group_instance = GroupTable.objects.get(group_id=group_id)
     group_member = PersonalGroupLinkingTable.objects.filter(group=group_instance)
     personal_name_list=[]
@@ -265,12 +268,13 @@ def group_account_spliter(group_id,text,account_data):
         is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
         code_execution_config={'use_docker':False}
     )
-    format = '\"人名\",......(輸出的分帳人名字要和給予的名單一模一樣)'
-    system_prompt = '給予群組的成員名單，從使用者的輸入判斷需要分帳的人並一一列出，若使用者沒有輸入，代表不用進行分帳，若與抓分帳人無關的資訊請輸出ERROR，只會產生一筆結果，請務必按照格式輸出'
-    examples = '''假若群組內有小明、小美、小白 
-            1.使用者輸入：小明、小美除外都要分帳。小白。
-            2.使用者輸入：全部人均分。小明,小美,小白。
-            3.使用者輸入：除了小明外。小美、小白。
+    format = '[{\'成員名稱\': \'\',\'分帳金額\':\'\'},(輸出的分帳人名字要和給予的名單一模一樣)'
+    system_prompt = '給予群組的成員名單，從使用者的輸入判斷需要分帳的人和分帳金額並一一列出，分帳金額按照使用者的輸入判斷即可，若與抓分帳人無關的資訊請輸出ERROR，只會產生一筆結果，請務必按照格式輸出'
+    examples = '''假若群組內有小明、小美、小白，分帳總金額是3000 
+            1.使用者輸入：小明、小美除外都要分帳。[{'成員名稱': '小白','分帳金額':3000}]。
+            2.使用者輸入：全部人均分。[{'成員名稱': '小明','分帳金額':1000},{'成員名稱': '小美','分帳金額':1000},{'成員名稱': '小白','分帳金額':1000}]。
+            3.使用者輸入：小明 1000 小美 1500 小白 500 。[{'成員名稱': '小明','分帳金額':1000},{'成員名稱': '小美','分帳金額':1500},{'成員名稱': '小白','分帳金額':500}]。
+            4.使用者輸入：小明 1000 小美 1500 。[{'成員名稱': '小明','分帳金額':1000},{'成員名稱': '小美','分帳金額':1500},{'成員名稱': '剩餘的人','分帳金額':500}]。
             '''
     # Create an assistant agent
     assistant = autogen.AssistantAgent(
@@ -278,7 +282,9 @@ def group_account_spliter(group_id,text,account_data):
         system_message=system_prompt+"輸出格式："+format+"例子:"+examples,
         llm_config={"config_list": config_list},
     )
-    agent = user.initiate_chat(assistant, message="成員名單:"+str(personal_name_list)+"使用者輸入:"+text+"",summary_method="last_msg")
+    personal_info = PersonalTable.objects.get(personal_id=personalID)
+    personal_name = personal_info.user_name
+    agent = user.initiate_chat(assistant, message="輸入者："+personal_name+",分帳總金額："+str(amount)+",成員名單:"+str(personal_name_list)+",使用者輸入:"+text+"",summary_method="last_msg")
     result = agent.summary
     if result[:5] == 'ERROR':
         return "錯誤"
@@ -286,7 +292,7 @@ def group_account_spliter(group_id,text,account_data):
         result2 = agent.summary
         names = result2.strip().rstrip(',').split(',')
         split = [name.strip() for name in names]
-        account_data['member']=split
+        account_data['member']=result2
         return account_data
 #暫存
 def address_temporary(personal_id,item,payment,location,category,time,transaction_type):
@@ -323,15 +329,24 @@ def sqlagent(text,personal_id):
     #個人帳
     for i in personal_account_info:
         category_instance = i.category
+        date=i.account_date.strftime('%Y-%m-%d') if i.account_date else None
         data = {
-            "個人帳目編號":i.personal_account_id,
-            '花費項目': i.item,
-            "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
-            '地點': i.location,
-            '金額': i.payment,
-            '資料完整flag': i.info_complete_flag,
-            '類別名稱': category_instance.category_name,
-            '交易類型': category_instance.transaction_type,
+            # "個人帳目編號":i.personal_account_id,
+            # '花費項目': i.item,
+            # "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
+            # '地點': i.location,
+            # '金額': i.payment,
+            # '資料完整flag': i.info_complete_flag,
+            # '類別名稱': category_instance.category_name,
+            # '交易類型': category_instance.transaction_type,
+            str(i.item)+','+
+            str(date)+','+
+            str(i.location)+','+
+            str(i.payment)+','+
+            str(i.info_complete_flag)+','+
+            str(category_instance.category_name)+','+
+            str(category_instance.transaction_type)
+
         }
         personal_info_list.append(data)
     #群組帳    
@@ -341,17 +356,28 @@ def sqlagent(text,personal_id):
         group_table = GroupAccountTable.objects.filter(group_account_id = account)
         for i in group_table:
             group_name = i.group.group_name
+            date = i.account_date.strftime('%Y-%m-%d') if i.account_date else None
             data3={
-                '群組帳目編號': i.group_account_id,
-                '花費項目': i.item,
-                "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
-                '地點': i.location,
-                '總付款金額': i.payment,
-                '群組名稱': group_name,
-                '資料完整flag': i.info_complete_flag,
-                '總付款人id':i.personal.personal_id,
-                '類別名稱': i.category.category_name,
-                '交易類型': i.category.transaction_type,
+                # '群組帳目編號': i.group_account_id,
+                # '花費項目': i.item,
+                # "記帳日期": i.account_date.strftime('%Y-%m-%d') if i.account_date else None,
+                # '地點': i.location,
+                # '總付款金額': i.payment,
+                # '群組名稱': group_name,
+                # '資料完整flag': i.info_complete_flag,
+                # '總付款人id':i.personal.personal_id,
+                # '類別名稱': i.category.category_name,
+                # '交易類型': i.category.transaction_type,
+                str(i.group_account_id)+','+
+                str(i.item)+','+
+                str(date)+','+
+                str(i.location)+','+
+                str(i.payment)+','+
+                str(group_name)+','+
+                str(i.info_complete_flag)+','+
+                str(i.personal.personal_id)+','+
+                str(i.category.category_name)+','+
+                str(i.category.transaction_type)
             }
             group_account_list.append(data3)
 
@@ -363,12 +389,18 @@ def sqlagent(text,personal_id):
             return_account = ReturnTable.objects.filter(split = l)
             for h in return_account:
                 data4 = {
-                    '群組帳目編號':l.group_account,
-                    '分帳':l.payment,
-                    '還錢金額':h.return_payment,
-                    '欠款人':h.payer,
-                    '收款人':h.receiver,
-                    '還錢flag':h.return_flag,
+                    # '群組帳目編號':l.group_account.group_account_id,
+                    # '分帳':l.payment,
+                    # '還錢金額':h.return_payment,
+                    # '欠款人':h.payer,
+                    # '收款人':h.receiver,
+                    # '還錢flag':h.return_flag,
+                    str(l.group_account.group_account_id)+','+
+                    str(l.payment)+','+
+                    str(h.return_payment)+','+
+                    str(h.payer)+','+
+                    str(h.receiver)+','+
+                    str(h.return_flag)
                 }  
                 split_return_list.append(data4) 
     group_link = PersonalGroupLinkingTable.objects.filter(personal = personal_info)
@@ -407,7 +439,7 @@ def sqlagent(text,personal_id):
         system_message=system_prompt+"例子："+examples,
         llm_config={"config_list": config_list},
     )
-    account = "個人帳目:"+str(personal_info_list)+"群組帳目:"+str(group_account_list)+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
+    account = "個人帳目格式:\{花費項目,記帳日期,地點,金額,資料完整flag,類別名稱,交易類型\}"+"個人帳目:"+str(personal_info_list)+"群組帳目格式:\{群組帳目編號,花費項目,記帳日期,地點,總付款金額,群組名稱,資料完整flag,總付款人id,類別名稱,交易類型\}"+"群組帳目:"+str(group_account_list)+"分帳帳目格式:\{群組帳目編號,分帳,還錢金額,欠款人,收款人,還錢flag\}"+"分帳帳目:"+str(split_return_list)+"群組:"+str(group)
     output=user.initiate_chat(assistant, message="我是:"+personal_info.user_name+"personal_id:"+personal_id+" 帳目資訊如下："+account+",問題:"+text,summary_method="last_msg")
     result = output.summary
     if result[:5] == 'ERROR':
