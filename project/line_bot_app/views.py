@@ -259,7 +259,6 @@ def callback(request):
                         result = func.sqlagent(mtext,personal_id)
                         messages = [
                             TextMessage(text=result),
-                            TextMessage(text="查詢模式")
                         ]
                         line_bot_api.reply_message(event.reply_token, messages)
                         
@@ -279,7 +278,7 @@ def callback(request):
                         )
                         messages = [
                             image_message,
-                            TextMessage(text="畫圖模式")
+                            
                         ]
                         line_bot_api.reply_message(event.reply_token, messages)
         return HttpResponse()
@@ -312,7 +311,7 @@ def get_user_account(request):
                     if not PersonalTable.objects.filter(personal_id=virtual_personal).exists():
                         break
                 #預設類別
-                unit2 = PersonalTable(personal_id=virtual_personal,user_name=user_name,line_id=user_id)
+                unit2 = PersonalTable(personal_id=virtual_personal,user_name=user_name,line_id=user_id,input_status="0")
                 unit2.save()
                 unit3 = PersonalCategoryTable(category_name = "早餐",transaction_type ='支出',personal =unit2)
                 unit4 = PersonalCategoryTable(category_name = "午餐",transaction_type ='支出',personal =unit2 )
@@ -340,6 +339,7 @@ def get_user_account(request):
                 unit13.save()
                 unit14.save()
                 unit15.save()
+                
             #抓出資料到首頁上
             user_instance = PersonalTable.objects.get(line_id=user_id)
             user_account = PersonalAccountTable.objects.filter(personal=user_instance)
@@ -433,8 +433,9 @@ def get_group_account_info_classificaiton(request):
             data = json.loads(request.body.decode('utf-8'))
             input_text = data.get('user_input')
             group_id = data.get('group_id')
+            personal_id = data.get('personal_id')
             response_data = {'message': '成功接收數據'}
-            temp = func.group_classification(input_text,group_id)
+            temp = func.group_classification(input_text,group_id,personal_id)
             if temp != '錯誤':
                 temp['group_id'] = group_id
             return JsonResponse({**response_data,'temp':temp})
