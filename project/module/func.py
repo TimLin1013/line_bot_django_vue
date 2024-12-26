@@ -2,6 +2,10 @@ import os
 import secrets,string,json
 from line_bot_app.models import * 
 from langchain_openai import ChatOpenAI
+from langchain.prompts import PromptTemplate
+from langchain.prompts import HumanMessagePromptTemplate
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
 from module.langchain_tool import *
 from openai import OpenAI
 from django.conf import settings
@@ -91,16 +95,80 @@ def JoinGroup(personal_id,group_code):
 
 
 def classification(text,personal_id):
-    config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
-    os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
-    # Create a user agent
-    user = autogen.UserProxyAgent(
-        name="user_proxy",
-        human_input_mode="NEVER",
-        max_consecutive_auto_reply=0,
-        is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
-        code_execution_config={'use_docker':False}
-    )
+    # config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
+    # os.environ["OAI_CONFIG_LIST"] = json.dumps(config_list)
+    # # Create a user agent
+    # user = autogen.UserProxyAgent(
+    #     name="user_proxy",
+    #     human_input_mode="NEVER",
+    #     max_consecutive_auto_reply=0,
+    #     is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+    #     code_execution_config={'use_docker':False}
+    # )
+    # category_list = []
+    # category = PersonalCategoryTable.objects.filter(personal_id = personal_id)
+    # for j in category:
+    #     data2 = {
+    #         "類別":j.category_name,
+    #         "交易類型":j.transaction_type
+    #     }
+    #     category_list.append(data2)
+    # account_record = []
+    # account = PersonalAccountTable.objects.filter(personal_id = personal_id)
+    # for i in account:
+    #     data3 = {
+    #         "項目名稱":i.item,
+    #         "類別":i.category.category_name,
+    #         "交易類型":i.category.transaction_type
+    #     }
+    #     account_record.append(data3)
+    # format="[{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)},{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)}...]"
+    # # Create an assistant agent
+    # role ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
+    #                 參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、
+    #                 地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
+    #                '''
+    # category_info = '''預測類別時，請先看"個人類別資料"，從使用者輸入內容中選擇最合適的一項"個人類別資料"的類別，如果無法從使用者的輸入判斷，
+    #                 則若抓取的你抓取的項目名稱沒有在"帳目類別資料"，請自行選擇，若項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
+    #                 (例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
+    #                 請務必按照格式輸出，預測的類別必定是"個人類別資料"的其中之一的類別，不能輸出"個人類別資料"的內容以外的類別，請勿自行產生類別。
+    #                 (例子:"個人類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
+    #             '''
+    # examples = '''
+    #           1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
+    #           2.使用者輸入:水果店買四個蘋果一個125元。輸出:項目名稱:蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出。
+    #           3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
+    #           '''
+    # assistant = autogen.AssistantAgent(
+    #     "assistant",
+    #     # model
+    #     llm_config={"config_list": config_list},
+    #     system_message=role+category_info+"輸出格式："+format+"例子："+examples+"個人類別資料："+str(category_list)+"帳目類別資料："+str(account_record)
+    # )
+    # user_input=text
+    # agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
+    # result = agent.summary
+    # if result[:5] == 'ERROR':
+    #     return "錯誤"
+    # else:
+    #     result2 = agent.summary
+    #     start_index = result2.find('[')
+    #     end_index = result2.rfind(']') + 1
+    #     extracted_content = result2[start_index:end_index]
+    #     data_list = json.loads(extracted_content)
+    #     return_data_list = []
+    # for data in data_list:
+    #     return_data = {
+    #         "item": data["項目名稱"],
+    #         "payment": data["金額"],
+    #         "location": data["地點"],
+    #         "category": data['類別'],
+    #         "transaction_type": data['交易類型']
+    #     }
+    #     # Print each processed result
+        
+    #     return_data_list.append(return_data)
+    # return return_data_list
     category_list = []
     category = PersonalCategoryTable.objects.filter(personal_id = personal_id)
     for j in category:
@@ -118,41 +186,32 @@ def classification(text,personal_id):
             "交易類型":i.category.transaction_type
         }
         account_record.append(data3)
-    format="[{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)},{\"項目名稱\":\"\"....(只能包含項目名稱、金額、地點、類別、交易類型)}...]"
-    # Create an assistant agent
-    role ='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
-                    參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、
-                    地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
-                   '''
-    category_info = '''預測類別時，請先看"個人類別資料"，從使用者輸入內容中選擇最合適的一項"個人類別資料"的類別，如果無法從使用者的輸入判斷，
-                    則若抓取的你抓取的項目名稱沒有在"帳目類別資料"，請自行選擇，若項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱
-                    (例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，
-                    請務必按照格式輸出，預測的類別必定是"個人類別資料"的其中之一的類別，不能輸出"個人類別資料"的內容以外的類別，請勿自行產生類別。
-                    (例子:"個人類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
-                '''
-    examples = '''
-              1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
-              2.使用者輸入:水果店買四個蘋果一個125元。輸出:項目名稱:蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出。
-              3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
-              '''
-    assistant = autogen.AssistantAgent(
-        "assistant",
-        # model
-        llm_config={"config_list": config_list},
-        system_message=role+category_info+"輸出格式："+format+"例子："+examples+"個人類別資料："+str(category_list)+"帳目類別資料："+str(account_record)
+    llm = ChatOpenAI(model="gpt-4-turbo", api_key=os.environ["OPENAI_API_KEY"])
+    chat_template = ChatPromptTemplate(
+        messages=[
+            SystemMessage(content='''你是一個專業記帳助手，根據使用者的輸入抓取帳目要的參數，抓取以下參數，輸出格式須符合，不要輸出其他的格式。
+                          參數：金額(若使用者有買多個要去算總金額，而其他的數字不是買的就不要理，只要輸出數字即可，若沒有抓取到金額請輸出0)、地點(若沒有抓取到地點請輸出無)、項目名稱(若沒有抓取到項目名稱請輸出無)、交易類型、類別。
+                          
+                          預測類別時，請先看"個人類別資料"，從使用者輸入內容中選擇最合適的一項"個人類別資料"的類別，如果無法從使用者的輸入判斷，則若抓取的你抓取的項目名稱沒有在"帳目類別資料"，請自行選擇，
+                          若項目名稱有在"帳目類別資料"有相同就呈現該項目出現最多次的類別名稱(例子:漢堡出現的類別，早餐有出現5次、晚餐有出現4次，那類別就抓取早餐)，若沒有最多次就輸出最好的結果，請務必按照格式輸出，預測的類別必定是"個人類別資料"的其中之一的類別，不能輸出"個人類別資料"的內容以外的類別，請勿自行產生類別。
+                          (例子:"個人類別資料"中有早餐、午餐、晚餐，預測的類別就只能是這三個其中之一，不能出現其他類別)
+
+                          以下是範例：1.使用者輸入:買漢堡25，三明治15元。輸出:項目名稱:漢堡、金額:25、地點:無、類別：早餐、交易類型：支出，項目名稱:三明治、金額:15、地點:無、類別:午餐、交易類型:支出。
+                          2.使用者輸入:水果店買四個蘋果一個125元。輸出:項目名稱:蘋果、金額:500、地點:水果店、類別:水果、交易類型:支出。
+                          3.使用者輸入:薪水2000元。輸出:項目名稱:薪水、金額:2000、地點:無、類別：薪水、交易類型：收入。
+                          
+                          '''+
+                          
+                          '''個人類別資料：'''+str(category_list)+'''帳目類別資料：'''+str(account_record)),
+            HumanMessage(content="買漢堡25，三明治15元"),
+            AIMessage(content="[{\"項目名稱\":\"漢堡\",\"金額\":25,\"地點\":\"無\",\"類別\":\"早餐\",\"交易類型\":\"支出\"},{\"項目名稱\":\"三明治\",\"金額\":15,\"地點\":\"無\",\"類別\":\"購物\",\"交易類型\":\"支出\"}]"),
+            HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['user_input'], template='{user_input}'))
+        ]
     )
-    user_input=text
-    agent = user.initiate_chat(assistant, message="使用者輸入："+user_input+"",summary_method="last_msg")
-    result = agent.summary
-    if result[:5] == 'ERROR':
-        return "錯誤"
-    else:
-        result2 = agent.summary
-        start_index = result2.find('[')
-        end_index = result2.rfind(']') + 1
-        extracted_content = result2[start_index:end_index]
-        data_list = json.loads(extracted_content)
-        return_data_list = []
+    result = llm.invoke(chat_template.format_messages(user_input=text)).content
+    print(result)
+    data_list = json.loads(result)
+    return_data_list = []
     for data in data_list:
         return_data = {
             "item": data["項目名稱"],
@@ -162,9 +221,9 @@ def classification(text,personal_id):
             "transaction_type": data['交易類型']
         }
         # Print each processed result
-        
         return_data_list.append(return_data)
     return return_data_list
+    
 #群組
 def group_classification(text,group_id,personalID):
     config_list = [{'model': 'gpt-4o','api_key': os.environ["OPENAI_API_KEY"],}]
@@ -586,7 +645,7 @@ def drawplot(text,personal_id):
 
     config_list = [
         {
-            'model': 'ft:gpt-3.5-turbo-0125:personal::9pzkFyXX',#ft:gpt-3.5-turbo-0613:personal::9pz0a2ep:ckpt-step-68
+            'model': 'ft:gpt-4o-mini-2024-07-18:personal:bookkeeping-v1206:AbUD28vP',#ft:gpt-3.5-turbo-0613:personal::9pz0a2ep:ckpt-step-68
             'api_key': os.environ["OPENAI_API_KEY"],
         },
     ]
